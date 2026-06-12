@@ -436,3 +436,10 @@ select {
   background: var(--panel);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
 }
+
+
+/* --- Marque MaltaiAI deux tons --- */
+.brand-name { color: var(--text); }
+.brand-ai { color: #2bd4f0; }
+.empty-state h1 { color: var(--text); }
+.empty-state h1 .brand-ai { color: #2bd4f0; }
