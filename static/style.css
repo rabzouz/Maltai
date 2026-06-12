@@ -350,3 +350,89 @@ select {
 }
 .side-tools .tools-list { max-height: none; }
 .side-tools .tool-opt { padding: 6px 4px; }
+
+/* ===========================================================
+   Theme "Odysseus" : sombre profond + accent corail
+   (les variables ci-dessous ecrasent celles du haut du fichier)
+   =========================================================== */
+:root {
+  --bg: #131416;
+  --panel: #18191c;
+  --panel-2: #212226;
+  --border: #27282d;
+  --text: #e8e6e3;
+  --muted: #8b8f98;
+  --accent: #e0726f;
+  --accent-2: #c75f5d;
+  --user-bubble: #34272a;
+}
+
+.brand-name { color: var(--accent); font-family: var(--mono); letter-spacing: .5px; }
+
+/* Recherche */
+.side-search input {
+  width: 100%; padding: 9px 11px; border-radius: 9px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  color: var(--text); font-size: 13px; outline: none;
+}
+.side-search input:focus { border-color: var(--accent); }
+
+/* Navigation laterale */
+.side-nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; justify-content: space-between; align-items: center;
+  width: 100%; padding: 9px 10px; border: none; border-radius: 8px;
+  background: transparent; color: var(--muted); font-size: 14px;
+  cursor: pointer; text-align: left;
+}
+.nav-item:hover { background: var(--panel-2); color: var(--text); }
+.nav-item .caret { color: var(--muted); font-size: 11px; }
+.nav-label {
+  margin: 12px 4px 4px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted); opacity: .8;
+}
+
+/* Panneaux repliables (outils / notes / taches) */
+.side-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  margin: 2px 0 6px;
+  max-height: 44vh;
+  overflow-y: auto;
+}
+.panel-add { display: flex; gap: 6px; margin-bottom: 8px; }
+.panel-add input {
+  flex: 1; padding: 7px 9px; border-radius: 8px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  color: var(--text); font-size: 13px; outline: none;
+}
+.panel-add input:focus { border-color: var(--accent); }
+.panel-list { display: flex; flex-direction: column; gap: 4px; }
+.panel-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 7px; border-radius: 7px; font-size: 13px;
+  background: var(--panel-2);
+}
+.panel-item .p-text { flex: 1; overflow-wrap: anywhere; }
+.panel-item.done .p-text { text-decoration: line-through; opacity: .55; }
+.panel-item .p-del {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 12px; padding: 2px 4px;
+}
+.panel-item .p-del:hover { color: var(--accent); }
+
+/* Etat vide : style Odysseus */
+.empty-state h1 { color: var(--accent); font-family: var(--mono); letter-spacing: 1px; }
+.empty-state .tagline { color: var(--muted); font-size: 15px; margin: 4px 0 2px; }
+.empty-state .hint-line { color: var(--muted); opacity: .6; font-size: 12.5px; }
+
+/* Composer flottant arrondi */
+#composer {
+  border-radius: 16px;
+  margin: 0 14px 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}

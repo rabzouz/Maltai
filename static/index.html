@@ -23,10 +23,13 @@
         <img class="logo-img" src="/static/logo-emblem.png" alt="Maltai" />
         <span class="brand-name">Maltai</span>
       </div>
-      <button id="new-chat" class="btn-primary">+ Nouvelle discussion</button>
-      <div class="side-section">
-        <button id="side-tools-toggle" class="btn-ghost side-toggle">🛠 Outils <span id="side-tools-caret">▸</span></button>
-        <div id="side-tools" class="side-tools hidden">
+      <div class="side-search">
+        <input id="session-search" type="text" placeholder="Rechercher une discussion…" autocomplete="off" />
+      </div>
+      <button id="new-chat" class="btn-primary">＋ Nouvelle discussion</button>
+      <nav class="side-nav">
+        <button id="side-tools-toggle" class="nav-item">🛠 Outils <span id="side-tools-caret" class="caret">▸</span></button>
+        <div id="side-tools" class="side-tools side-panel hidden">
           <div class="tools-panel-head">
             <strong>Outils de l'agent</strong>
             <span>
@@ -36,7 +39,24 @@
           </div>
           <div id="side-tools-list" class="tools-list"><p class="hint">chargement…</p></div>
         </div>
-      </div>
+        <button id="side-notes-toggle" class="nav-item">📝 Notes <span id="side-notes-caret" class="caret">▸</span></button>
+        <div id="side-notes" class="side-panel hidden">
+          <div class="panel-add">
+            <input id="note-input" type="text" placeholder="Nouvelle note…" />
+            <button id="note-add-btn" class="mini-btn">＋</button>
+          </div>
+          <div id="notes-list" class="panel-list"></div>
+        </div>
+        <button id="side-todos-toggle" class="nav-item">☑ Tâches <span id="side-todos-caret" class="caret">▸</span></button>
+        <div id="side-todos" class="side-panel hidden">
+          <div class="panel-add">
+            <input id="todo-input" type="text" placeholder="Nouvelle tâche…" />
+            <button id="todo-add-btn" class="mini-btn">＋</button>
+          </div>
+          <div id="todos-list" class="panel-list"></div>
+        </div>
+        <div class="nav-label">Discussions</div>
+      </nav>
       <nav id="session-list" class="session-list"></nav>
       <div class="sidebar-foot">
         <button id="open-settings" class="btn-ghost">⚙ Réglages</button>
@@ -58,7 +78,8 @@
         <div class="empty-state">
           <img src="/static/logo-emblem.png" alt="" style="width:110px;height:110px;border-radius:24px;margin-bottom:14px;" />
           <h1>Maltai</h1>
-          <p>Workspace IA auto-hébergé. Choisis un provider, un modèle, et lance-toi.</p>
+          <p class="tagline">À toi le voyage.</p>
+          <p class="hint-line">Workspace IA auto-hébergé — choisis un provider, un modèle, et lance-toi.</p>
         </div>
       </div>
 
