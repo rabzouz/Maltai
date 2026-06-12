@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1b3a6b"/>
+      <stop offset="55%" stop-color="#1e5fa8"/>
+      <stop offset="100%" stop-color="#28c4e8"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e9fd4"/>
+      <stop offset="100%" stop-color="#2bd4f0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- M anguleux -->
+  <path d="M 84 408 L 84 128 L 196 282 L 308 128 L 308 408"
+        fill="none" stroke="url(#g)" stroke-width="40"
+        stroke-linecap="square" stroke-linejoin="miter"/>
+  <!-- double trait interieur -->
+  <path d="M 134 408 L 134 232 L 196 318 L 258 232 L 258 408"
+        fill="none" stroke="url(#g)" stroke-width="22"
+        stroke-linecap="square" stroke-linejoin="miter" opacity="0.85"/>
+
+  <!-- reseau de noeuds (cote droit) -->
+  <g stroke="url(#g2)" stroke-width="5" fill="none" opacity="0.95">
+    <path d="M 308 160 L 368 120 M 368 120 L 420 152 M 420 152 L 444 210
+             M 308 230 L 376 196 M 376 196 L 420 152 M 376 196 L 444 210
+             M 444 210 L 430 278 M 308 300 L 372 268 M 372 268 L 430 278
+             M 372 268 L 376 196 M 430 278 L 398 340 M 308 360 L 398 340
+             M 398 340 L 352 386 M 308 408 L 352 386"/>
+  </g>
+  <g fill="url(#g2)">
+    <circle cx="368" cy="120" r="13"/>
+    <circle cx="420" cy="152" r="10"/>
+    <circle cx="444" cy="210" r="12"/>
+    <circle cx="376" cy="196" r="11"/>
+    <circle cx="430" cy="278" r="12"/>
+    <circle cx="372" cy="268" r="10"/>
+    <circle cx="398" cy="340" r="11"/>
+    <circle cx="352" cy="386" r="9"/>
+  </g>
+</svg>
