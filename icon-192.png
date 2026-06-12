@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
+  <meta name="theme-color" content="#14161a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Maltai" />
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="apple-touch-icon" href="/static/icon-180.png" />
+  <title>Maltai</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="overlay"></div>
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="brand">
+        <img class="logo-img" src="/static/logo-emblem.png" alt="Maltai" />
+        <span class="brand-name">Maltai</span>
+      </div>
+      <button id="new-chat" class="btn-primary">+ Nouvelle discussion</button>
+      <nav id="session-list" class="session-list"></nav>
+      <div class="sidebar-foot">
+        <button id="open-settings" class="btn-ghost">⚙ Réglages</button>
+        <button id="logout" class="btn-ghost">⏻ Déconnexion</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main id="main">
+      <header id="topbar">
+        <button id="toggle-sidebar" class="icon-btn" title="Menu">☰</button>
+        <div class="selectors">
+          <select id="provider-select" title="Provider"></select>
+          <select id="model-select" title="Modèle"></select>
+        </div>
+      </header>
+
+      <div id="messages" class="messages">
+        <div class="empty-state">
+          <img src="/static/logo-emblem.png" alt="" style="width:110px;height:110px;border-radius:24px;margin-bottom:14px;" />
+          <h1>Maltai</h1>
+          <p>Workspace IA auto-hébergé. Choisis un provider, un modèle, et lance-toi.</p>
+        </div>
+      </div>
+
+      <div id="attach-chips" class="attach-chips"></div>
+      <footer id="composer">
+        <button id="attach-btn" class="icon-btn attach" title="Joindre un fichier (PDF, image, texte)">📎</button>
+        <input type="file" id="file-input" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.py,.js,.html,.css,.png,.jpg,.jpeg,.webp,.gif,.kt,.dart,.yaml,.yml,.xml,.sql,.sh,.log" />
+        <div class="agent-group">
+          <label class="agent-toggle" title="Mode agent : le modèle peut utiliser des outils">
+            <input type="checkbox" id="agent-mode" />
+            <span>🛠 Agent</span>
+          </label>
+          <button id="tools-btn" class="icon-btn tools-btn" title="Choisir les outils">▾</button>
+        </div>
+        <div id="tools-panel" class="tools-panel hidden">
+          <div class="tools-panel-head">
+            <strong>Outils de l'agent</strong>
+            <span>
+              <button id="tools-all" class="mini-btn">tout</button>
+              <button id="tools-none" class="mini-btn">aucun</button>
+            </span>
+          </div>
+          <div id="tools-list" class="tools-list"><p class="hint">chargement…</p></div>
+        </div>
+        <textarea id="input" rows="1" placeholder="Écris un message… (Entrée pour envoyer, Maj+Entrée pour une ligne)"></textarea>
+        <button id="send" class="btn-send" title="Envoyer">↑</button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Modal réglages providers -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2>Providers</h2>
+        <button id="close-settings" class="icon-btn">✕</button>
+      </div>
+      <p class="hint">Compatible OpenAI : Ollama, vLLM, llama.cpp, OpenRouter, OpenAI…</p>
+      <div id="provider-rows" class="provider-rows"></div>
+      <div class="provider-form">
+        <input id="p-name" placeholder="Nom (ex: Ollama local)" />
+        <input id="p-url" placeholder="Base URL (ex: http://localhost:11434/v1)" />
+        <input id="p-key" placeholder="Clé API (vide si local)" />
+        <input id="p-model" placeholder="Modèle par défaut (ex: llama3.1:8b)" />
+        <input id="p-embed" placeholder="Modèle d'embeddings / mémoire (ex: nomic-embed-text)" />
+        <button id="p-add" class="btn-primary">Ajouter</button>
+      </div>
+      <hr class="sep" />
+      <h2>Connecteurs</h2>
+      <h3 class="sub">Bot Telegram</h3>
+      <p class="hint">Crée un bot via @BotFather, colle son jeton, mets l'URL publique de ton Maltai (Coolify), active.</p>
+      <div class="provider-form">
+        <input id="tg-token" type="password" placeholder="Jeton du bot (laisser vide pour conserver)" />
+        <input id="tg-url" placeholder="URL publique (ex: https://maltai.tondomaine.fr)" />
+        <input id="tg-chats" placeholder="Chat IDs autorisés, séparés par des virgules" />
+        <label class="agent-toggle" style="justify-content:flex-start">
+          <input type="checkbox" id="tg-agent" /> <span>🛠 Mode agent pour Telegram</span>
+        </label>
+        <label class="agent-toggle" style="justify-content:flex-start">
+          <input type="checkbox" id="tg-enabled" /> <span>Activer le bot</span>
+        </label>
+        <button id="tg-save" class="btn-primary">Enregistrer Telegram</button>
+        <div id="tg-msg" class="hint"></div>
+      </div>
+      <h3 class="sub">API externe (OpenClaw, scripts…)</h3>
+      <p class="hint">POST /api/external/chat avec le header X-Api-Key. Une clé n'est montrée qu'une fois.</p>
+      <div id="key-rows" class="provider-rows"></div>
+      <div class="provider-form">
+        <input id="key-name" placeholder="Nom de la clé (ex: openclaw)" />
+        <button id="key-add" class="btn-primary">Générer une clé</button>
+        <div id="key-msg" class="hint" style="word-break:break-all"></div>
+      </div>
+      <hr class="sep" />
+      <h2>Serveurs MCP</h2>
+      <p class="hint">Outils externes pour l'agent (transport HTTP). Découverts à chaque requête en mode 🛠 Agent.</p>
+      <div id="mcp-rows" class="provider-rows"></div>
+      <div class="provider-form">
+        <input id="m-name" placeholder="Nom (ex: meteo)" />
+        <input id="m-url" placeholder="URL (ex: https://mon-serveur.fr/mcp)" />
+        <input id="m-token" placeholder="Jeton d'auth (optionnel)" />
+        <button id="m-add" class="btn-primary">Ajouter le serveur MCP</button>
+      </div>
+      <hr class="sep" />
+      <h2>Mémoire</h2>
+      <p class="hint" id="mem-status">…</p>
+      <button id="mem-clear" class="btn-ghost">Effacer toute la mémoire</button>
+      <hr class="sep" />
+      <h2>Workspace de l'agent</h2>
+      <p class="hint">Fichiers créés par l'agent (write_file, shell, python). Clique pour télécharger.</p>
+      <div id="ws-rows" class="provider-rows"></div>
+      <hr class="sep" />
+      <h2>Compte</h2>
+      <div class="provider-form">
+        <input id="cp-current" type="password" placeholder="Mot de passe actuel" autocomplete="current-password" />
+        <input id="cp-new" type="password" placeholder="Nouveau mot de passe (8 car. min)" autocomplete="new-password" />
+        <button id="cp-save" class="btn-primary">Changer le mot de passe</button>
+        <div id="cp-msg" class="hint"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/vendor/marked.js"></script>
+  <script src="/static/vendor/purify.min.js"></script>
+  <script src="/static/vendor/highlight.min.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
