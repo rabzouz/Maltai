@@ -24,6 +24,19 @@
         <span class="brand-name">Maltai</span>
       </div>
       <button id="new-chat" class="btn-primary">+ Nouvelle discussion</button>
+      <div class="side-section">
+        <button id="side-tools-toggle" class="btn-ghost side-toggle">🛠 Outils <span id="side-tools-caret">▸</span></button>
+        <div id="side-tools" class="side-tools hidden">
+          <div class="tools-panel-head">
+            <strong>Outils de l'agent</strong>
+            <span>
+              <button id="side-tools-all" class="mini-btn">tout</button>
+              <button id="side-tools-none" class="mini-btn">aucun</button>
+            </span>
+          </div>
+          <div id="side-tools-list" class="tools-list"><p class="hint">chargement…</p></div>
+        </div>
+      </div>
       <nav id="session-list" class="session-list"></nav>
       <div class="sidebar-foot">
         <button id="open-settings" class="btn-ghost">⚙ Réglages</button>

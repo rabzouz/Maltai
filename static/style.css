@@ -334,3 +334,19 @@ select {
 
 .msg-row.user { flex-direction: column; align-items: flex-end; }
 .msg-row.user .edit-bar { justify-content: flex-end; }
+
+
+/* --- Outils dans la sidebar (style Odysseus) --- */
+.side-section { margin: 10px 0 4px; }
+.side-toggle { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+.side-tools {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px;
+  margin-top: 6px;
+  max-height: 48vh;
+  overflow-y: auto;
+}
+.side-tools .tools-list { max-height: none; }
+.side-tools .tool-opt { padding: 6px 4px; }
