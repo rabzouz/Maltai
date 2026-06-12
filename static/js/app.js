@@ -656,16 +656,79 @@ function bindEvents() {
   $("#tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel(); };
   $("#tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel(); };
 
-  // Outils dans la sidebar (style Odysseus)
-  $("#side-tools-toggle").onclick = () => {
-    const sec = $("#side-tools");
-    const opening = sec.classList.contains("hidden");
-    sec.classList.toggle("hidden");
-    $("#side-tools-caret").textContent = opening ? "\u25be" : "\u25b8";
-    if (opening) loadToolsPanel("#side-tools-list");
-  };
+  // --- Sidebar (style Odysseus) : sections repliables -----------------------
+  function wirePanel(btnId, panelId, caretId, onOpen) {
+    $(btnId).onclick = () => {
+      const sec = $(panelId);
+      const opening = sec.classList.contains("hidden");
+      sec.classList.toggle("hidden");
+      $(caretId).textContent = opening ? "\u25be" : "\u25b8";
+      if (opening && onOpen) onOpen();
+    };
+  }
+  wirePanel("#side-tools-toggle", "#side-tools", "#side-tools-caret", () => loadToolsPanel("#side-tools-list"));
   $("#side-tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
   $("#side-tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
+
+  // --- Notes & Taches --------------------------------------------------------
+  async function loadNotesPanel(kind) {
+    const list = $(kind === "todo" ? "#todos-list" : "#notes-list");
+    list.innerHTML = '<p class="hint">chargement…</p>';
+    try {
+      const items = await api(`/api/notes?kind=${kind}`);
+      list.innerHTML = items.length ? "" : '<p class="hint">— vide —</p>';
+      items.forEach((n) => {
+        const row = document.createElement("div");
+        row.className = "panel-item" + (n.done ? " done" : "");
+        if (kind === "todo") {
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = !!n.done;
+          cb.onchange = async () => { await api(`/api/notes/${n.id}/toggle`, { method: "PATCH" }); loadNotesPanel("todo"); };
+          row.appendChild(cb);
+        }
+        const txt = document.createElement("span");
+        txt.className = "p-text";
+        txt.textContent = n.content;
+        const del = document.createElement("button");
+        del.className = "p-del";
+        del.textContent = "\u2715";
+        del.title = "Supprimer";
+        del.onclick = async () => { await api(`/api/notes/${n.id}`, { method: "DELETE" }); loadNotesPanel(kind); };
+        row.append(txt, del);
+        list.appendChild(row);
+      });
+    } catch {
+      list.innerHTML = '<p class="hint">Erreur de chargement.</p>';
+    }
+  }
+  async function addNoteFromInput(kind) {
+    const input = $(kind === "todo" ? "#todo-input" : "#note-input");
+    const content = input.value.trim();
+    if (!content) return;
+    await api("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, kind }),
+    });
+    input.value = "";
+    loadNotesPanel(kind);
+  }
+  wirePanel("#side-notes-toggle", "#side-notes", "#side-notes-caret", () => loadNotesPanel("note"));
+  wirePanel("#side-todos-toggle", "#side-todos", "#side-todos-caret", () => loadNotesPanel("todo"));
+  $("#note-add-btn").onclick = () => addNoteFromInput("note");
+  $("#todo-add-btn").onclick = () => addNoteFromInput("todo");
+  $("#note-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNoteFromInput("note"); });
+  $("#todo-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNoteFromInput("todo"); });
+
+  // --- Recherche dans les discussions ---------------------------------------
+  $("#session-search").addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll("#session-list .session-item").forEach((el) => {
+      const t = el.querySelector(".title");
+      el.style.display = !q || (t && t.textContent.toLowerCase().includes(q)) ? "" : "none";
+    });
+  });
   $("#toggle-sidebar").onclick = toggleSidebar;
   $("#overlay").onclick = closeSidebar;
   $("#open-settings").onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
