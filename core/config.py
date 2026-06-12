@@ -67,5 +67,13 @@ class Settings:
     # Limites d'upload (octets)
     CHAT_UPLOAD_MAX_BYTES = int(os.getenv("MALTAI_CHAT_UPLOAD_MAX_BYTES", str(10 * 1024 * 1024)))
 
+    # Envoi d'emails (outil email_send de l'agent). Non configure = outil desactive.
+    SMTP_HOST = os.getenv("SMTP_HOST", "")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM = os.getenv("SMTP_FROM", "")  # defaut: SMTP_USER
+    SMTP_TLS = _bool("SMTP_TLS", True)
+
 
 settings = Settings()
