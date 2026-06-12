@@ -1,47 +1,85 @@
-# ROADMAP Maltai
+# Déployer Maltai sur Coolify (Hostinger)
 
-v0.2 actuel : chat multi-providers, sessions, streaming, **auth (cookie
-signé, admin seedé)**, **agent + outils (calc, fichiers sandbox, web
-search/fetch, shell admin)**, **mobile + PWA installable**, **déploiement
-Docker/Coolify**, **mémoire vectorielle**, **client MCP (Streamable HTTP)**, **rendu Markdown**, **bot Telegram + API
-externe a cle**, **upload fichiers (PDF/texte/images vision)**, **workspace
-telechargeable**, **outils additionnels (datetime, http, memoire, python)**.
+Coolify détecte le `Dockerfile` à la racine, build l'image, et gère le HTTPS
+automatiquement (Traefik + Let's Encrypt). C'est ce HTTPS qui rend la **PWA
+installable** depuis ton téléphone.
 
-## Prochaines briques (par ordre de valeur / effort)
+## 1. Mettre Maltai sur un dépôt Git
 
-### 1. ~~Auth & comptes~~ ✅ fait (v0.2)
-- Reste : multi-utilisateurs (signup, gestion par l'admin), sessions par user
+Coolify déploie depuis Git (GitHub / GitLab…). Pousse le dossier `maltai/`
+sur un repo (privé de préférence) :
 
-### 2. ~~Mémoire~~ ✅ fait (v0.5)
-- ✅ Embeddings via provider + stockage SQLite + recall auto dans le prompt
-- Reste : migration `sqlite-vec` pour le passage à l'échelle, extraction de
-  « faits » saillants (vs message brut), import/export, mémoire éditable
+```bash
+cd maltai
+git init && git add . && git commit -m "Maltai v0.4"
+git remote add origin git@github.com:ton-compte/maltai.git
+git push -u origin main
+```
 
-### 3. ~~Agents + outils + MCP~~ ✅ fait (v0.2 / v0.6)
-- ✅ Serveurs MCP distants en Streamable HTTP (decouverte + execution)
-- Reste : OAuth MCP, serveurs stdio locaux (hors conteneur), confirmation
-  utilisateur avant actions sensibles, skills persistantes
+## 2. Créer l'application dans Coolify
 
-### 4. ~~Recherche web~~ ✅ fait (v0.2 / v1.1)
-- ✅ DuckDuckGo + deep research multi-etapes -> rapport avec sources
-- Reste : integration SearXNG (recherche auto-hebergee)
+1. **+ New Resource → Application**
+2. Choisis ta source Git, sélectionne le repo `maltai` et la branche `main`
+3. **Build Pack** : laisse Coolify détecter — il trouvera le `Dockerfile`
+4. **Port** : `7000` (normalement auto-détecté via `EXPOSE`)
+5. **Domaine** : mets ton sous-domaine (ex. `maltai.tondomaine.fr`). Coolify
+   provisionne le certificat HTTPS tout seul.
 
-### 5. ~~Documents & uploads~~ ✅ fait (v0.8)
-- ✅ Upload PDF/texte/images vision, extraction, limite de taille
-- Reste : éditeur multi-onglets, OCR des PDF scannés, historique multimodal
-  (les images ne sont envoyées qu'au tour de leur upload)
+## 3. Stockage persistant (IMPORTANT)
 
-### 5bis. ~~Interface agent~~ ✅ fait (v0.9)
-- ✅ Panneau de selection des outils (natifs + MCP), cartes d'appels
-  repliables, bouton stop, copie des reponses
+Sans ça, ta base SQLite et tes comptes sont effacés à chaque redéploiement.
 
-### 6. Confort
-- ~~Markdown + coloration syntaxique dans les bulles~~ ✅ fait (v0.7)
-- ~~Copier, edition et regeneration de messages~~ ✅ (v0.9 / v1.0)
-- Thèmes, presets, raccourcis
-- ~~PWA / mobile~~ ✅ fait (v0.3)
+- Onglet **Storages → + Add**
+- **Name** : `maltai-data`
+- **Destination Path** : `/app/data`  ← le dossier (pas un fichier)
 
-### 7. Déploiement
-- ~~Dockerfile + docker-compose~~ ✅ fait (v0.4)
-- Overlays GPU (nvidia/amd) pour servir des modèles localement
-- ~~Reverse proxy HTTPS~~ ✅ via Coolify/Traefik (v0.4)
+Tout y est stocké : `app.db`, `secret.key`, le workspace de l'agent.
+
+## 4. Variables d'environnement
+
+Onglet **Environment Variables** (chiffrées au repos, hors Git) :
+
+| Clé                     | Valeur                                   |
+| ----------------------- | ---------------------------------------- |
+| `SECURE_COOKIES`        | `true`                                   |
+| `SESSION_SECRET`        | 32+ caractères aléatoires (voir ci-dessous) |
+| `MALTAI_ADMIN_USER`     | `admin` (ou ton identifiant)             |
+| `MALTAI_ADMIN_PASSWORD` | un mot de passe fort                     |
+
+Génère un secret :
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+`SESSION_SECRET` est facultatif (sinon un secret est généré et stocké dans le
+volume persistant), mais le définir évite de déconnecter tout le monde si le
+volume est recréé.
+
+## 5. Déployer
+
+Clique **Deploy**. Au premier boot, le compte admin est créé avec le mot de
+passe que tu as mis dans `MALTAI_ADMIN_PASSWORD`. Sinon, un mot de passe
+temporaire s'affiche dans les **logs de déploiement** Coolify.
+
+Ouvre ton domaine, connecte-toi, et installe la PWA depuis le navigateur du
+téléphone (« Ajouter à l'écran d'accueil »).
+
+## Sécurité — à exposer sur Internet
+
+Maltai exposé publiquement est puissant (l'agent a accès web, fichiers, et
+shell pour les admins). Donc :
+
+- **Mot de passe admin fort** et `AUTH_ENABLED=true` (défaut).
+- L'outil `shell` reste réservé aux admins — n'ajoute pas d'autres comptes
+  admin sans raison.
+- Pense à un backup régulier du volume `maltai-data` (Coolify sait sauvegarder
+  les volumes).
+- Pour un provider LLM : soit tu pointes vers une API (OpenAI/OpenRouter avec
+  clé en variable d'env), soit vers ton Ollama. Si Ollama tourne ailleurs,
+  expose-le **uniquement** sur ton réseau privé (Tailscale), pas en clair.
+
+## Mettre à jour
+
+Push sur la branche → **Deploy** (ou active le déploiement auto sur push dans
+Coolify). Le volume `/app/data` est conservé entre les versions.
