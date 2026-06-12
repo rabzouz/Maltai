@@ -560,6 +560,175 @@ async def tool_deep_research(args: dict, ctx: dict) -> str:
     return report
 
 
+# --- Notes & taches (inspire d'Odysseus) ------------------------------------
+
+def _fmt_ts(ts: float) -> str:
+    return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
+
+def _find_note(conn, user_id, id_prefix: str, kind: str):
+    rows = conn.execute(
+        "SELECT * FROM notes WHERE kind=? AND (user_id IS ? OR user_id=?) "
+        "AND id LIKE ? ORDER BY created_at",
+        (kind, user_id, user_id, id_prefix + "%"),
+    ).fetchall()
+    return rows
+
+
+async def tool_note_add(args: dict, ctx: dict) -> str:
+    from core import database as db
+    content = str(args.get("content", "")).strip()
+    if not content:
+        return "Contenu vide"
+    conn = db.connect()
+    try:
+        nid = db.new_id()
+        conn.execute(
+            "INSERT INTO notes (id, user_id, kind, content, done, created_at) "
+            "VALUES (?, ?, 'note', ?, 0, ?)",
+            (nid, ctx.get("user_id"), content, db.now()),
+        )
+        conn.commit()
+        return f"Note enregistree (id {nid[:8]})"
+    finally:
+        conn.close()
+
+
+async def tool_note_list(args: dict, ctx: dict) -> str:
+    from core import database as db
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM notes WHERE kind='note' AND (user_id IS ? OR user_id=?) "
+            "ORDER BY created_at DESC LIMIT 50",
+            (ctx.get("user_id"), ctx.get("user_id")),
+        ).fetchall()
+    finally:
+        conn.close()
+    if not rows:
+        return "Aucune note"
+    lines = [f"- [{r['id'][:8]}] ({_fmt_ts(r['created_at'])}) {r['content']}" for r in rows]
+    return _truncate("\n".join(lines))
+
+
+async def tool_note_delete(args: dict, ctx: dict) -> str:
+    from core import database as db
+    id_prefix = str(args.get("note_id", "")).strip()
+    if not id_prefix:
+        return "note_id manquant"
+    conn = db.connect()
+    try:
+        rows = _find_note(conn, ctx.get("user_id"), id_prefix, "note")
+        if not rows:
+            return f"Aucune note avec l'id {id_prefix}"
+        if len(rows) > 1:
+            return f"Id ambigu ({len(rows)} notes). Precise plus de caracteres."
+        conn.execute("DELETE FROM notes WHERE id=?", (rows[0]["id"],))
+        conn.commit()
+        return f"Note supprimee : {rows[0]['content'][:80]}"
+    finally:
+        conn.close()
+
+
+async def tool_todo_add(args: dict, ctx: dict) -> str:
+    from core import database as db
+    content = str(args.get("content", "")).strip()
+    if not content:
+        return "Contenu vide"
+    conn = db.connect()
+    try:
+        nid = db.new_id()
+        conn.execute(
+            "INSERT INTO notes (id, user_id, kind, content, done, created_at) "
+            "VALUES (?, ?, 'todo', ?, 0, ?)",
+            (nid, ctx.get("user_id"), content, db.now()),
+        )
+        conn.commit()
+        return f"Tache ajoutee (id {nid[:8]})"
+    finally:
+        conn.close()
+
+
+async def tool_todo_list(args: dict, ctx: dict) -> str:
+    from core import database as db
+    include_done = bool(args.get("include_done", False))
+    conn = db.connect()
+    try:
+        sql = ("SELECT * FROM notes WHERE kind='todo' AND (user_id IS ? OR user_id=?) "
+               + ("" if include_done else "AND done=0 ")
+               + "ORDER BY done, created_at DESC LIMIT 100")
+        rows = conn.execute(sql, (ctx.get("user_id"), ctx.get("user_id"))).fetchall()
+    finally:
+        conn.close()
+    if not rows:
+        return "Aucune tache" + (" (toutes terminees ?)" if not include_done else "")
+    lines = []
+    for r in rows:
+        box = "[x]" if r["done"] else "[ ]"
+        lines.append(f"- {box} [{r['id'][:8]}] {r['content']}")
+    return _truncate("\n".join(lines))
+
+
+async def tool_todo_done(args: dict, ctx: dict) -> str:
+    from core import database as db
+    id_prefix = str(args.get("todo_id", "")).strip()
+    if not id_prefix:
+        return "todo_id manquant"
+    conn = db.connect()
+    try:
+        rows = _find_note(conn, ctx.get("user_id"), id_prefix, "todo")
+        if not rows:
+            return f"Aucune tache avec l'id {id_prefix}"
+        if len(rows) > 1:
+            return f"Id ambigu ({len(rows)} taches). Precise plus de caracteres."
+        conn.execute("UPDATE notes SET done=1 WHERE id=?", (rows[0]["id"],))
+        conn.commit()
+        return f"Tache terminee : {rows[0]['content'][:80]}"
+    finally:
+        conn.close()
+
+
+# --- Envoi d'email (SMTP, inspire d'Odysseus) --------------------------------
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+async def tool_email_send(args: dict, ctx: dict) -> str:
+    from core.config import settings
+    if not settings.SMTP_HOST or not settings.SMTP_USER:
+        return ("Email non configure. Definis les variables d'environnement "
+                "SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD (et SMTP_FROM optionnel).")
+    to = str(args.get("to", "")).strip()
+    subject = str(args.get("subject", "")).strip()
+    body = str(args.get("body", ""))
+    if not _EMAIL_RE.match(to):
+        return f"Adresse destinataire invalide : {to}"
+    if not subject or not body:
+        return "subject et body sont requis"
+
+    import smtplib
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["From"] = settings.SMTP_FROM or settings.SMTP_USER
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg.set_content(body)
+
+    def send():
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as s:
+            if settings.SMTP_TLS:
+                s.starttls()
+            s.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            s.send_message(msg)
+
+    try:
+        await asyncio.to_thread(send)
+        return f"Email envoye a {to} (sujet : {subject})"
+    except Exception as e:
+        return f"Echec de l'envoi : {e}"
+
+
 # --- Registre ----------------------------------------------------------------
 
 Tool = dict[str, Any]
@@ -753,6 +922,89 @@ TOOLS: dict[str, dict] = {
                 "type": "object",
                 "properties": {"command": {"type": "string"}},
                 "required": ["command"],
+            },
+        },
+    },
+    "note_add": {
+        "run": tool_note_add,
+        "spec": {
+            "name": "note_add",
+            "description": "Enregistre une note persistante pour l'utilisateur (memo, idee, information a retenir).",
+            "parameters": {
+                "type": "object",
+                "properties": {"content": {"type": "string", "description": "Texte de la note"}},
+                "required": ["content"],
+            },
+        },
+    },
+    "note_list": {
+        "run": tool_note_list,
+        "spec": {
+            "name": "note_list",
+            "description": "Liste les notes enregistrees de l'utilisateur (avec leur id).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    "note_delete": {
+        "run": tool_note_delete,
+        "spec": {
+            "name": "note_delete",
+            "description": "Supprime une note par son id (prefixe accepte).",
+            "parameters": {
+                "type": "object",
+                "properties": {"note_id": {"type": "string", "description": "Id (ou debut d'id) de la note"}},
+                "required": ["note_id"],
+            },
+        },
+    },
+    "todo_add": {
+        "run": tool_todo_add,
+        "spec": {
+            "name": "todo_add",
+            "description": "Ajoute une tache a la todo-list persistante de l'utilisateur.",
+            "parameters": {
+                "type": "object",
+                "properties": {"content": {"type": "string", "description": "Description de la tache"}},
+                "required": ["content"],
+            },
+        },
+    },
+    "todo_list": {
+        "run": tool_todo_list,
+        "spec": {
+            "name": "todo_list",
+            "description": "Liste les taches de la todo-list (en cours par defaut).",
+            "parameters": {
+                "type": "object",
+                "properties": {"include_done": {"type": "boolean", "description": "Inclure les taches terminees"}},
+            },
+        },
+    },
+    "todo_done": {
+        "run": tool_todo_done,
+        "spec": {
+            "name": "todo_done",
+            "description": "Marque une tache comme terminee par son id (prefixe accepte).",
+            "parameters": {
+                "type": "object",
+                "properties": {"todo_id": {"type": "string", "description": "Id (ou debut d'id) de la tache"}},
+                "required": ["todo_id"],
+            },
+        },
+    },
+    "email_send": {
+        "run": tool_email_send,
+        "spec": {
+            "name": "email_send",
+            "description": "Envoie un email (texte) via SMTP. Necessite SMTP_HOST/SMTP_USER/SMTP_PASSWORD en variables d'environnement.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "to": {"type": "string", "description": "Adresse du destinataire"},
+                    "subject": {"type": "string"},
+                    "body": {"type": "string", "description": "Corps du message (texte brut)"},
+                },
+                "required": ["to", "subject", "body"],
             },
         },
     },
