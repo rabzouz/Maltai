@@ -324,8 +324,8 @@ function saveToolPrefs() {
   localStorage.setItem("maltai_disabled_tools", JSON.stringify([...state.disabledTools]));
 }
 
-async function loadToolsPanel() {
-  const list = $("#tools-list");
+async function loadToolsPanel(sel) {
+  const list = $(sel || "#tools-list");
   list.innerHTML = '<p class="hint">chargement…</p>';
   try {
     const d = await api("/api/tools");
@@ -655,6 +655,17 @@ function bindEvents() {
   });
   $("#tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel(); };
   $("#tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel(); };
+
+  // Outils dans la sidebar (style Odysseus)
+  $("#side-tools-toggle").onclick = () => {
+    const sec = $("#side-tools");
+    const opening = sec.classList.contains("hidden");
+    sec.classList.toggle("hidden");
+    $("#side-tools-caret").textContent = opening ? "\u25be" : "\u25b8";
+    if (opening) loadToolsPanel("#side-tools-list");
+  };
+  $("#side-tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
+  $("#side-tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
   $("#toggle-sidebar").onclick = toggleSidebar;
   $("#overlay").onclick = closeSidebar;
   $("#open-settings").onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
