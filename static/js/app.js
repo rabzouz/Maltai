@@ -812,7 +812,6 @@ function bindEvents() {
   }
 
   // --- Settings & misc ------------------------------------------------------
-  $("#open-settings").onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
@@ -887,6 +886,16 @@ function bindEvents() {
     if (r.ok) { $("#cp-current").value = ""; $("#cp-new").value = ""; }
   };
   $("#close-settings").onclick = () => $("#settings-modal").classList.add("hidden");
+  // Click hors du modal-box pour fermer
+  $("#settings-modal").addEventListener("click", (e) => {
+    if (e.target === $("#settings-modal")) $("#settings-modal").classList.add("hidden");
+  });
+  // Echap pour fermer
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#settings-modal").classList.contains("hidden")) {
+      $("#settings-modal").classList.add("hidden");
+    }
+  });
 
   $("#input").addEventListener("input", (e) => autoGrow(e.target));
   $("#input").addEventListener("keydown", (e) => {
@@ -931,7 +940,7 @@ if ("serviceWorker" in navigator) {
 }
 
 (async function init() {
-  bindEvents();
+  try { bindEvents(); } catch(e) { console.error('bindEvents error:', e); }
   applyInitialLayout();
   window.addEventListener("resize", applyInitialLayout);
   await loadProviders();
