@@ -16,6 +16,7 @@ from core import auth as core_auth
 from core import database as db
 from routes import auth as auth_routes
 from routes import chat, external, mcp, memory, notes, providers, sessions, telegram, tools, uploads
+from routes import tool_run
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -83,6 +84,7 @@ app.include_router(external.router)
 app.include_router(uploads.router)
 app.include_router(tools.router)
 app.include_router(notes.router)
+app.include_router(tool_run.router)
 
 
 @app.get("/api/health")

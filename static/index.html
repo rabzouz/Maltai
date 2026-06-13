@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=a395e0d4" />
+  <link rel="stylesheet" href="/static/style.css?v=20c34fbd" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -106,6 +106,17 @@
           <button id="todo-add-btn" class="section-add-btn">＋</button>
         </div>
         <div id="todos-list" class="panel-list"></div>
+      </div>
+      <div id="subpanel-research" class="subpanel hidden">
+        <div class="dr-panel">
+          <p class="dr-desc">Lance une recherche approfondie multi-étapes sur n'importe quel sujet.</p>
+          <div class="section-add-row">
+            <input id="dr-input" type="text" placeholder="Sujet à rechercher…" />
+            <button id="dr-start-btn" class="section-add-btn">→</button>
+          </div>
+          <div id="dr-status" class="dr-status hidden"></div>
+          <div id="dr-result" class="dr-result hidden"></div>
+        </div>
       </div>
 
       <!-- Pied de sidebar -->
@@ -264,6 +275,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=f9555ee5"></script>
+  <script src="/static/js/app.js?v=4125ce94"></script>
 </body>
 </html>

@@ -671,6 +671,70 @@ function bindEvents() {
   $("#tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel(); };
   $("#tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel(); };
 
+
+  // --- Deep Research ---------------------------------------------------------
+  let drInitialized = false;
+  function initDeepResearch() {
+    if (drInitialized) return;
+    drInitialized = true;
+    const btn    = $("#dr-start-btn");
+    const input  = $("#dr-input");
+    const status = $("#dr-status");
+    const result = $("#dr-result");
+    if (!btn || !input) return;
+
+    async function runResearch() {
+      const topic = input.value.trim();
+      if (!topic) return;
+      btn.disabled = true;
+      status.className = "dr-status";
+      status.innerHTML = '<span class="dr-spinner"></span> Analyse du sujet…';
+      result.className = "dr-result hidden";
+      result.innerHTML = "";
+
+      try {
+        // Call via agent tool endpoint
+        const r = await fetch("/api/tool/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tool: "deep_research",
+            args: { topic },
+            model: state.model,
+            provider: state.provider,
+          }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        const d = await r.json();
+        status.innerHTML = "✓ Rapport prêt";
+        result.className = "dr-result";
+        result.innerHTML = markdownToHtml(d.result || d.output || "");
+      } catch(e) {
+        status.innerHTML = "⚠ Erreur : " + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    btn.onclick = runResearch;
+    input.onkeydown = (e) => { if (e.key === "Enter") runResearch(); };
+  }
+
+  function markdownToHtml(md) {
+    return md
+      .replace(/^## (.+)/gm, "<h3>$1</h3>")
+      .replace(/^# (.+)/gm, "<h2>$1</h2>")
+      .replace(/^### (.+)/gm, "<h4>$1</h4>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/^- (.+)/gm, "<li>$1</li>")
+      .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+      .replace(/
+{2,}/g, "</p><p>")
+      .replace(/^(?!<[h|u|l])/gm, "")
+      .trim();
+  }
+
   // --- Notes & Taches --------------------------------------------------------
   async function loadNotesPanel(kind) {
     const list = $(kind === "todo" ? "#todos-list" : "#notes-list");
@@ -743,6 +807,7 @@ function bindEvents() {
     tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
     notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
+    research:    { el: "#subpanel-research",     load: () => initDeepResearch() },
   };
 
   function activateNav(id) {
@@ -766,11 +831,7 @@ function bindEvents() {
   $("#nav-tools").onclick       = () => activateNav("tools");
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
-  $("#nav-research").onclick    = () => {
-    activateNav("chat");
-    const inp = $("#input");
-    if (inp) { inp.value = "Lance un deep research sur : "; inp.focus(); }
-  };
+  $("#nav-research").onclick    = () => activateNav("research");
   $("#nav-skills").onclick      = () => {
     activateNav("chat");
     const inp = $("#input");

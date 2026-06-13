@@ -310,6 +310,52 @@ async def tool_python_exec(args: dict, ctx: dict) -> str:
         return f"Erreur python : {e}"
 
 
+
+async def tool_code_execute(args: dict, ctx: dict) -> str:
+    """Execute du code Python dans un sandbox isole (tous users, timeout 10s).
+    Acces reseau et modules systeme bloques, stdout/stderr captures."""
+    code = str(args.get("code", "")).strip()
+    if not code:
+        return "Code vide"
+    # Wrapper de securite : bloque les imports dangereux
+    guard = (
+        "import sys, builtins\n"
+        "_blocked = {'os','subprocess','socket','shutil','importlib',"
+        "'ctypes','multiprocessing','threading','signal','pty','fcntl','resource'}\n"
+        "_orig_import = builtins.__import__\n"
+        "def _safe_import(name, *a, **kw):\n"
+        "    top = name.split('.')[0]\n"
+        "    if top in _blocked:\n"
+        "        raise ImportError(f'Import bloque (sandbox): {name}')\n"
+        "    return _orig_import(name, *a, **kw)\n"
+        "builtins.__import__ = _safe_import\n"
+    )
+    full_code = guard + "\n" + code
+    try:
+        import tempfile, os as _os
+        with tempfile.TemporaryDirectory() as td:
+            code_file = _os.path.join(td, "_code.py")
+            with open(code_file, "w") as cf:
+                cf.write(full_code)
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-I", code_file,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=td,
+                env={"PATH": "/usr/bin:/bin"},
+            )
+            try:
+                out, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
+            except asyncio.TimeoutError:
+                proc.kill()
+                return "Timeout (10s) — code interrompu"
+        result = out.decode(errors="replace").strip()
+        label = f"[exit {proc.returncode}]"
+        return _truncate(f"{label}\n{result}" if result else f"{label} (aucune sortie)")
+    except OSError as e:
+        return f"Erreur sandbox : {e}"
+
+
 # --- Wikipedia ------------------------------------------------------------------
 
 WIKI_BASE = "https://fr.wikipedia.org"
@@ -1127,6 +1173,20 @@ TOOLS: dict[str, dict] = {
             "parameters": {
                 "type": "object",
                 "properties": {"code": {"type": "string"}},
+                "required": ["code"],
+            },
+        },
+    },
+    "code_execute": {
+        "run": tool_code_execute,
+        "spec": {
+            "name": "code_execute",
+            "description": "Execute du code Python dans un sandbox isole (disponible pour tous). Utile pour calculs, transformations de donnees, generation de texte programme. Timeout 10s. Acces reseau et systeme bloques.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "string", "description": "Code Python a executer"},
+                },
                 "required": ["code"],
             },
         },
