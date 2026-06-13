@@ -847,6 +847,89 @@ async def tool_skill_run(args: dict, ctx: dict) -> str:
     return f"=== Skill : {skill['name']} ===\n{skill['body']}"
 
 
+# =============================================================================
+# Pack v1.4 — image_generate, page_summary
+# =============================================================================
+
+async def tool_image_generate(args: dict, ctx: dict) -> str:
+    """Genere une image via l'API images du provider OpenAI-compatible."""
+    provider = ctx.get("provider")
+    if not provider:
+        return "Erreur : aucun provider configure."
+    prompt = str(args.get("prompt", "")).strip()
+    if not prompt:
+        return "Erreur : parametre 'prompt' manquant."
+    size = str(args.get("size", "1024x1024"))
+    quality = str(args.get("quality", "standard"))
+    n = int(args.get("n", 1))
+    base_url = provider["base_url"].rstrip("/")
+    # Remove /v1 suffix if already present to reconstruct cleanly
+    if base_url.endswith("/v1"):
+        base_url = base_url[:-3]
+    url = f"{base_url}/v1/images/generations"
+    headers = {"Content-Type": "application/json"}
+    if provider.get("api_key"):
+        headers["Authorization"] = f"Bearer {provider['api_key']}"
+    payload = {"prompt": prompt, "n": n, "size": size}
+    # quality param only supported by some providers (dall-e-3)
+    if quality != "standard":
+        payload["quality"] = quality
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            r = await client.post(url, json=payload, headers=headers)
+        if r.status_code != 200:
+            return f"Erreur API images ({r.status_code}) : {r.text[:300]}"
+        data = r.json()
+        images = data.get("data", [])
+        if not images:
+            return "Aucune image retournee par le provider."
+        urls = []
+        for img in images:
+            if img.get("url"):
+                urls.append(img["url"])
+            elif img.get("b64_json"):
+                urls.append(f"data:image/png;base64,{img['b64_json'][:40]}…")
+        return "Image(s) generee(s) :\n" + "\n".join(urls)
+    except httpx.HTTPError as e:
+        return f"Erreur reseau : {e}"
+
+
+async def tool_page_summary(args: dict, ctx: dict) -> str:
+    """Recupere le contenu d'une page web et en extrait le texte principal."""
+    import re as _re
+    url = str(args.get("url", "")).strip()
+    if not url or not url.startswith(("http://", "https://")):
+        return "Erreur : URL invalide ou manquante."
+    question = str(args.get("question", "")).strip()
+    try:
+        async with httpx.AsyncClient(
+            timeout=20,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; MaltaiBot/1.0)"},
+        ) as client:
+            r = await client.get(url)
+        if r.status_code != 200:
+            return f"Erreur HTTP {r.status_code} sur {url}"
+        raw = r.text
+    except httpx.HTTPError as e:
+        return f"Erreur reseau : {e}"
+
+    # Strip scripts, styles, HTML tags
+    raw = _re.sub(r"<(script|style|head)[^>]*>.*?</(script|style|head)>", " ", raw, flags=_re.S | _re.I)
+    raw = _re.sub(r"<[^>]+>", " ", raw)
+    raw = html.unescape(raw)
+    raw = _re.sub(r"[ \t]{2,}", " ", raw)
+    raw = _re.sub(r"\n{3,}", "\n\n", raw).strip()
+
+    # Truncate to ~6000 chars for context
+    excerpt = raw[:6000]
+    if len(raw) > 6000:
+        excerpt += f"\n\n[... {len(raw)-6000} caracteres supprimes ...]"
+
+    if question:
+        return f"Page : {url}\nQuestion : {question}\n\nContenu :\n{excerpt}"
+    return f"Page : {url}\n\nContenu extrait :\n{excerpt}"
+
 # --- Registre ----------------------------------------------------------------
 
 Tool = dict[str, Any]
@@ -1207,6 +1290,39 @@ TOOLS: dict[str, dict] = {
                     "name": {"type": "string", "description": "Nom du skill a executer"},
                 },
                 "required": ["name"],
+            },
+        },
+    },
+
+    "image_generate": {
+        "run": tool_image_generate,
+        "spec": {
+            "name": "image_generate",
+            "description": "Genere une image a partir d'un prompt textuel via le provider OpenAI-compatible configure (DALL-E, etc.). Retourne l'URL de l'image.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Description precise de l'image a generer"},
+                    "size": {"type": "string", "description": "Taille : 256x256 | 512x512 | 1024x1024 | 1792x1024 | 1024x1792", "default": "1024x1024"},
+                    "quality": {"type": "string", "description": "standard ou hd (DALL-E 3 uniquement)", "default": "standard"},
+                    "n": {"type": "integer", "description": "Nombre d'images (1-4)", "default": 1},
+                },
+                "required": ["prompt"],
+            },
+        },
+    },
+    "page_summary": {
+        "run": tool_page_summary,
+        "spec": {
+            "name": "page_summary",
+            "description": "Recupere et extrait le contenu textuel d'une page web a partir de son URL. Utile pour lire un article, une documentation ou repondre a une question sur un site.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL complete de la page (https://...)"},
+                    "question": {"type": "string", "description": "Question optionnelle sur le contenu de la page"},
+                },
+                "required": ["url"],
             },
         },
     },
