@@ -846,6 +846,25 @@ async def tool_skill_run(args: dict, ctx: dict) -> str:
         return f"Skill « {name} » introuvable. Verifiez le nom avec skill_list."
     return f"=== Skill : {skill['name']} ===\n{skill['body']}"
 
+async def tool_patch_file(args: dict, ctx: dict) -> str:
+    path_str = str(args.get("path", "")).strip()
+    old_text = args.get("old_str", "")
+    new_text = args.get("new_str", "")
+    if not path_str:
+        return "Erreur : parametre 'path' manquant."
+    workspace = Path(DATA_DIR).parent / "workspace"
+    workspace.mkdir(exist_ok=True)
+    target = (workspace / path_str).resolve()
+    if not str(target).startswith(str(workspace.resolve())):
+        return "Acces refuse : chemin hors du workspace."
+    if not target.exists():
+        return f"Fichier introuvable : {path_str}"
+    content = target.read_text(encoding="utf-8")
+    if old_text and old_text not in content:
+        return "Erreur : le bloc 'old_str' est introuvable dans le fichier."
+    content = content.replace(old_text, new_text, 1) if old_text else new_text
+    target.write_text(content, encoding="utf-8")
+    return f"Fichier mis a jour : {path_str} ({len(new_text)} caracteres inseres)"
 
 # --- Registre ----------------------------------------------------------------
 
@@ -1207,6 +1226,22 @@ TOOLS: dict[str, dict] = {
                     "name": {"type": "string", "description": "Nom du skill a executer"},
                 },
                 "required": ["name"],
+            },
+        },
+    },
+    "patch_file": {
+        "run": tool_patch_file,
+        "spec": {
+            "name": "patch_file",
+            "description": "Remplace un bloc de texte dans un fichier du workspace par un nouveau contenu.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin relatif du fichier dans le workspace"},
+                    "old_str": {"type": "string", "description": "Texte exact a remplacer"},
+                    "new_str": {"type": "string", "description": "Nouveau texte"},
+                },
+                "required": ["path", "new_str"],
             },
         },
     },
