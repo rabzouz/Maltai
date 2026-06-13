@@ -1,30 +1,42 @@
-# MaltaiAI v1.2 — mise a jour complete (tout-en-un)
+# Maltai — Mise à jour v1.3
 
-Ce zip remplace les precedents : code + interface + logo.
+## Fichiers modifiés
 
-## Contenu
-1. 7 nouveaux outils agent : notes, todo-list, email (SMTP)
-2. Interface style Odysseus : theme sombre/corail, recherche,
-   sections sidebar 🛠 Outils / 📝 Notes / ☑ Taches, composer flottant
-3. Marque "MaltaiAI" deux tons (sidebar, accueil, page de connexion)
-4. Nouveau logo (embleme M + reseau de noeuds) : favicon + icones PWA
+| Fichier | Changements |
+|---|---|
+| `core/database.py` | Table `skills`, FTS5 `messages_fts`, auto-indexation dans `add_message`, fonctions `skill_save/list/get`, `fts_search` |
+| `src/tools.py` | 6 nouveaux outils : `memory_save`, `session_search`, `patch_file`, `skill_save`, `skill_list`, `skill_run` |
 
-## Fichiers a uploader sur GitHub (dossier par dossier)
-RACINE      : app.py
-routes/     : notes.py (NOUVEAU)
-src/        : tools.py
-core/       : config.py + database.py
-static/     : index.html + style.css + login.html
-              + logo-emblem.png + favicon.png + icon-180.png
-              + icon-192.png + icon-512.png + logo-full.png
-static/js/  : app.js
+## Nouveaux outils (30 total)
 
-Sur github.com/rabzouz/Maltai : ouvre chaque dossier
--> Add file > Upload files -> glisse les fichiers -> Commit changes.
+### memory_save
+L'agent mémorise durablement un fait dans la mémoire vectorielle persistante.
+Ex : "Mémorise que je préfère les réponses courtes."
 
-Puis Coolify : Deploy. Navigateur : Ctrl+F5.
-PWA telephone : reinstalle l'app pour la nouvelle icone.
+### session_search
+Recherche plein texte FTS5 dans toutes les conversations passées.
+Ex : "Recherche dans mes discussions les échanges sur Docker."
 
-## Activer l'outil email_send (optionnel) — variables d'env Coolify
-SMTP_HOST=smtp.gmail.com / SMTP_PORT=587 / SMTP_USER=ton@gmail.com /
-SMTP_PASSWORD=mot-de-passe-application (myaccount.google.com/apppasswords)
+### patch_file
+Remplace un bloc ciblé dans un fichier du dossier workspace/ sans réécrire tout le fichier.
+
+### skill_save / skill_list / skill_run
+Sauvegarde, liste et rappelle des procédures réutilisables en base de données.
+
+## Déploiement (3 étapes)
+
+1. Copier dans votre repo GitHub :
+   - core/database.py
+   - src/tools.py
+
+2. Pousser :
+   git add core/database.py src/tools.py
+   git commit -m "feat: pack v1.3"
+   git push
+
+3. Redéployer dans Coolify → Redeploy.
+
+La migration DB est automatique. Aucune perte de données.
+
+Note : patch_file utilise un dossier workspace/ créé automatiquement à côté de data/.
+Pour le persister entre redéploiements, ajoutez un volume mount /app/workspace dans Coolify.
