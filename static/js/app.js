@@ -179,6 +179,12 @@ function scrollDown() {
   m.scrollTop = m.scrollHeight;
 }
 
+// --- Helpers UI ---
+function setStatus(msg) {
+  const bar = document.getElementById("status-bar");
+  if (bar) { bar.textContent = msg; bar.style.opacity = msg ? "1" : "0"; }
+}
+
 // --- Chat streaming ------------------------------------------------------
 async function send(contentOverride) {
   const input = $("#input");
@@ -191,7 +197,9 @@ async function send(contentOverride) {
   input.value = ""; input.style.height = "auto";
   addMessage("user", content + (attachedNames.length ? `\n📎 ${attachedNames.join(", ")}` : ""));
   const bubble = addMessage("assistant", "");
+  bubble.innerHTML = '<span class="thinking-dots"><span></span><span></span><span></span></span>';
   bubble.classList.add("typing");
+  setStatus("Maltai réfléchit…");
   state.streaming = true;
   const sendBtn = $("#send");
   sendBtn.classList.add("stop"); sendBtn.textContent = "■"; sendBtn.title = "Arrêter";
@@ -229,8 +237,10 @@ async function send(contentOverride) {
         if (type && type.includes("memory")) {
           addToolLine(`🧠 ${data.count} souvenir(s) rappelé(s) du contexte passé`, bubble);
         } else if (type && type.includes("tool_result")) {
+          setStatus("Maltai répond…");
           finishToolCard(data.name, String(data.result));
         } else if (type && type.includes("tool")) {
+          setStatus(`⚙ Outil : ${data.name}…`);
           const card = document.createElement("div");
           // inserer la carte AVANT la bulle de reponse en cours
           const row = bubble.closest(".msg-row");
@@ -240,15 +250,16 @@ async function send(contentOverride) {
           acc += `\n\n⚠ ${data.message}`;
           renderMarkdown(bubble, acc);
         } else if (data.content) {
+          if (!acc) { bubble.innerHTML = ""; setStatus("Maltai répond…"); }
           acc += data.content;
           renderMarkdown(bubble, acc);
         }
         scrollDown();
       }
     }
-    bubble.classList.remove("typing");
+    bubble.classList.remove("typing"); setStatus("");
   } catch (e) {
-    bubble.classList.remove("typing");
+    bubble.classList.remove("typing"); setStatus("");
     if (e.name === "AbortError") {
       renderMarkdown(bubble, (bubble.textContent || "") + "\n\n⏹ *Génération interrompue*");
     } else {
