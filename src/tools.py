@@ -729,6 +729,124 @@ async def tool_email_send(args: dict, ctx: dict) -> str:
         return f"Echec de l'envoi : {e}"
 
 
+# =============================================================================
+# Pack v1.3 — memory_save, session_search, patch_file, skill_save/list/run
+# =============================================================================
+
+async def tool_memory_save(args: dict, ctx: dict) -> str:
+    """Ecrit un fait dans la memoire vectorielle persistante de l'utilisateur."""
+    from core import database as db
+    from src.memory import embed_text, cosine_sim  # noqa: F401
+    import struct, numpy as np
+
+    fact = str(args.get("fact", "")).strip()
+    if not fact:
+        return "Erreur : parametre 'fact' manquant."
+    user_id = ctx.get("user_id")
+    session_id = ctx.get("session_id")
+    provider = ctx.get("provider")
+    if provider is None:
+        return "Pas de provider configure, impossible de calculer l'embedding."
+    try:
+        emb = await embed_text(fact, provider)
+    except Exception as e:
+        return f"Erreur embedding : {e}"
+    dim = len(emb)
+    blob = struct.pack(f"{dim}f", *emb)
+    mid = db.add_memory(user_id, session_id, "user", fact, blob, dim)
+    return f"Souvenir enregistre (id={mid[:8]}…) : « {fact[:80]} »"
+
+
+async def tool_session_search(args: dict, ctx: dict) -> str:
+    """Recherche plein texte dans toutes les conversations (FTS5)."""
+    from core import database as db
+
+    query = str(args.get("query", "")).strip()
+    if not query:
+        return "Erreur : parametre 'query' manquant."
+    limit = min(int(args.get("limit", 8)), 20)
+    user_id = ctx.get("user_id")
+    results = db.fts_search(query, user_id, limit)
+    if not results:
+        return f"Aucun resultat pour « {query} »."
+    if results and "error" in results[0]:
+        return f"Erreur FTS : {results[0]['error']}"
+    lines = [f"Resultats pour « {query} » ({len(results)}) :\n"]
+    for r in results:
+        import datetime
+        ts = datetime.datetime.fromtimestamp(r["updated_at"]).strftime("%d/%m/%Y")
+        lines.append(f"- [{r['session_title']}] ({ts}) [{r['role']}] {r['snippet']}")
+    return "\n".join(lines)
+
+
+async def tool_patch_file(args: dict, ctx: dict) -> str:
+    """Remplace un bloc de texte dans un fichier workspace par un nouveau contenu."""
+    path_str = str(args.get("path", "")).strip()
+    old_text = args.get("old_str", "")
+    new_text = args.get("new_str", "")
+    if not path_str:
+        return "Erreur : parametre 'path' manquant."
+    workspace = Path(DATA_DIR).parent / "workspace"
+    workspace.mkdir(exist_ok=True)
+    target = (workspace / path_str).resolve()
+    if not str(target).startswith(str(workspace.resolve())):
+        return "Acces refuse : chemin hors du workspace."
+    if not target.exists():
+        return f"Fichier introuvable : {path_str}"
+    content = target.read_text(encoding="utf-8")
+    if old_text and old_text not in content:
+        return "Erreur : le bloc 'old_str' est introuvable dans le fichier."
+    if old_text:
+        content = content.replace(old_text, new_text, 1)
+    else:
+        content = new_text
+    target.write_text(content, encoding="utf-8")
+    return f"Fichier mis a jour : {path_str} ({len(new_text)} caracteres inseres)"
+
+
+async def tool_skill_save(args: dict, ctx: dict) -> str:
+    """Sauvegarde une procedure reutilisable (skill) dans la base."""
+    from core import database as db
+
+    name = str(args.get("name", "")).strip().lower().replace(" ", "_")
+    description = str(args.get("description", "")).strip()
+    body = str(args.get("body", "")).strip()
+    if not name or not body:
+        return "Erreur : 'name' et 'body' sont requis."
+    user_id = ctx.get("user_id")
+    db.skill_save(user_id, name, description, body)
+    return f"Skill « {name} » sauvegarde."
+
+
+async def tool_skill_list(args: dict, ctx: dict) -> str:
+    """Liste les skills disponibles pour cet utilisateur."""
+    from core import database as db
+
+    user_id = ctx.get("user_id")
+    skills = db.list_skills(user_id)
+    if not skills:
+        return "Aucun skill enregistre. Utilisez skill_save pour en creer un."
+    lines = ["Skills disponibles :\n"]
+    for s in skills:
+        desc = f" — {s['description']}" if s['description'] else ""
+        lines.append(f"• **{s['name']}**{desc}")
+    return "\n".join(lines)
+
+
+async def tool_skill_run(args: dict, ctx: dict) -> str:
+    """Rappelle le corps d'un skill et le retourne pour que l'agent l'execute."""
+    from core import database as db
+
+    name = str(args.get("name", "")).strip().lower().replace(" ", "_")
+    if not name:
+        return "Erreur : 'name' est requis."
+    user_id = ctx.get("user_id")
+    skill = db.get_skill(user_id, name)
+    if not skill:
+        return f"Skill « {name} » introuvable. Verifiez le nom avec skill_list."
+    return f"=== Skill : {skill['name']} ===\n{skill['body']}"
+
+
 # --- Registre ----------------------------------------------------------------
 
 Tool = dict[str, Any]
@@ -1114,122 +1232,3 @@ async def execute_tool(name: str, args: dict, ctx: dict) -> str:
         return await runner(args, ctx)
     except Exception as e:  # garde-fou : un outil ne doit jamais tuer la boucle
         return f"Erreur outil {name} : {e}"
-
-
-# =============================================================================
-# Pack v1.3 — memory_save, session_search, patch_file, skill_save/list/run
-# =============================================================================
-
-async def tool_memory_save(args: dict, ctx: dict) -> str:
-    """Ecrit un fait dans la memoire vectorielle persistante de l'utilisateur."""
-    from core import database as db
-    from src.memory import embed_text, cosine_sim  # noqa: F401
-    import struct, numpy as np
-
-    fact = str(args.get("fact", "")).strip()
-    if not fact:
-        return "Erreur : parametre 'fact' manquant."
-    user_id = ctx.get("user_id")
-    session_id = ctx.get("session_id")
-    provider = ctx.get("provider")
-    if provider is None:
-        return "Pas de provider configure, impossible de calculer l'embedding."
-    try:
-        emb = await embed_text(fact, provider)
-    except Exception as e:
-        return f"Erreur embedding : {e}"
-    dim = len(emb)
-    blob = struct.pack(f"{dim}f", *emb)
-    mid = db.add_memory(user_id, session_id, "user", fact, blob, dim)
-    return f"Souvenir enregistre (id={mid[:8]}…) : « {fact[:80]} »"
-
-
-async def tool_session_search(args: dict, ctx: dict) -> str:
-    """Recherche plein texte dans toutes les conversations (FTS5)."""
-    from core import database as db
-
-    query = str(args.get("query", "")).strip()
-    if not query:
-        return "Erreur : parametre 'query' manquant."
-    limit = min(int(args.get("limit", 8)), 20)
-    user_id = ctx.get("user_id")
-    results = db.fts_search(query, user_id, limit)
-    if not results:
-        return f"Aucun resultat pour « {query} »."
-    if results and "error" in results[0]:
-        return f"Erreur FTS : {results[0]['error']}"
-    lines = [f"Resultats pour « {query} » ({len(results)}) :\n"]
-    for r in results:
-        import datetime
-        ts = datetime.datetime.fromtimestamp(r["updated_at"]).strftime("%d/%m/%Y")
-        lines.append(f"- [{r['session_title']}] ({ts}) [{r['role']}] {r['snippet']}")
-    return "\n".join(lines)
-
-
-async def tool_patch_file(args: dict, ctx: dict) -> str:
-    """Remplace un bloc de texte dans un fichier workspace par un nouveau contenu."""
-    path_str = str(args.get("path", "")).strip()
-    old_text = args.get("old_str", "")
-    new_text = args.get("new_str", "")
-    if not path_str:
-        return "Erreur : parametre 'path' manquant."
-    workspace = Path(DATA_DIR).parent / "workspace"
-    workspace.mkdir(exist_ok=True)
-    target = (workspace / path_str).resolve()
-    if not str(target).startswith(str(workspace.resolve())):
-        return "Acces refuse : chemin hors du workspace."
-    if not target.exists():
-        return f"Fichier introuvable : {path_str}"
-    content = target.read_text(encoding="utf-8")
-    if old_text and old_text not in content:
-        return "Erreur : le bloc 'old_str' est introuvable dans le fichier."
-    if old_text:
-        content = content.replace(old_text, new_text, 1)
-    else:
-        content = new_text
-    target.write_text(content, encoding="utf-8")
-    return f"Fichier mis a jour : {path_str} ({len(new_text)} caracteres inseres)"
-
-
-async def tool_skill_save(args: dict, ctx: dict) -> str:
-    """Sauvegarde une procedure reutilisable (skill) dans la base."""
-    from core import database as db
-
-    name = str(args.get("name", "")).strip().lower().replace(" ", "_")
-    description = str(args.get("description", "")).strip()
-    body = str(args.get("body", "")).strip()
-    if not name or not body:
-        return "Erreur : 'name' et 'body' sont requis."
-    user_id = ctx.get("user_id")
-    db.skill_save(user_id, name, description, body)
-    return f"Skill « {name} » sauvegarde."
-
-
-async def tool_skill_list(args: dict, ctx: dict) -> str:
-    """Liste les skills disponibles pour cet utilisateur."""
-    from core import database as db
-
-    user_id = ctx.get("user_id")
-    skills = db.list_skills(user_id)
-    if not skills:
-        return "Aucun skill enregistre. Utilisez skill_save pour en creer un."
-    lines = ["Skills disponibles :\n"]
-    for s in skills:
-        desc = f" — {s['description']}" if s['description'] else ""
-        lines.append(f"• **{s['name']}**{desc}")
-    return "\n".join(lines)
-
-
-async def tool_skill_run(args: dict, ctx: dict) -> str:
-    """Rappelle le corps d'un skill et le retourne pour que l'agent l'execute."""
-    from core import database as db
-
-    name = str(args.get("name", "")).strip().lower().replace(" ", "_")
-    if not name:
-        return "Erreur : 'name' est requis."
-    user_id = ctx.get("user_id")
-    skill = db.get_skill(user_id, name)
-    if not skill:
-        return f"Skill « {name} » introuvable. Verifiez le nom avec skill_list."
-    return f"=== Skill : {skill['name']} ===\n{skill['body']}"
-
