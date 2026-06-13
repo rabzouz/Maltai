@@ -52,7 +52,11 @@ async function loadModels(pid) {
       sel.appendChild(o);
     });
     state.model = prov?.model && models.includes(prov.model) ? prov.model : models[0] || null;
-    if (state.model) sel.value = state.model;
+    if (state.model) {
+      sel.value = state.model;
+      const lbl = $("#composer-model-name");
+      if (lbl) lbl.textContent = state.model;
+    }
   } catch {
     sel.innerHTML = "";
     if (prov?.model) {
@@ -910,7 +914,11 @@ function bindEvents() {
     state.providerId = e.target.value;
     await loadModels(state.providerId);
   };
-  $("#model-select").onchange = (e) => { state.model = e.target.value; };
+  $("#model-select").onchange = (e) => {
+    state.model = e.target.value;
+    const lbl = $("#composer-model-name");
+    if (lbl) lbl.textContent = e.target.value || "—";
+  };
 
   $("#p-add").onclick = async () => {
     const name = $("#p-name").value.trim();
