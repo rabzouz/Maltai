@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=aa2d0eff" />
+  <link rel="stylesheet" href="/static/style.css?v=3e543438" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -143,30 +143,49 @@
         </div>
       </div>
 
-      <div id="attach-chips" class="attach-chips"></div>
       <footer id="composer">
-        <button id="attach-btn" class="icon-btn attach" title="Joindre un fichier (PDF, image, texte)">📎</button>
         <input type="file" id="file-input" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.py,.js,.html,.css,.png,.jpg,.jpeg,.webp,.gif,.kt,.dart,.yaml,.yml,.xml,.sql,.sh,.log" />
-        <div class="agent-group">
-          <label class="agent-toggle" title="Mode agent : le modèle peut utiliser des outils">
-            <input type="checkbox" id="agent-mode" />
-            <span>🛠 Agent</span>
-          </label>
-          <button id="tools-btn" class="icon-btn tools-btn" title="Choisir les outils">▾</button>
-        </div>
-        <div id="tools-panel" class="tools-panel hidden">
-          <div class="tools-panel-head">
-            <strong>Outils de l'agent</strong>
-            <span>
-              <button id="tools-all" class="mini-btn">tout</button>
-              <button id="tools-none" class="mini-btn">aucun</button>
+        <div class="composer-box">
+          <!-- Topbar du composer : modèle + agent -->
+          <div class="composer-topbar">
+            <div class="agent-group">
+              <label class="agent-toggle" title="Mode agent : le modèle peut utiliser des outils">
+                <input type="checkbox" id="agent-mode" />
+                <span>🛠 Agent</span>
+              </label>
+              <button id="tools-btn" class="icon-btn tools-btn" title="Choisir les outils">▾</button>
+            </div>
+            <span class="composer-model-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span id="composer-model-name">—</span>
             </span>
           </div>
-          <div id="tools-list" class="tools-list"><p class="hint">chargement…</p></div>
+          <!-- Chips fichiers joints -->
+          <div id="attach-chips" class="attach-chips"></div>
+          <!-- Barre de statut -->
+          <div id="status-bar" class="status-bar"></div>
+          <!-- Panneau outils -->
+          <div id="tools-panel" class="tools-panel hidden">
+            <div class="tools-panel-head">
+              <strong>Outils de l'agent</strong>
+              <span>
+                <button id="tools-all" class="mini-btn">tout</button>
+                <button id="tools-none" class="mini-btn">aucun</button>
+              </span>
+            </div>
+            <div id="tools-list" class="tools-list"><p class="hint">chargement…</p></div>
+          </div>
+          <!-- Ligne saisie -->
+          <div class="composer-row">
+            <button id="attach-btn" class="icon-btn attach" title="Joindre un fichier">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <textarea id="input" rows="1" placeholder="Écris un message… (Entrée pour envoyer, Maj+Entrée pour une ligne)"></textarea>
+            <button id="send" class="btn-send" title="Envoyer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </button>
+          </div>
         </div>
-        <div id="status-bar" class="status-bar"></div>
-        <textarea id="input" rows="1" placeholder="Écris un message… (Entrée pour envoyer, Maj+Entrée pour une ligne)"></textarea>
-        <button id="send" class="btn-send" title="Envoyer">↑</button>
       </footer>
     </main>
   </div>
@@ -245,6 +264,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=9101c965"></script>
+  <script src="/static/js/app.js?v=f9555ee5"></script>
 </body>
 </html>
