@@ -11,6 +11,8 @@ frontend vanilla**.
 
 ## Stack
 
+
+
 - **Backend** : FastAPI (Python 3.11+), SQLite (sqlite3 standard, sans ORM)
 - **LLM** : client unique compatible OpenAI → Ollama, vLLM, llama.cpp,
   OpenRouter, OpenAI… (il suffit de changer `base_url` + `api_key` + `model`)
