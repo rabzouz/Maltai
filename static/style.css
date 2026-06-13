@@ -207,8 +207,8 @@ select {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 8px 12px 10px;
-  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
   box-shadow: 0 4px 28px rgba(0,0,0,0.4);
   max-width: 780px;
   margin: 0 auto;
@@ -226,10 +226,23 @@ select {
 #composer-collapse { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 2px; opacity: 0.4; }
 #composer-collapse:hover { opacity: 1; }
 .composer-row {
-  display: flex; align-items: flex-end; gap: 8px;
+  display: flex; align-items: flex-end; gap: 10px;
+  padding-top: 4px;
 }
 .composer-row textarea {
   flex: 1;
+  min-height: 52px;
+  max-height: 220px;
+  font-size: 14px;
+  padding: 10px 12px;
+  line-height: 1.55;
+  resize: none;
+  overflow-y: auto;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg, var(--text));
+  font-family: inherit;
 }
 
 /* Modal */

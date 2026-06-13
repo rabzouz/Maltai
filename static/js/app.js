@@ -966,9 +966,13 @@ function bindEvents() {
   });
 
   $("#input").addEventListener("input", (e) => autoGrow(e.target));
-  $("#input").addEventListener("keydown", (e) => {
+  const inputEl = $("#input");
+  inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   });
+  inputEl.addEventListener("input", () => autoGrow(inputEl));
+  // hauteur initiale
+  autoGrow(inputEl);
 
   $("#provider-select").onchange = async (e) => {
     state.providerId = e.target.value;
