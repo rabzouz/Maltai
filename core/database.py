@@ -118,6 +118,26 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
+
+CREATE TABLE IF NOT EXISTS skills (
+    id         TEXT PRIMARY KEY,
+    user_id    TEXT,
+    name       TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    body       TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_name ON skills(user_id, name);
+
+-- FTS5 : recherche plein texte sur les messages
+CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+    content,
+    session_id UNINDEXED,
+    role UNINDEXED,
+    content_rowid='rowid',
+    tokenize='unicode61'
+);
 """
 
 
@@ -265,10 +285,19 @@ def add_message(sid: str, role: str, content: str) -> dict[str, Any]:
     ts = now()
     conn = connect()
     try:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?,?,?,?,?)",
             (mid, sid, role, content, ts),
         )
+        rowid = cur.lastrowid
+        # Index FTS5 (best-effort)
+        try:
+            conn.execute(
+                "INSERT INTO messages_fts(rowid, content, session_id, role) VALUES (?,?,?,?)",
+                (rowid, content, sid, role),
+            )
+        except Exception:
+            pass
         conn.execute("UPDATE sessions SET updated_at=? WHERE id=?", (ts, sid))
         conn.commit()
     finally:
@@ -537,3 +566,108 @@ def pop_last_exchange(session_id: str) -> str | None:
         return user_content
     finally:
         conn.close()
+
+
+# --- Skills ------------------------------------------------------------------
+
+def skill_save(user_id, name, description, body):
+    sid = new_id()
+    ts = now()
+    conn = connect()
+    try:
+        conn.execute(
+            "INSERT INTO skills (id, user_id, name, description, body, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(user_id, name) DO UPDATE SET description=excluded.description, "
+            "body=excluded.body, updated_at=excluded.updated_at",
+            (sid, user_id, name, description, body, ts, ts),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return name
+
+
+def list_skills(user_id):
+    conn = connect()
+    try:
+        if user_id is None:
+            rows = conn.execute(
+                "SELECT id, name, description, body, updated_at FROM skills "
+                "WHERE user_id IS NULL ORDER BY name"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, name, description, body, updated_at FROM skills "
+                "WHERE user_id=? ORDER BY name", (user_id,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_skill(user_id, name):
+    conn = connect()
+    try:
+        if user_id is None:
+            row = conn.execute(
+                "SELECT * FROM skills WHERE user_id IS NULL AND name=?", (name,)
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT * FROM skills WHERE user_id=? AND name=?", (user_id, name)
+            ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+# --- FTS5 : recherche sessions -----------------------------------------------
+
+def fts_index_message(session_id, role, content, rowid):
+    conn = connect()
+    try:
+        conn.execute(
+            "INSERT INTO messages_fts(rowid, content, session_id, role) VALUES (?,?,?,?)",
+            (rowid, content, session_id, role),
+        )
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+
+def fts_search(query, user_id, limit=10):
+    conn = connect()
+    try:
+        if user_id is not None:
+            rows = conn.execute(
+                "SELECT m.session_id, m.role, "
+                "snippet(messages_fts, 0, '[', ']', '...', 20) AS snippet, "
+                "s.title AS session_title, s.updated_at "
+                "FROM messages_fts "
+                "JOIN messages m ON messages_fts.rowid = m.rowid "
+                "JOIN sessions s ON m.session_id = s.id "
+                "WHERE messages_fts MATCH ? AND s.user_id = ? "
+                "ORDER BY rank LIMIT ?",
+                (query, user_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT m.session_id, m.role, "
+                "snippet(messages_fts, 0, '[', ']', '...', 20) AS snippet, "
+                "s.title AS session_title, s.updated_at "
+                "FROM messages_fts "
+                "JOIN messages m ON messages_fts.rowid = m.rowid "
+                "JOIN sessions s ON m.session_id = s.id "
+                "WHERE messages_fts MATCH ? "
+                "ORDER BY rank LIMIT ?",
+                (query, limit),
+            ).fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        return [{"error": str(e)}]
+    finally:
+        conn.close()
+
