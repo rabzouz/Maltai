@@ -667,21 +667,6 @@ function bindEvents() {
   $("#tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel(); };
   $("#tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel(); };
 
-  // --- Sidebar (style Odysseus) : sections repliables -----------------------
-  function wirePanel(btnId, panelId, caretId, onOpen) {
-    $(btnId).onclick = () => {
-      const sec = $(panelId);
-      const caret = $(caretId);
-      const opening = sec.classList.contains("hidden");
-      sec.classList.toggle("hidden");
-      if (caret) { caret.classList.toggle("open", opening); }
-      if (opening && onOpen) onOpen();
-    };
-  }
-  wirePanel("#side-tools-toggle", "#side-tools", "#side-tools-caret", () => loadToolsPanel("#side-tools-list"));
-  $("#side-tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
-  $("#side-tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel("#side-tools-list"); };
-
   // --- Notes & Taches --------------------------------------------------------
   async function loadNotesPanel(kind) {
     const list = $(kind === "todo" ? "#todos-list" : "#notes-list");
@@ -726,8 +711,7 @@ function bindEvents() {
     input.value = "";
     loadNotesPanel(kind);
   }
-  wirePanel("#side-notes-toggle", "#side-notes", "#side-notes-caret", () => loadNotesPanel("note"));
-  wirePanel("#side-todos-toggle", "#side-todos", "#side-todos-caret", () => loadNotesPanel("todo"));
+  // notes/todos now wired via nav items
   $("#note-add-btn").onclick = () => addNoteFromInput("note");
   $("#todo-add-btn").onclick = () => addNoteFromInput("todo");
   $("#note-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNoteFromInput("note"); });
@@ -741,47 +725,65 @@ function bindEvents() {
       el.style.display = !q || (t && t.textContent.toLowerCase().includes(q)) ? "" : "none";
     });
   });
-  // --- Sidebar toggles (icon-rail + sidebar hamburger) ----------------------
-  ["#rail-sidebar-toggle", "#sidebar-toggle"].forEach((id) => {
-    const el = $(id);
-    if (el) el.onclick = toggleSidebar;
-  });
+  // --- Sidebar toggle -------------------------------------------------------
+  const sideToggle = $("#sidebar-toggle");
+  if (sideToggle) sideToggle.onclick = toggleSidebar;
   $("#overlay").onclick = closeSidebar;
 
-  // --- Rail icon shortcuts --------------------------------------------------
-  const railNew = $("#rail-new-chat");
-  if (railNew) railNew.onclick = newSession;
+  // --- Nouveau Chat ---------------------------------------------------------
+  $("#new-chat").onclick = newSession;
 
-  const railSearch = $("#rail-search");
-  if (railSearch) railSearch.onclick = () => {
-    if ($("#sidebar").classList.contains("collapsed")) openSidebar();
-    const inp = $("#session-search");
-    if (inp) { inp.focus(); inp.select(); }
+  // --- Nav items ------------------------------------------------------------
+  const SUBPANELS = {
+    discussions: { el: "#subpanel-discussions", load: () => {} },
+    tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
+    notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
+    tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
   };
 
-  function openSection(toggleId, panelId, caretId, onOpen) {
-    if ($("#sidebar").classList.contains("collapsed")) openSidebar();
-    const sec = $(panelId);
-    if (sec && sec.classList.contains("hidden")) {
-      sec.classList.remove("hidden");
-      const caret = $(caretId);
-      if (caret) { caret.textContent = "▾"; caret.classList.add("open"); }
-      if (onOpen) onOpen();
+  function activateNav(id) {
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
+    const btn = $(`#nav-${id}`);
+    if (btn) btn.classList.add("active");
+    // Hide all subpanels
+    document.querySelectorAll(".subpanel").forEach((p) => p.classList.add("hidden"));
+    // Show relevant subpanel
+    if (SUBPANELS[id]) {
+      const panel = $(SUBPANELS[id].el);
+      if (panel) {
+        panel.classList.remove("hidden");
+        SUBPANELS[id].load();
+      }
     }
-    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
-  const railNotes = $("#rail-notes");
-  if (railNotes) railNotes.onclick = () => openSection("#side-notes-toggle", "#side-notes", "#side-notes-caret", () => loadNotesPanel("note"));
+  $("#nav-chat").onclick        = () => activateNav("chat");
+  $("#nav-discussions").onclick = () => activateNav("discussions");
+  $("#nav-tools").onclick       = () => activateNav("tools");
+  $("#nav-notes").onclick       = () => activateNav("notes");
+  $("#nav-tasks").onclick       = () => activateNav("tasks");
+  $("#nav-research").onclick    = () => {
+    activateNav("chat");
+    const inp = $("#input");
+    if (inp) { inp.value = "Lance un deep research sur : "; inp.focus(); }
+  };
+  $("#nav-skills").onclick      = () => {
+    activateNav("chat");
+    const inp = $("#input");
+    if (inp) { inp.value = ""; }
+    // Could show skills list — placeholder for now
+  };
+  $("#nav-theme").onclick       = () => {
+    activateNav("chat");
+    $("#settings-modal").classList.remove("hidden");
+    refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace();
+  };
 
-  const railTasks = $("#rail-tasks");
-  if (railTasks) railTasks.onclick = () => openSection("#side-todos-toggle", "#side-todos", "#side-todos-caret", () => loadNotesPanel("todo"));
-
-  const railTools = $("#rail-tools");
-  if (railTools) railTools.onclick = () => openSection("#side-tools-toggle", "#side-tools", "#side-tools-caret", () => loadToolsPanel("#side-tools-list"));
-
-  const railSettings = $("#rail-settings");
-  if (railSettings) railSettings.onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
+  // --- Footer buttons -------------------------------------------------------
+  const footNotes = $("#foot-notes");
+  if (footNotes) footNotes.onclick = () => activateNav("notes");
+  const footTasks = $("#foot-tasks");
+  if (footTasks) footTasks.onclick = () => activateNav("tasks");
 
   const railLogout = $("#rail-logout");
   if (railLogout) railLogout.onclick = async () => {
@@ -794,16 +796,12 @@ function bindEvents() {
   if (resizeHandle) {
     let resizing = false, startX = 0, startW = 0;
     resizeHandle.addEventListener("mousedown", (e) => {
-      resizing = true;
-      startX = e.clientX;
-      startW = $("#sidebar").offsetWidth;
-      document.body.style.userSelect = "none";
-      e.preventDefault();
+      resizing = true; startX = e.clientX; startW = $("#sidebar").offsetWidth;
+      document.body.style.userSelect = "none"; e.preventDefault();
     });
     document.addEventListener("mousemove", (e) => {
       if (!resizing) return;
-      const dx = e.clientX - startX;
-      const newW = Math.max(160, Math.min(420, startW + dx));
+      const newW = Math.max(160, Math.min(420, startW + (e.clientX - startX)));
       $("#sidebar").style.width = newW + "px";
     });
     document.addEventListener("mouseup", () => {
@@ -812,6 +810,12 @@ function bindEvents() {
   }
 
   // --- Settings & misc ------------------------------------------------------
+  // open-settings now in sidebar footer
+  const openSettingsBtn = $("#open-settings");
+  if (openSettingsBtn) openSettingsBtn.onclick = () => {
+    $("#settings-modal").classList.remove("hidden");
+    refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace();
+  };
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
