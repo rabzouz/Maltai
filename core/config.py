@@ -38,8 +38,19 @@ class Settings:
     # Auth / sessions
     AUTH_ENABLED = _bool("AUTH_ENABLED", True)
     LOCALHOST_BYPASS = _bool("LOCALHOST_BYPASS", False)
-    SECURE_COOKIES = _bool("SECURE_COOKIES", False)
+    SECURE_COOKIES = _bool("SECURE_COOKIES", True)   # True en prod (HTTPS)
     SESSION_SECRET = os.getenv("SESSION_SECRET", "")  # genere au setup si vide
+    # Avertissement si secret non configure en production
+    @classmethod
+    def check_security(cls):
+        import secrets, warnings
+        if not cls.SESSION_SECRET:
+            cls.SESSION_SECRET = secrets.token_hex(32)
+            warnings.warn(
+                "SESSION_SECRET non configure — genere temporairement. "
+                "Definissez SESSION_SECRET dans .env pour des sessions persistantes.",
+                stacklevel=2
+            )
     ADMIN_USER = os.getenv("MALTAI_ADMIN_USER", "admin")
     ADMIN_PASSWORD = os.getenv("MALTAI_ADMIN_PASSWORD", "")  # si vide: genere au 1er boot
 
