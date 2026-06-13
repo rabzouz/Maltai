@@ -671,9 +671,10 @@ function bindEvents() {
   function wirePanel(btnId, panelId, caretId, onOpen) {
     $(btnId).onclick = () => {
       const sec = $(panelId);
+      const caret = $(caretId);
       const opening = sec.classList.contains("hidden");
       sec.classList.toggle("hidden");
-      $(caretId).textContent = opening ? "\u25be" : "\u25b8";
+      if (caret) { caret.classList.toggle("open", opening); }
       if (opening && onOpen) onOpen();
     };
   }
@@ -740,14 +741,84 @@ function bindEvents() {
       el.style.display = !q || (t && t.textContent.toLowerCase().includes(q)) ? "" : "none";
     });
   });
-  $("#toggle-sidebar").onclick = toggleSidebar;
+  // --- Sidebar toggles (icon-rail + sidebar hamburger) ----------------------
+  ["#rail-sidebar-toggle", "#sidebar-toggle"].forEach((id) => {
+    const el = $(id);
+    if (el) el.onclick = toggleSidebar;
+  });
   $("#overlay").onclick = closeSidebar;
+
+  // --- Rail icon shortcuts --------------------------------------------------
+  const railNew = $("#rail-new-chat");
+  if (railNew) railNew.onclick = newSession;
+
+  const railSearch = $("#rail-search");
+  if (railSearch) railSearch.onclick = () => {
+    if ($("#sidebar").classList.contains("collapsed")) openSidebar();
+    const inp = $("#session-search");
+    if (inp) { inp.focus(); inp.select(); }
+  };
+
+  function openSection(toggleId, panelId, caretId, onOpen) {
+    if ($("#sidebar").classList.contains("collapsed")) openSidebar();
+    const sec = $(panelId);
+    if (sec && sec.classList.contains("hidden")) {
+      sec.classList.remove("hidden");
+      const caret = $(caretId);
+      if (caret) { caret.textContent = "▾"; caret.classList.add("open"); }
+      if (onOpen) onOpen();
+    }
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  const railNotes = $("#rail-notes");
+  if (railNotes) railNotes.onclick = () => openSection("#side-notes-toggle", "#side-notes", "#side-notes-caret", () => loadNotesPanel("note"));
+
+  const railTasks = $("#rail-tasks");
+  if (railTasks) railTasks.onclick = () => openSection("#side-todos-toggle", "#side-todos", "#side-todos-caret", () => loadNotesPanel("todo"));
+
+  const railTools = $("#rail-tools");
+  if (railTools) railTools.onclick = () => openSection("#side-tools-toggle", "#side-tools", "#side-tools-caret", () => loadToolsPanel("#side-tools-list"));
+
+  const railSettings = $("#rail-settings");
+  if (railSettings) railSettings.onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
+
+  const railLogout = $("#rail-logout");
+  if (railLogout) railLogout.onclick = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    location.href = "/login";
+  };
+
+  // --- Sidebar resize handle ------------------------------------------------
+  const resizeHandle = $("#sidebar-resize-handle");
+  if (resizeHandle) {
+    let resizing = false, startX = 0, startW = 0;
+    resizeHandle.addEventListener("mousedown", (e) => {
+      resizing = true;
+      startX = e.clientX;
+      startW = $("#sidebar").offsetWidth;
+      document.body.style.userSelect = "none";
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (!resizing) return;
+      const dx = e.clientX - startX;
+      const newW = Math.max(160, Math.min(420, startW + dx));
+      $("#sidebar").style.width = newW + "px";
+    });
+    document.addEventListener("mouseup", () => {
+      if (resizing) { resizing = false; document.body.style.userSelect = ""; }
+    });
+  }
+
+  // --- Settings & misc ------------------------------------------------------
   $("#open-settings").onclick = () => { $("#settings-modal").classList.remove("hidden"); refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace(); };
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
   });
-  $("#logout").onclick = async () => {
+  const _logout = $("#logout");
+  if (_logout) _logout.onclick = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     location.href = "/login";
   };
