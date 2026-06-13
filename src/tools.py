@@ -39,10 +39,19 @@ def _truncate(s: str) -> str:
     return s[:MAX_TOOL_OUTPUT] + f"\n…[tronque, {len(s)} caracteres au total]"
 
 
-def _safe_path(rel: str) -> Path:
-    """Resout un chemin relatif DANS le workspace, refuse toute evasion."""
-    p = (WORKSPACE / rel).resolve()
-    if not str(p).startswith(str(WORKSPACE.resolve())):
+def _user_workspace(ctx: dict | None = None) -> Path:
+    """Retourne le workspace isole par utilisateur."""
+    uid = (ctx or {}).get("user_id") or "shared"
+    uid = "".join(c for c in str(uid) if c.isalnum() or c in "-_")[:32] or "shared"
+    ws = WORKSPACE / uid
+    ws.mkdir(parents=True, exist_ok=True)
+    return ws
+
+def _safe_path(rel: str, ctx: dict | None = None) -> Path:
+    """Resout un chemin relatif DANS le workspace utilisateur, refuse toute evasion."""
+    ws = _user_workspace(ctx)
+    p = (ws / rel).resolve()
+    if not str(p).startswith(str(ws.resolve())):
         raise ValueError("Chemin hors du workspace refuse")
     return p
 
@@ -82,7 +91,7 @@ async def tool_calculator(args: dict, ctx: dict) -> str:
 
 async def tool_list_files(args: dict, ctx: dict) -> str:
     try:
-        target = _safe_path(str(args.get("path", ".")))
+        target = _safe_path(str(args.get("path", ".")), ctx)
     except ValueError as e:
         return str(e)
     if not target.exists():
@@ -99,7 +108,7 @@ async def tool_list_files(args: dict, ctx: dict) -> str:
 
 async def tool_read_file(args: dict, ctx: dict) -> str:
     try:
-        p = _safe_path(str(args.get("path", "")))
+        p = _safe_path(str(args.get("path", "")), ctx)
     except ValueError as e:
         return str(e)
     if not p.is_file():
@@ -112,7 +121,7 @@ async def tool_read_file(args: dict, ctx: dict) -> str:
 
 async def tool_write_file(args: dict, ctx: dict) -> str:
     try:
-        p = _safe_path(str(args.get("path", "")))
+        p = _safe_path(str(args.get("path", "")), ctx)
     except ValueError as e:
         return str(e)
     content = str(args.get("content", ""))
@@ -900,6 +909,14 @@ async def tool_page_summary(args: dict, ctx: dict) -> str:
     url = str(args.get("url", "")).strip()
     if not url or not url.startswith(("http://", "https://")):
         return "Erreur : URL invalide ou manquante."
+    # SSRF protection : bloquer IPs privees / localhost
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(url).hostname or ""
+        if _is_private_host(host):
+            return "Refuse : l'acces aux adresses privees/locales est interdit."
+    except Exception:
+        return "Erreur : impossible de resoudre l'URL."
     question = str(args.get("question", "")).strip()
     try:
         async with httpx.AsyncClient(
