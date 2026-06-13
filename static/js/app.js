@@ -729,8 +729,7 @@ function bindEvents() {
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/^- (.+)/gm, "<li>$1</li>")
       .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
-      .replace(/
-{2,}/g, "</p><p>")
+      .replace(/\n{2,}/g, "</p><p>")
       .replace(/^(?!<[h|u|l])/gm, "")
       .trim();
   }
