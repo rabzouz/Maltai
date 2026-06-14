@@ -908,8 +908,32 @@ function bindEvents() {
 
   // --- Terminal admin -------------------------------------------------------
   let terminalInitialized = false;
+  let filesInitialized = false;
+  let currentFilesPath = ".";
+  let filesParentPath = "";
   const terminalHistory = [];
   let terminalHistoryIndex = 0;
+
+  async function terminalApi(path, opts = {}) {
+    const r = await fetch(path, opts);
+    if (r.status === 401) {
+      location.href = "/login";
+      throw new Error("401");
+    }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.detail || `Erreur ${r.status}`);
+    return d;
+  }
+
+  function setConsoleTab(tab) {
+    document.querySelectorAll("[data-console-tab]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.consoleTab === tab);
+    });
+    $("#console-terminal-pane")?.classList.toggle("hidden", tab !== "terminal");
+    $("#console-files-pane")?.classList.toggle("hidden", tab !== "files");
+    if (tab === "files") initFilesPanel();
+    if (tab === "terminal") setTimeout(() => $("#terminal-input")?.focus(), 0);
+  }
 
   function appendTerminal(text) {
     const out = $("#terminal-output");
@@ -927,28 +951,145 @@ function bindEvents() {
     terminalHistoryIndex = terminalHistory.length;
     appendTerminal(`$ ${cmd}\n`);
     try {
-      const r = await fetch("/api/terminal/run", {
+      const d = await terminalApi("/api/terminal/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: cmd }),
       });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        appendTerminal(`Erreur ${r.status}: ${d.detail || "commande refusee"}\n\n`);
-        return;
-      }
       appendTerminal(`[exit ${d.exit_code ?? "timeout"}]\n${d.output || ""}\n`);
       if (d.expanded && d.expanded !== d.command) appendTerminal(`# ${d.expanded}\n`);
       appendTerminal("\n");
     } catch (e) {
-      appendTerminal(`Erreur reseau: ${e.message}\n\n`);
+      appendTerminal(`Erreur: ${e.message}\n\n`);
     }
+  }
+
+  function fileDirname(path) {
+    const clean = (path || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const idx = clean.lastIndexOf("/");
+    return idx > 0 ? clean.slice(0, idx) : ".";
+  }
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes)) return "";
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
+  }
+
+  function setFileStatus(text, kind = "") {
+    const el = $("#file-status");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = `file-status ${kind}`.trim();
+  }
+
+  function renderFiles(items) {
+    const list = $("#files-list");
+    list.innerHTML = "";
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "hint";
+      empty.textContent = "Dossier vide.";
+      list.appendChild(empty);
+      return;
+    }
+    items.forEach((item) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = `file-row ${item.type}`;
+      const badge = document.createElement("span");
+      badge.className = "file-badge";
+      badge.textContent = item.type === "dir" ? "DIR" : "FILE";
+      const name = document.createElement("span");
+      name.className = "file-name";
+      name.textContent = item.name;
+      const meta = document.createElement("span");
+      meta.className = "file-meta";
+      meta.textContent = item.type === "dir" ? "dossier" : formatBytes(item.size);
+      row.append(badge, name, meta);
+      row.onclick = () => {
+        if (item.type === "dir") loadFiles(item.path);
+        else openWorkspaceFile(item.path);
+      };
+      list.appendChild(row);
+    });
+  }
+
+  async function loadFiles(path = currentFilesPath) {
+    setFileStatus("Chargement...");
+    try {
+      const d = await terminalApi(`/api/terminal/files?path=${encodeURIComponent(path || ".")}`);
+      currentFilesPath = d.path || ".";
+      filesParentPath = d.parent || ".";
+      $("#files-path").textContent = currentFilesPath === "." ? "/" : `/${currentFilesPath}`;
+      renderFiles(d.items || []);
+      setFileStatus("");
+    } catch (e) {
+      setFileStatus(e.message, "error");
+    }
+  }
+
+  async function openWorkspaceFile(path) {
+    setFileStatus("Lecture...");
+    try {
+      const d = await terminalApi(`/api/terminal/file?path=${encodeURIComponent(path)}`);
+      $("#file-path").value = d.path;
+      $("#file-content").value = d.content || "";
+      setFileStatus(`${d.path} ouvert (${formatBytes(d.size)})`, "ok");
+    } catch (e) {
+      setFileStatus(e.message, "error");
+    }
+  }
+
+  async function saveWorkspaceFile() {
+    const path = $("#file-path").value.trim();
+    if (!path) {
+      setFileStatus("Chemin de fichier requis.", "error");
+      return;
+    }
+    setFileStatus("Sauvegarde...");
+    try {
+      const d = await terminalApi("/api/terminal/file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, content: $("#file-content").value }),
+      });
+      setFileStatus(`${d.path} sauvegarde (${formatBytes(d.size)})`, "ok");
+      await loadFiles(fileDirname(d.path));
+    } catch (e) {
+      setFileStatus(e.message, "error");
+    }
+  }
+
+  function initFilesPanel() {
+    if (filesInitialized) return;
+    filesInitialized = true;
+    $("#files-refresh").onclick = () => loadFiles(currentFilesPath);
+    $("#files-up").onclick = () => loadFiles(filesParentPath || ".");
+    $("#file-new").onclick = () => {
+      $("#file-path").value = "";
+      $("#file-content").value = "";
+      setFileStatus("Nouveau fichier pret.");
+      $("#file-path").focus();
+    };
+    $("#file-save").onclick = saveWorkspaceFile;
+    $("#file-content").addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveWorkspaceFile();
+      }
+    });
+    loadFiles(".");
   }
 
   function initTerminal() {
     if (terminalInitialized) return;
     terminalInitialized = true;
     $("#terminal-output").textContent = "";
+    document.querySelectorAll("[data-console-tab]").forEach((btn) => {
+      btn.onclick = () => setConsoleTab(btn.dataset.consoleTab);
+    });
     $("#terminal-run").onclick = () => runTerminalCommand();
     document.querySelectorAll("[data-terminal-cmd]").forEach((btn) => {
       btn.onclick = () => runTerminalCommand(btn.dataset.terminalCmd);
@@ -973,7 +1114,8 @@ function bindEvents() {
   function openTerminalWindow() {
     $("#terminal-window").classList.remove("hidden");
     initTerminal();
-    setTimeout(() => $("#terminal-input")?.focus(), 0);
+    const activeTab = document.querySelector("[data-console-tab].active")?.dataset.consoleTab || "terminal";
+    setConsoleTab(activeTab);
   }
 
   function closeTerminalWindow() {

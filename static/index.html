@@ -208,23 +208,51 @@
   <div id="terminal-window" class="terminal-window hidden">
     <div class="terminal-titlebar">
       <div>
-        <strong>Terminal</strong>
+        <strong>Console</strong>
         <span>admin</span>
       </div>
       <button id="terminal-close" class="icon-btn" title="Fermer">✕</button>
     </div>
-    <div class="terminal-panel">
-      <div class="terminal-actions">
-        <button class="section-mini-btn" data-terminal-cmd="version">version</button>
-        <button class="section-mini-btn" data-terminal-cmd="health">health</button>
-        <button class="section-mini-btn" data-terminal-cmd="pwd">pwd</button>
-        <button class="section-mini-btn" data-terminal-cmd="ls">ls</button>
+    <div class="console-tabs">
+      <button class="console-tab active" data-console-tab="terminal">Terminal</button>
+      <button class="console-tab" data-console-tab="files">Fichiers</button>
+    </div>
+    <div id="console-terminal-pane" class="console-pane">
+      <div class="terminal-panel">
+        <div class="terminal-actions">
+          <button class="section-mini-btn" data-terminal-cmd="version">version</button>
+          <button class="section-mini-btn" data-terminal-cmd="health">health</button>
+          <button class="section-mini-btn" data-terminal-cmd="process">process</button>
+          <button class="section-mini-btn" data-terminal-cmd="pwd">pwd</button>
+          <button class="section-mini-btn" data-terminal-cmd="ls">ls</button>
+        </div>
+        <pre id="terminal-output" class="terminal-output"></pre>
+        <div class="terminal-input-row">
+          <span>$</span>
+          <input id="terminal-input" type="text" autocomplete="off" spellcheck="false" placeholder="version" />
+          <button id="terminal-run" class="section-add-btn">→</button>
+        </div>
       </div>
-      <pre id="terminal-output" class="terminal-output"></pre>
-      <div class="terminal-input-row">
-        <span>$</span>
-        <input id="terminal-input" type="text" autocomplete="off" spellcheck="false" placeholder="version" />
-        <button id="terminal-run" class="section-add-btn">→</button>
+    </div>
+    <div id="console-files-pane" class="console-pane hidden">
+      <div class="files-panel">
+        <div class="files-toolbar">
+          <button id="files-up" class="section-mini-btn">↑</button>
+          <button id="files-refresh" class="section-mini-btn">Actualiser</button>
+          <span id="files-path">/</span>
+        </div>
+        <div class="files-body">
+          <div id="files-list" class="files-list"></div>
+          <div class="file-editor">
+            <div class="file-editor-head">
+              <input id="file-path" type="text" placeholder="chemin/fichier.txt" spellcheck="false" />
+              <button id="file-new" class="section-mini-btn">Nouveau</button>
+              <button id="file-save" class="section-mini-btn">Sauver</button>
+            </div>
+            <textarea id="file-content" spellcheck="false" placeholder="Sélectionne ou crée un fichier du workspace…"></textarea>
+            <div id="file-status" class="file-status"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
