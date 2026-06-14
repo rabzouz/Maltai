@@ -639,3 +639,55 @@ select {
 .dr-result ul { padding-left: 16px; margin: 4px 0; }
 .dr-result li { margin: 2px 0; }
 
+/* Terminal Panel */
+.terminal-panel {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 360px;
+}
+.terminal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.terminal-output {
+  min-height: 260px;
+  max-height: 50vh;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #080b10;
+  color: #d8e1ea;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.terminal-input-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 6px 8px;
+}
+.terminal-input-row span {
+  color: var(--accent);
+  font-family: var(--mono);
+}
+.terminal-input-row input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+

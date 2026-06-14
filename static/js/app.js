@@ -906,6 +906,70 @@ function bindEvents() {
   $("#note-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNoteFromInput("note"); });
   $("#todo-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNoteFromInput("todo"); });
 
+  // --- Terminal admin -------------------------------------------------------
+  let terminalInitialized = false;
+  const terminalHistory = [];
+  let terminalHistoryIndex = 0;
+
+  function appendTerminal(text) {
+    const out = $("#terminal-output");
+    if (!out) return;
+    out.textContent += text;
+    out.scrollTop = out.scrollHeight;
+  }
+
+  async function runTerminalCommand(command) {
+    const input = $("#terminal-input");
+    const cmd = (command || input?.value || "").trim();
+    if (!cmd) return;
+    if (input) input.value = "";
+    terminalHistory.push(cmd);
+    terminalHistoryIndex = terminalHistory.length;
+    appendTerminal(`$ ${cmd}\n`);
+    try {
+      const r = await fetch("/api/terminal/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        appendTerminal(`Erreur ${r.status}: ${d.detail || "commande refusee"}\n\n`);
+        return;
+      }
+      appendTerminal(`[exit ${d.exit_code ?? "timeout"}]\n${d.output || ""}\n`);
+      if (d.expanded && d.expanded !== d.command) appendTerminal(`# ${d.expanded}\n`);
+      appendTerminal("\n");
+    } catch (e) {
+      appendTerminal(`Erreur reseau: ${e.message}\n\n`);
+    }
+  }
+
+  function initTerminal() {
+    if (terminalInitialized) return;
+    terminalInitialized = true;
+    $("#terminal-output").textContent = "";
+    $("#terminal-run").onclick = () => runTerminalCommand();
+    document.querySelectorAll("[data-terminal-cmd]").forEach((btn) => {
+      btn.onclick = () => runTerminalCommand(btn.dataset.terminalCmd);
+    });
+    $("#terminal-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runTerminalCommand();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        terminalHistoryIndex = Math.max(0, terminalHistoryIndex - 1);
+        $("#terminal-input").value = terminalHistory[terminalHistoryIndex] || "";
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        terminalHistoryIndex = Math.min(terminalHistory.length, terminalHistoryIndex + 1);
+        $("#terminal-input").value = terminalHistory[terminalHistoryIndex] || "";
+      }
+    });
+    runTerminalCommand("version");
+  }
+
   // --- Recherche dans les discussions ---------------------------------------
   $("#session-search").addEventListener("input", (e) => {
     const q = e.target.value.toLowerCase();
@@ -926,6 +990,7 @@ function bindEvents() {
   const SUBPANELS = {
     discussions: { el: "#subpanel-discussions", load: () => {} },
     tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
+    terminal:    { el: "#subpanel-terminal",    load: () => initTerminal() },
     notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
     research:    { el: "#subpanel-research",     load: () => initDeepResearch() },
@@ -950,6 +1015,7 @@ function bindEvents() {
   $("#nav-chat").onclick        = () => activateNav("chat");
   $("#nav-discussions").onclick = () => activateNav("discussions");
   $("#nav-tools").onclick       = () => activateNav("tools");
+  $("#nav-terminal").onclick    = () => activateNav("terminal");
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
   $("#nav-research").onclick    = () => activateNav("research");
