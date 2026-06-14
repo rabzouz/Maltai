@@ -18,14 +18,13 @@ from typing import AsyncIterator
 
 from core import database as db
 from src import llm, mcp, tools
+from src.prompts import SYSTEM_PROMPT
 
 MAX_STEPS = 8
-
-SYSTEM_PROMPT = (
-    "Tu es Maltai, un agent IA auto-heberge. Tu disposes d'outils : "
-    "utilise-les quand c'est pertinent (calculs, fichiers du workspace, "
-    "recherche et lecture web, shell si disponible). Reponds en francais, "
-    "de maniere concise. Quand tu as fini, donne ta reponse finale en texte."
+AGENT_SYSTEM_PROMPT = (
+    SYSTEM_PROMPT + " En mode agent, utilise les outils uniquement quand c'est "
+    "pertinent (calculs, fichiers du workspace, recherche et lecture web, shell "
+    "si disponible). Quand tu as fini, donne ta reponse finale en texte."
 )
 
 
@@ -53,7 +52,11 @@ async def run_agent(
         allowed = set(enabled_tools)
         specs = [s for s in specs if s["function"]["name"] in allowed]
 
-    convo: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}, *messages]
+    base_messages = [
+        m for m in messages
+        if not (m.get("role") == "system" and m.get("content") == SYSTEM_PROMPT)
+    ]
+    convo: list[dict] = [{"role": "system", "content": AGENT_SYSTEM_PROMPT}, *base_messages]
 
     for _step in range(MAX_STEPS):
         text_parts: list[str] = []

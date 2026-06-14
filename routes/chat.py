@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from core import database as db
 from src import agent, llm, memory
+from src.prompts import SYSTEM_PROMPT
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -81,7 +82,8 @@ async def chat(body: ChatIn, request: Request):
         title = body.content.strip().splitlines()[0][:60] or "Discussion"
         db.rename_session(body.session_id, title)
 
-    messages = [{"role": m["role"], "content": m["content"]} for m in history]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend({"role": m["role"], "content": m["content"]} for m in history)
 
     file_context, image_blocks = _build_attachments(body.attachment_ids)
     if image_blocks:

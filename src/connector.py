@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from core import database as db
 from src import agent, llm, memory
+from src.prompts import SYSTEM_PROMPT
 
 
 class ConnectorError(Exception):
@@ -47,7 +48,8 @@ async def run_turn(
         title = content.strip().splitlines()[0][:60] or "Discussion"
         db.rename_session(session_id, title)
 
-    messages = [{"role": m["role"], "content": m["content"]} for m in history]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend({"role": m["role"], "content": m["content"]} for m in history)
     messages.append({"role": "user", "content": content})
 
     recalled = await memory.recall(provider, user_id, content, exclude_session=session_id)
