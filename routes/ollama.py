@@ -28,7 +28,10 @@ def _require_admin(request: Request) -> None:
 @router.get("/models")
 async def models():
     try:
-        return {"base_url": settings.OLLAMA_BASE_URL, "models": await ollama.list_models()}
+        return {
+            "base_url": ollama.configured_base_url(),
+            "models": await ollama.list_models(),
+        }
     except ollama.OllamaError as e:
         raise HTTPException(502, str(e))
 

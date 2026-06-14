@@ -45,6 +45,7 @@ Onglet **Environment Variables** (chiffrées au repos, hors Git) :
 | `SESSION_SECRET`        | 32+ caractères aléatoires (voir ci-dessous) |
 | `MALTAI_ADMIN_USER`     | `admin` (ou ton identifiant)             |
 | `MALTAI_ADMIN_PASSWORD` | un mot de passe fort                     |
+| `OLLAMA_BASE_URL`       | URL Ollama joignable depuis le conteneur |
 
 Génère un secret :
 
@@ -78,6 +79,12 @@ shell pour les admins). Donc :
 - Pour un provider LLM : soit tu pointes vers une API (OpenAI/OpenRouter avec
   clé en variable d'env), soit vers ton Ollama. Si Ollama tourne ailleurs,
   expose-le **uniquement** sur ton réseau privé (Tailscale), pas en clair.
+- Si Ollama tourne sur le même serveur que Coolify, `localhost` dans Maltai
+  désigne le conteneur, pas l'hôte. Lance Ollama avec
+  `OLLAMA_HOST=0.0.0.0:11434`, puis configure `OLLAMA_BASE_URL` avec l'adresse
+  joignable depuis Docker, par exemple `http://172.17.0.1:11434` ou une IP
+  privée/Tailscale. Maltai essaie aussi automatiquement `host.docker.internal`
+  et la gateway Docker lorsque `OLLAMA_BASE_URL` vaut `localhost`.
 
 ## Mettre à jour
 
