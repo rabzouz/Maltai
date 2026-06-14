@@ -96,9 +96,10 @@ async def tool_list_files(args: dict, ctx: dict) -> str:
         return str(e)
     if not target.exists():
         return "Dossier inexistant"
+    ws = _user_workspace(ctx)
     lines = []
     for p in sorted(target.rglob("*")):
-        rel = p.relative_to(WORKSPACE)
+        rel = p.relative_to(ws)
         lines.append(f"{'[D]' if p.is_dir() else '[F]'} {rel}")
         if len(lines) >= 200:
             lines.append("…")
@@ -128,7 +129,7 @@ async def tool_write_file(args: dict, ctx: dict) -> str:
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content)
-        return f"Ecrit : {p.relative_to(WORKSPACE)} ({len(content)} caracteres)"
+        return f"Ecrit : {p.relative_to(_user_workspace(ctx))} ({len(content)} caracteres)"
     except OSError as e:
         return f"Erreur ecriture : {e}"
 
@@ -841,11 +842,10 @@ async def tool_patch_file(args: dict, ctx: dict) -> str:
     new_text = args.get("new_str", "")
     if not path_str:
         return "Erreur : parametre 'path' manquant."
-    workspace = Path(DATA_DIR).parent / "workspace"
-    workspace.mkdir(exist_ok=True)
-    target = (workspace / path_str).resolve()
-    if not str(target).startswith(str(workspace.resolve())):
-        return "Acces refuse : chemin hors du workspace."
+    try:
+        target = _safe_path(path_str, ctx)
+    except ValueError as e:
+        return str(e)
     if not target.exists():
         return f"Fichier introuvable : {path_str}"
     content = target.read_text(encoding="utf-8")

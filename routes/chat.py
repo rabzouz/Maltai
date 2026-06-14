@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 from core import database as db
 from src import agent, llm, memory
 from src.prompts import SYSTEM_PROMPT
+from src.tools import WORKSPACE
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -31,7 +33,32 @@ class ChatIn(BaseModel):
     enabled_tools: list[str] | None = None
 
 
-def _build_attachments(ids: list[str]) -> tuple[str, list[dict]]:
+def _safe_workspace_user(user_id: str | None) -> str:
+    uid = user_id or "shared"
+    return "".join(c for c in str(uid) if c.isalnum() or c in "-_")[:32] or "shared"
+
+
+def _safe_workspace_filename(name: str) -> str:
+    return re.sub(r"[^\w.\-]+", "_", name)[:120] or "fichier"
+
+
+def _copy_attachment_to_workspace(up: dict, user_id: str | None) -> str | None:
+    if not up.get("text_extract"):
+        return None
+    source = Path(up["path"])
+    if not source.is_file():
+        return None
+    user_dir = WORKSPACE / _safe_workspace_user(user_id)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    target = user_dir / _safe_workspace_filename(up["filename"])
+    try:
+        target.write_bytes(source.read_bytes())
+    except OSError:
+        return None
+    return str(target.relative_to(user_dir)).replace("\\", "/")
+
+
+def _build_attachments(ids: list[str], user_id: str | None) -> tuple[str, list[dict]]:
     """Retourne (contexte_texte, blocs_images) pour les pieces jointes."""
     context_parts: list[str] = []
     image_blocks: list[dict] = []
@@ -50,8 +77,13 @@ def _build_attachments(ids: list[str]) -> tuple[str, list[dict]]:
                 "image_url": {"url": f"data:{up['mime']};base64,{b64}"},
             })
         elif up["text_extract"]:
+            workspace_path = _copy_attachment_to_workspace(up, user_id)
+            path_hint = (
+                f"\nChemin workspace pour read_file : {workspace_path}"
+                if workspace_path else ""
+            )
             context_parts.append(
-                f"--- Fichier joint : {up['filename']} ---\n{up['text_extract']}"
+                f"--- Fichier joint : {up['filename']} ---{path_hint}\n{up['text_extract']}"
             )
     return "\n\n".join(context_parts), image_blocks
 
@@ -85,7 +117,7 @@ async def chat(body: ChatIn, request: Request):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend({"role": m["role"], "content": m["content"]} for m in history)
 
-    file_context, image_blocks = _build_attachments(body.attachment_ids)
+    file_context, image_blocks = _build_attachments(body.attachment_ids, user_id)
     if image_blocks:
         # Message multimodal (modeles vision) : texte + image(s) en base64.
         user_content: object = [{"type": "text", "text": body.content}, *image_blocks]
