@@ -33,7 +33,13 @@ def get_providers():
 
 @router.post("")
 def create_provider(body: ProviderIn):
-    p = db.add_provider(body.name, body.base_url, body.api_key, body.model, body.embed_model)
+    p = db.add_provider(
+        body.name,
+        llm.normalize_base(body.base_url),
+        body.api_key,
+        body.model,
+        body.embed_model,
+    )
     return {"id": p["id"], "name": p["name"], "base_url": p["base_url"],
             "model": p["model"], "embed_model": p["embed_model"]}
 

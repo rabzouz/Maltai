@@ -15,12 +15,17 @@ class LLMError(Exception):
     pass
 
 
-def _normalize_base(base_url: str) -> str:
-    base = base_url.rstrip("/")
+def normalize_base(base_url: str) -> str:
+    base = (base_url or "").strip().rstrip("/")
+    if base and "://" not in base:
+        base = "http://" + base
     # Ollama natif expose /v1 ; on tolere une URL sans /v1.
     if base.endswith("/v1"):
         return base
     return base + "/v1"
+
+
+_normalize_base = normalize_base
 
 
 async def list_models(base_url: str, api_key: str) -> list[str]:
