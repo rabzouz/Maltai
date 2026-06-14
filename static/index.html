@@ -219,6 +219,16 @@
         <button id="p-add" class="btn-primary">Ajouter</button>
       </div>
       <hr class="sep" />
+      <h2>Modèles Ollama</h2>
+      <div class="provider-form inline-form">
+        <input id="ollama-model" placeholder="Modèle (ex: llama3.1:8b)" />
+        <button id="ollama-pull" class="btn-primary">Télécharger</button>
+        <button id="ollama-refresh" class="btn-ghost">Actualiser</button>
+      </div>
+      <div id="ollama-progress" class="progress hidden"><div></div></div>
+      <p class="hint" id="ollama-status">…</p>
+      <div id="ollama-rows" class="provider-rows"></div>
+      <hr class="sep" />
       <h2>Connecteurs</h2>
       <h3 class="sub">Bot Telegram</h3>
       <p class="hint">Crée un bot via @BotFather, colle son jeton, mets l'URL publique de ton Maltai (Coolify), active.</p>

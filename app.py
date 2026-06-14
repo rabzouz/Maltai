@@ -15,7 +15,7 @@ from core.config import settings
 from core import auth as core_auth
 from core import database as db
 from routes import auth as auth_routes
-from routes import chat, external, mcp, memory, notes, providers, sessions, telegram, tools, uploads
+from routes import chat, external, mcp, memory, notes, ollama, providers, sessions, telegram, tools, uploads
 from routes import tool_run
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -78,6 +78,7 @@ app.include_router(providers.router)
 app.include_router(sessions.router)
 app.include_router(chat.router)
 app.include_router(memory.router)
+app.include_router(ollama.router)
 app.include_router(mcp.router)
 app.include_router(telegram.router)
 app.include_router(external.router)

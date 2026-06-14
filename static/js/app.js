@@ -8,6 +8,7 @@ const api = (p, opts) => fetch(p, opts).then((r) => {
 const state = {
   sessions: [],
   providers: [],
+  ollamaModels: [],
   currentSession: null,
   providerId: null,
   model: null,
@@ -68,6 +69,10 @@ async function loadModels(pid) {
   }
 }
 
+async function refreshActiveProviderModels() {
+  if (state.providerId) await loadModels(state.providerId);
+}
+
 function renderProviderRows() {
   const box = $("#provider-rows");
   box.innerHTML = "";
@@ -90,6 +95,123 @@ function renderProviderRows() {
     row.appendChild(del);
     box.appendChild(row);
   });
+}
+
+// --- Modeles Ollama ------------------------------------------------------
+function bytes(n) {
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const units = ["o", "Ko", "Mo", "Go", "To"];
+  let v = n, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; }
+  return `${v.toFixed(i ? 1 : 0)} ${units[i]}`;
+}
+
+function setOllamaProgress(value, text) {
+  const box = $("#ollama-progress");
+  const bar = box?.querySelector("div");
+  const status = $("#ollama-status");
+  if (!box || !bar || !status) return;
+  if (value == null) {
+    box.classList.add("hidden");
+    bar.style.width = "0%";
+  } else {
+    box.classList.remove("hidden");
+    bar.style.width = `${Math.max(0, Math.min(100, value))}%`;
+  }
+  if (text != null) status.textContent = text;
+}
+
+async function loadOllamaModels() {
+  const box = $("#ollama-rows");
+  const status = $("#ollama-status");
+  if (!box || !status) return;
+  status.textContent = "chargement…";
+  try {
+    const resp = await fetch("/api/ollama/models");
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.detail || "Ollama injoignable");
+    state.ollamaModels = data.models || [];
+    box.innerHTML = state.ollamaModels.length ? "" : '<p class="hint">Aucun modèle Ollama local.</p>';
+    state.ollamaModels.forEach((m) => {
+      const row = document.createElement("div");
+      row.className = "provider-row";
+      const family = m.details?.family ? ` · ${esc(m.details.family)}` : "";
+      row.innerHTML = `<div><strong>${esc(m.name)}</strong>
+        <div class="meta">${bytes(m.size)}${family}</div></div>`;
+      const del = document.createElement("button");
+      del.className = "icon-btn"; del.textContent = "🗑"; del.title = "Supprimer";
+      del.onclick = async () => {
+        if (!confirm(`Supprimer ${m.name} d'Ollama ?`)) return;
+        const r = await fetch(`/api/ollama/models/${encodeURIComponent(m.name)}`, { method: "DELETE" });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          alert(d.detail || "Suppression impossible");
+          return;
+        }
+        await loadOllamaModels();
+        await refreshActiveProviderModels();
+      };
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+    status.textContent = `Ollama : ${data.base_url} · ${state.ollamaModels.length} modèle(s)`;
+  } catch (e) {
+    box.innerHTML = "";
+    status.textContent = `Ollama injoignable : ${e.message}`;
+  }
+}
+
+async function pullOllamaModel() {
+  const input = $("#ollama-model");
+  const btn = $("#ollama-pull");
+  const name = input.value.trim();
+  if (!name) { alert("Nom du modèle requis."); return; }
+  btn.disabled = true;
+  setOllamaProgress(0, `Téléchargement de ${name}…`);
+  try {
+    const resp = await fetch("/api/ollama/pull", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!resp.ok || !resp.body) {
+      const d = await resp.json().catch(() => ({}));
+      throw new Error(d.detail || "Téléchargement impossible");
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop();
+      for (const ev of events) {
+        const type = ev.split("\n").find((l) => l.startsWith("event:"));
+        const line = ev.split("\n").find((l) => l.startsWith("data:"));
+        if (!line) continue;
+        const data = JSON.parse(line.slice(5).trim());
+        if (type && type.includes("error")) throw new Error(data.message || "Erreur Ollama");
+        const status = data.status || "en cours";
+        const doneBytes = data.completed ?? data.current;
+        if (data.total && doneBytes != null) {
+          const pct = (doneBytes / data.total) * 100;
+          setOllamaProgress(pct, `${status} · ${bytes(doneBytes)} / ${bytes(data.total)}`);
+        } else {
+          setOllamaProgress(5, status);
+        }
+      }
+    }
+    setOllamaProgress(100, `✓ ${name} téléchargé`);
+    input.value = "";
+    await loadOllamaModels();
+    await refreshActiveProviderModels();
+  } catch (e) {
+    setOllamaProgress(null, `✗ ${e.message}`);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // --- Sessions ------------------------------------------------------------
@@ -878,7 +1000,11 @@ function bindEvents() {
   const openSettingsBtn = $("#open-settings");
   if (openSettingsBtn) openSettingsBtn.onclick = () => {
     $("#settings-modal").classList.remove("hidden");
-    refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace();
+    refreshMemoryStatus();
+    loadOllamaModels();
+    loadMcpServers();
+    loadConnectors();
+    loadWorkspace();
   };
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
@@ -933,6 +1059,11 @@ function bindEvents() {
     ["#m-name", "#m-url", "#m-token"].forEach((s) => ($(s).value = ""));
     await loadMcpServers();
   };
+  $("#ollama-refresh").onclick = loadOllamaModels;
+  $("#ollama-pull").onclick = pullOllamaModel;
+  $("#ollama-model").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); pullOllamaModel(); }
+  });
   $("#mem-clear").onclick = async () => {
     if (!confirm("Effacer toute la mémoire vectorielle ? Cette action est irréversible.")) return;
     const r = await fetch("/api/memory", { method: "DELETE" }).then((x) => x.json());

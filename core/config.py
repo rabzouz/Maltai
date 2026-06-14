@@ -64,6 +64,7 @@ class Settings:
     DEFAULT_API_KEY = os.getenv("DEFAULT_API_KEY", "ollama")
     DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "llama3.1:8b")
     DEFAULT_EMBED_MODEL = os.getenv("DEFAULT_EMBED_MODEL", "nomic-embed-text")
+    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
     # Generation d'images (endpoint compatible OpenAI /v1/images/generations)
     IMAGE_API_BASE = os.getenv("IMAGE_API_BASE", "")

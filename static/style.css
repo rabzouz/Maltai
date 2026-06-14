@@ -265,11 +265,31 @@ select {
 }
 .provider-row .meta { color: var(--muted); font-size: 12px; font-family: var(--mono); }
 .provider-form { display: flex; flex-direction: column; gap: 8px; }
+.provider-form.inline-form {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+}
 .provider-form input {
   background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
   border-radius: 8px; padding: 10px 12px; font-size: 14px;
 }
 .provider-form input:focus { outline: none; border-color: var(--accent-2); }
+.progress {
+  height: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0 8px;
+}
+.progress.hidden { display: none; }
+.progress div {
+  height: 100%;
+  width: 0%;
+  background: var(--accent-2);
+  transition: width .18s ease;
+}
 
 .typing::after { content: ""; display: none; }
 .typing .thinking-dots { display: inline-flex; gap: 5px; align-items: center; padding: 4px 0; }
@@ -349,6 +369,7 @@ select {
     border-radius: 0; padding: max(20px, env(safe-area-inset-top)) 18px 24px;
   }
   .provider-form input, .provider-form button { font-size: 16px; padding: 12px 14px; }
+  .provider-form.inline-form { grid-template-columns: 1fr; }
 
   /* Sessions : items plus hauts pour le doigt */
   .session-item { padding: 12px 12px; }
