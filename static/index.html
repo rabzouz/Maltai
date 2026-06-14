@@ -97,22 +97,6 @@
         </div>
         <div id="side-tools-list" class="tools-list"></div>
       </div>
-      <div id="subpanel-terminal" class="subpanel hidden">
-        <div class="terminal-panel">
-          <div class="terminal-actions">
-            <button class="section-mini-btn" data-terminal-cmd="version">version</button>
-            <button class="section-mini-btn" data-terminal-cmd="health">health</button>
-            <button class="section-mini-btn" data-terminal-cmd="pwd">pwd</button>
-            <button class="section-mini-btn" data-terminal-cmd="ls">ls</button>
-          </div>
-          <pre id="terminal-output" class="terminal-output"></pre>
-          <div class="terminal-input-row">
-            <span>$</span>
-            <input id="terminal-input" type="text" autocomplete="off" spellcheck="false" placeholder="version" />
-            <button id="terminal-run" class="section-add-btn">→</button>
-          </div>
-        </div>
-      </div>
       <div id="subpanel-notes" class="subpanel hidden">
         <div class="section-add-row">
           <input id="note-input" type="text" placeholder="Nouvelle note…" />
@@ -219,6 +203,30 @@
         </div>
       </footer>
     </main>
+  </div>
+
+  <div id="terminal-window" class="terminal-window hidden">
+    <div class="terminal-titlebar">
+      <div>
+        <strong>Terminal</strong>
+        <span>admin</span>
+      </div>
+      <button id="terminal-close" class="icon-btn" title="Fermer">✕</button>
+    </div>
+    <div class="terminal-panel">
+      <div class="terminal-actions">
+        <button class="section-mini-btn" data-terminal-cmd="version">version</button>
+        <button class="section-mini-btn" data-terminal-cmd="health">health</button>
+        <button class="section-mini-btn" data-terminal-cmd="pwd">pwd</button>
+        <button class="section-mini-btn" data-terminal-cmd="ls">ls</button>
+      </div>
+      <pre id="terminal-output" class="terminal-output"></pre>
+      <div class="terminal-input-row">
+        <span>$</span>
+        <input id="terminal-input" type="text" autocomplete="off" spellcheck="false" placeholder="version" />
+        <button id="terminal-run" class="section-add-btn">→</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal réglages providers -->

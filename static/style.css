@@ -640,6 +640,38 @@ select {
 .dr-result li { margin: 2px 0; }
 
 /* Terminal Panel */
+.terminal-window {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: min(720px, calc(100vw - 48px));
+  max-height: min(720px, calc(100vh - 48px));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.terminal-window.hidden { display: none; }
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.terminal-titlebar strong { font-size: 14px; }
+.terminal-titlebar span {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--mono);
+}
 .terminal-panel {
   padding: 10px 12px;
   display: flex;
@@ -689,5 +721,17 @@ select {
   color: var(--text);
   font-family: var(--mono);
   font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .terminal-window {
+    inset: auto 10px max(10px, env(safe-area-inset-bottom)) 10px;
+    width: auto;
+    max-height: calc(100dvh - 24px);
+  }
+  .terminal-output {
+    min-height: 220px;
+    max-height: 55dvh;
+  }
 }
 

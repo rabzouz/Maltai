@@ -970,6 +970,16 @@ function bindEvents() {
     runTerminalCommand("version");
   }
 
+  function openTerminalWindow() {
+    $("#terminal-window").classList.remove("hidden");
+    initTerminal();
+    setTimeout(() => $("#terminal-input")?.focus(), 0);
+  }
+
+  function closeTerminalWindow() {
+    $("#terminal-window").classList.add("hidden");
+  }
+
   // --- Recherche dans les discussions ---------------------------------------
   $("#session-search").addEventListener("input", (e) => {
     const q = e.target.value.toLowerCase();
@@ -990,7 +1000,6 @@ function bindEvents() {
   const SUBPANELS = {
     discussions: { el: "#subpanel-discussions", load: () => {} },
     tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
-    terminal:    { el: "#subpanel-terminal",    load: () => initTerminal() },
     notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
     research:    { el: "#subpanel-research",     load: () => initDeepResearch() },
@@ -1015,7 +1024,7 @@ function bindEvents() {
   $("#nav-chat").onclick        = () => activateNav("chat");
   $("#nav-discussions").onclick = () => activateNav("discussions");
   $("#nav-tools").onclick       = () => activateNav("tools");
-  $("#nav-terminal").onclick    = () => activateNav("terminal");
+  $("#nav-terminal").onclick    = openTerminalWindow;
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
   $("#nav-research").onclick    = () => activateNav("research");
@@ -1151,6 +1160,7 @@ function bindEvents() {
     if (r.ok) { $("#cp-current").value = ""; $("#cp-new").value = ""; }
   };
   $("#close-settings").onclick = () => $("#settings-modal").classList.add("hidden");
+  $("#terminal-close").onclick = closeTerminalWindow;
   // Click hors du modal-box pour fermer
   $("#settings-modal").addEventListener("click", (e) => {
     if (e.target === $("#settings-modal")) $("#settings-modal").classList.add("hidden");
@@ -1159,6 +1169,8 @@ function bindEvents() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#settings-modal").classList.contains("hidden")) {
       $("#settings-modal").classList.add("hidden");
+    } else if (e.key === "Escape" && !$("#terminal-window").classList.contains("hidden")) {
+      closeTerminalWindow();
     }
   });
 
