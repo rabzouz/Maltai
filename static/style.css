@@ -83,9 +83,10 @@ body {
   text-transform: uppercase; opacity: 0.3; padding: 8px 14px 4px; flex-shrink: 0;
 }
 .sidebar-nav { display: flex; flex-direction: column; padding: 2px 8px; gap: 1px; flex-shrink: 0; }
+.sidebar-nav + .nav-label { margin-top: 4px; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; border-radius: 8px;
+  padding: 7px 12px; border-radius: 8px;
   background: none; border: none;
   color: var(--fg, var(--text)); font-size: 13px;
   cursor: pointer; text-align: left; width: 100%;
@@ -103,6 +104,23 @@ body {
 .subpanel { overflow-y: auto; border-top: 1px solid var(--border); flex: 1; padding: 6px 4px; }
 .subpanel.hidden { display: none; }
 .subpanel-actions { display: flex; gap: 6px; padding: 4px 6px 6px; }
+.subpanel-actions.compact { padding: 0; flex-wrap: wrap; }
+.subpanel-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-2) 65%, transparent);
+  padding: 10px;
+  margin: 4px 4px 10px;
+}
+.subpanel-card h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+.subpanel-card .hint {
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
 
 /* Section mini btns (shared with subpanels) */
 .section-mini-btn {
@@ -217,6 +235,31 @@ select {
 .composer-topbar {
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
   padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.composer-toolbelt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 3px 0 1px;
+}
+.toolbelt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 9px;
+}
+.toolbelt-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
 }
 .composer-model-label {
   display: flex; align-items: center; gap: 5px;
@@ -581,6 +624,11 @@ select {
   display: flex; align-items: center; gap: 7px;
   padding: 6px 7px; border-radius: 7px; font-size: 13px;
   background: var(--panel-2);
+}
+.panel-item small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
 }
 .panel-item .p-text { flex: 1; overflow-wrap: anywhere; }
 .panel-item.done .p-text { text-decoration: line-through; opacity: .55; }

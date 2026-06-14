@@ -1118,8 +1118,68 @@ function bindEvents() {
     setConsoleTab(activeTab);
   }
 
+  function openTerminalFilesWindow() {
+    $("#terminal-window").classList.remove("hidden");
+    initTerminal();
+    setConsoleTab("files");
+  }
+
   function closeTerminalWindow() {
     $("#terminal-window").classList.add("hidden");
+  }
+
+  function openSettingsModal() {
+    $("#settings-modal").classList.remove("hidden");
+    refreshMemoryStatus();
+    loadOllamaModels();
+    loadMcpServers();
+    loadConnectors();
+    loadWorkspace();
+  }
+
+  async function refreshBrainPanel() {
+    const status = $("#brain-memory-status");
+    if (status) status.textContent = "chargement...";
+    try {
+      const m = await fetch("/api/memory").then((r) => r.json());
+      if (status) {
+        status.textContent = m.enabled
+          ? `${m.count} souvenir(s) memorise(s) · top-${m.top_k} rappeles par message.`
+          : "Memoire desactivee (MEMORY_ENABLED=false).";
+      }
+    } catch {
+      if (status) status.textContent = "Memoire indisponible.";
+    }
+    loadToolsPanel("#brain-tools-preview");
+  }
+
+  function refreshModelsPanel() {
+    const status = $("#models-status");
+    const list = $("#models-list");
+    if (!status || !list) return;
+    const providerCount = state.providers.length;
+    const modelCount = state.ollamaModels.length;
+    status.textContent = `${providerCount} provider(s) · ${modelCount} modele(s) Ollama local(aux).`;
+    list.innerHTML = "";
+    state.providers.forEach((p) => {
+      const row = document.createElement("div");
+      row.className = "panel-item";
+      row.innerHTML = `<span>${esc(p.name)}<br><small>${esc(p.model || "modele non defini")}</small></span>`;
+      list.appendChild(row);
+    });
+    if (!state.providers.length) list.innerHTML = '<p class="hint">Aucun provider configure.</p>';
+  }
+
+  async function refreshModelsPanelData() {
+    try { await loadOllamaModels(); } catch {}
+    refreshModelsPanel();
+  }
+
+  function openComposerTools() {
+    const panel = $("#tools-panel");
+    const opening = panel.classList.contains("hidden");
+    panel.classList.toggle("hidden");
+    if (opening) loadToolsPanel();
   }
 
   // --- Recherche dans les discussions ---------------------------------------
@@ -1141,6 +1201,9 @@ function bindEvents() {
   // --- Nav items ------------------------------------------------------------
   const SUBPANELS = {
     discussions: { el: "#subpanel-discussions", load: () => {} },
+    brain:       { el: "#subpanel-brain",       load: () => refreshBrainPanel() },
+    email:       { el: "#subpanel-email",       load: () => {} },
+    models:      { el: "#subpanel-models",      load: () => refreshModelsPanelData() },
     tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
     notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
@@ -1161,10 +1224,14 @@ function bindEvents() {
         SUBPANELS[id].load();
       }
     }
+    if (isMobile() && id !== "chat") openSidebar();
   }
 
   $("#nav-chat").onclick        = () => activateNav("chat");
   $("#nav-discussions").onclick = () => activateNav("discussions");
+  $("#nav-brain").onclick       = () => activateNav("brain");
+  $("#nav-email").onclick       = () => activateNav("email");
+  $("#nav-models").onclick      = () => activateNav("models");
   $("#nav-tools").onclick       = () => activateNav("tools");
   $("#nav-terminal").onclick    = openTerminalWindow;
   $("#nav-notes").onclick       = () => activateNav("notes");
@@ -1178,9 +1245,30 @@ function bindEvents() {
   };
   $("#nav-theme").onclick       = () => {
     activateNav("chat");
-    $("#settings-modal").classList.remove("hidden");
-    refreshMemoryStatus(); loadMcpServers(); loadConnectors(); loadWorkspace();
+    openSettingsModal();
   };
+
+  const brainSettings = $("#brain-settings");
+  if (brainSettings) brainSettings.onclick = openSettingsModal;
+  const brainRefresh = $("#brain-refresh");
+  if (brainRefresh) brainRefresh.onclick = refreshBrainPanel;
+  const emailSettings = $("#email-settings");
+  if (emailSettings) emailSettings.onclick = openSettingsModal;
+  const modelsSettings = $("#models-settings");
+  if (modelsSettings) modelsSettings.onclick = openSettingsModal;
+  const modelsRefresh = $("#models-refresh");
+  if (modelsRefresh) modelsRefresh.onclick = refreshModelsPanelData;
+
+  const composerSearch = $("#composer-search");
+  if (composerSearch) composerSearch.onclick = () => activateNav("research");
+  const composerTerminal = $("#composer-terminal");
+  if (composerTerminal) composerTerminal.onclick = openTerminalWindow;
+  const composerFiles = $("#composer-files");
+  if (composerFiles) composerFiles.onclick = openTerminalFilesWindow;
+  const composerTools = $("#composer-tools");
+  if (composerTools) composerTools.onclick = (e) => { e.stopPropagation(); openComposerTools(); };
+  const composerModels = $("#composer-models");
+  if (composerModels) composerModels.onclick = () => activateNav("models");
 
   // --- Footer buttons -------------------------------------------------------
   const footNotes = $("#foot-notes");
@@ -1215,14 +1303,7 @@ function bindEvents() {
   // --- Settings & misc ------------------------------------------------------
   // open-settings now in sidebar footer
   const openSettingsBtn = $("#open-settings");
-  if (openSettingsBtn) openSettingsBtn.onclick = () => {
-    $("#settings-modal").classList.remove("hidden");
-    refreshMemoryStatus();
-    loadOllamaModels();
-    loadMcpServers();
-    loadConnectors();
-    loadWorkspace();
-  };
+  if (openSettingsBtn) openSettingsBtn.onclick = openSettingsModal;
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
