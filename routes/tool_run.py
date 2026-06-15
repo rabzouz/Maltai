@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from core import database as db
+from core import plans
 from src.tools import execute_tool, TOOLS
 
 router = APIRouter(prefix="/api/tool", tags=["tool_run"])
@@ -25,6 +26,10 @@ async def run_tool(request: Request, body: ToolRunIn):
 
     if body.tool not in TOOLS:
         raise HTTPException(400, f"Outil inconnu : {body.tool}")
+    is_admin = bool(user.get("is_admin"))
+    plan = plans.normalize_plan(user.get("plan"), is_admin)
+    if not plans.tool_allowed(body.tool, plan, is_admin):
+        raise HTTPException(403, "Plan premium requis pour utiliser cet outil")
 
     # Build ctx identique à celui de la boucle agent
     provider_row = None
@@ -37,7 +42,8 @@ async def run_tool(request: Request, body: ToolRunIn):
 
     ctx: dict = {
         "user_id":  user["id"],
-        "is_admin": bool(user.get("is_admin")),
+        "is_admin": is_admin,
+        "plan": plan,
         "provider": provider_row,
         "model":    body.model or (provider_row.get("default_model") if provider_row else None),
     }
@@ -52,4 +58,5 @@ def list_tools(request: Request):
     from src.tools import openai_tool_specs
     user = getattr(request.state, "user", None)
     is_admin = bool(user.get("is_admin")) if user else False
-    return openai_tool_specs(is_admin)
+    plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
+    return openai_tool_specs(is_admin, plan)

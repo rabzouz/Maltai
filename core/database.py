@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     is_admin      INTEGER NOT NULL DEFAULT 0,
+    plan          TEXT NOT NULL DEFAULT 'basic',
     created_at    REAL NOT NULL
 );
 
@@ -156,6 +157,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(providers)")}
     if "embed_model" not in cols:
         conn.execute("ALTER TABLE providers ADD COLUMN embed_model TEXT NOT NULL DEFAULT ''")
+    user_cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
+    if "plan" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'basic'")
+    conn.execute("UPDATE users SET plan='admin' WHERE is_admin=1")
 
 
 def new_id() -> str:
@@ -208,6 +213,28 @@ def delete_provider(pid: str) -> None:
     conn = connect()
     try:
         conn.execute("DELETE FROM providers WHERE id=?", (pid,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# --- Users / subscription plans ------------------------------------------
+
+def list_users() -> list[dict[str, Any]]:
+    conn = connect()
+    try:
+        rows = conn.execute(
+            "SELECT id, username, is_admin, plan, created_at FROM users ORDER BY created_at"
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def set_user_plan(user_id: str, plan: str) -> None:
+    conn = connect()
+    try:
+        conn.execute("UPDATE users SET plan=? WHERE id=? AND is_admin=0", (plan, user_id))
         conn.commit()
     finally:
         conn.close()

@@ -26,6 +26,7 @@ from typing import Any, Awaitable, Callable
 import httpx
 
 from core.config import DATA_DIR
+from core import plans
 
 WORKSPACE = DATA_DIR / "workspace"
 WORKSPACE.mkdir(exist_ok=True)
@@ -1406,11 +1407,11 @@ TOOLS: dict[str, dict] = {
 }
 
 
-def openai_tool_specs(is_admin: bool) -> list[dict]:
-    """Specs au format OpenAI, shell exclu pour les non-admins."""
+def openai_tool_specs(is_admin: bool, plan: str = "premium") -> list[dict]:
+    """Specs au format OpenAI selon le plan."""
     specs = []
     for name, t in TOOLS.items():
-        if name in ("shell", "python_exec") and not is_admin:
+        if not plans.tool_allowed(name, plan, is_admin):
             continue
         specs.append({"type": "function", "function": t["spec"]})
     return specs
@@ -1420,6 +1421,8 @@ async def execute_tool(name: str, args: dict, ctx: dict) -> str:
     tool = TOOLS.get(name)
     if not tool:
         return f"Outil inconnu : {name}"
+    if not plans.tool_allowed(name, ctx.get("plan"), bool(ctx.get("is_admin"))):
+        return "Premium requis pour utiliser les outils de l'agent."
     runner: Callable[[dict, dict], Awaitable[str]] = tool["run"]
     try:
         return await runner(args, ctx)

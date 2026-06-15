@@ -15,6 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from core import database as db
+from core import plans
 from src import agent, llm, memory
 from src.prompts import SYSTEM_PROMPT
 from src.tools import WORKSPACE
@@ -101,6 +102,9 @@ async def chat(body: ChatIn, request: Request):
     user = getattr(request.state, "user", None)
     user_id = user["id"] if user else None
     is_admin = bool(user and user.get("is_admin"))
+    plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
+    if body.agent and not plans.can_use_tools(plan, is_admin):
+        raise HTTPException(403, "Plan premium requis pour utiliser les outils de l'agent")
 
     history = db.list_messages(body.session_id)
     stored_content = body.content
@@ -169,7 +173,7 @@ async def chat(body: ChatIn, request: Request):
         full = []
         async for ev, data in agent.run_agent(
             provider, body.model, messages, is_admin, body.temperature,
-            user_id=user_id, enabled_tools=body.enabled_tools,
+            user_id=user_id, enabled_tools=body.enabled_tools, plan=plan,
         ):
             if ev == "delta":
                 full.append(data["content"])

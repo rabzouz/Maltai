@@ -6,6 +6,7 @@ const api = (p, opts) => fetch(p, opts).then((r) => {
 });
 
 const state = {
+  user: null,
   sessions: [],
   providers: [],
   ollamaModels: [],
@@ -18,6 +19,88 @@ const state = {
   allTools: [],      // noms de tous les outils connus
   abort: null,       // AbortController du stream en cours
 };
+
+function effectivePlan() {
+  if (state.user?.is_admin) return "admin";
+  return state.user?.plan || "basic";
+}
+
+function canUseAgentTools() {
+  return ["premium", "admin"].includes(effectivePlan());
+}
+
+function planLabel(plan = effectivePlan()) {
+  return plan === "admin" ? "Admin" : plan === "premium" ? "Premium" : "Basic";
+}
+
+function updateSubscriptionUI() {
+  const plan = effectivePlan();
+  const badge = $("#plan-badge");
+  if (badge) {
+    badge.textContent = planLabel(plan);
+    badge.className = `plan-badge ${plan}`;
+  }
+  const agentToggle = $("#agent-mode");
+  if (agentToggle) {
+    agentToggle.disabled = !canUseAgentTools();
+    if (!canUseAgentTools()) agentToggle.checked = false;
+  }
+  const status = $("#subscription-status");
+  if (status) {
+    status.textContent = canUseAgentTools()
+      ? `Plan ${planLabel(plan)} : outils agent actifs.`
+      : "Plan Basic : chat actif, outils agent reserves au plan Premium.";
+  }
+  const adminBox = $("#subscription-admin");
+  if (adminBox) adminBox.classList.toggle("hidden", !state.user?.is_admin);
+}
+
+async function loadMe() {
+  try {
+    state.user = await api("/api/auth/me");
+  } catch {
+    state.user = null;
+  }
+  updateSubscriptionUI();
+}
+
+async function loadSubscriptionUsers() {
+  const box = $("#subscription-users");
+  if (!box || !state.user?.is_admin) return;
+  box.innerHTML = '<p class="hint">chargement…</p>';
+  try {
+    const users = await api("/api/auth/users");
+    box.innerHTML = "";
+    users.forEach((u) => {
+      const row = document.createElement("div");
+      row.className = "provider-row";
+      const effective = u.is_admin ? "admin" : (u.plan || "basic");
+      row.innerHTML = `<div><strong>${esc(u.username)}</strong><div class="meta">${esc(planLabel(effective))}</div></div>`;
+      const sel = document.createElement("select");
+      sel.className = "plan-select";
+      sel.disabled = !!u.is_admin;
+      ["basic", "premium"].forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = planLabel(p);
+        opt.selected = effective === p;
+        sel.appendChild(opt);
+      });
+      sel.onchange = async () => {
+        await fetch(`/api/auth/users/${u.id}/plan`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: sel.value }),
+        });
+        await loadSubscriptionUsers();
+      };
+      row.appendChild(sel);
+      box.appendChild(row);
+    });
+  } catch {
+    box.innerHTML = '<p class="hint">Impossible de charger les utilisateurs.</p>';
+  }
+}
 
 // --- Providers -----------------------------------------------------------
 async function loadProviders() {
@@ -317,6 +400,10 @@ async function send(contentOverride) {
   const content = (typeof contentOverride === "string" ? contentOverride : input.value).trim();
   if (!content || state.streaming) return;
   if (!state.providerId || !state.model) { alert("Configure un provider et un modèle."); return; }
+  if ($("#agent-mode").checked && !canUseAgentTools()) {
+    alert("Plan premium requis pour utiliser les outils de l'agent.");
+    return;
+  }
   if (!state.currentSession) await newSession();
 
   const attachedNames = state.attachments.filter((a) => a.id).map((a) => a.filename);
@@ -346,6 +433,10 @@ async function send(contentOverride) {
         enabled_tools: $("#agent-mode").checked ? enabledToolsParam() : null,
       }),
     });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || `Erreur ${resp.status}`);
+    }
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "", acc = "";
@@ -471,6 +562,11 @@ async function loadToolsPanel(sel) {
   list.innerHTML = '<p class="hint">chargement…</p>';
   try {
     const d = await api("/api/tools");
+    if (!d.can_use_tools) {
+      state.allTools = [];
+      list.innerHTML = `<p class="hint">${esc(d.upgrade_message || "Plan premium requis.")}</p>`;
+      return;
+    }
     state.allTools = [...d.native.map((t) => t.name), ...d.mcp.map((t) => t.name)];
     list.innerHTML = "";
     const addOpt = (t, badge) => {
@@ -1135,6 +1231,8 @@ function bindEvents() {
 
   function openSettingsModal() {
     $("#settings-modal").classList.remove("hidden");
+    updateSubscriptionUI();
+    loadSubscriptionUsers();
     refreshMemoryStatus();
     loadOllamaModels();
     loadMcpServers();
@@ -1470,6 +1568,7 @@ if ("serviceWorker" in navigator) {
   try { bindEvents(); } catch(e) { console.error('bindEvents error:', e); }
   applyInitialLayout();
   window.addEventListener("resize", applyInitialLayout);
+  await loadMe();
   await loadProviders();
   await loadSessions();
 })();

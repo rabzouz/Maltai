@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 
 from core import database as db
+from core import plans
 from src import mcp, tools
 
 router = APIRouter(prefix="/api/tools", tags=["tools"])
@@ -17,11 +18,12 @@ router = APIRouter(prefix="/api/tools", tags=["tools"])
 async def list_tools(request: Request):
     user = getattr(request.state, "user", None)
     is_admin = bool(user and user.get("is_admin"))
+    plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
 
     native = []
     for name, t in tools.TOOLS.items():
         admin_only = name in ("shell", "python_exec")
-        if admin_only and not is_admin:
+        if not plans.tool_allowed(name, plan, is_admin):
             continue
         native.append({
             "name": name,
@@ -31,7 +33,7 @@ async def list_tools(request: Request):
 
     mcp_tools = []
     servers = db.list_mcp_servers(enabled_only=True)
-    if servers:
+    if servers and plans.can_use_tools(plan, is_admin):
         specs, _ = await mcp.load_mcp_tools(servers)
         for s in specs:
             fn = s["function"]
@@ -40,4 +42,10 @@ async def list_tools(request: Request):
                 "description": (fn.get("description") or "")[:200],
             })
 
-    return {"native": native, "mcp": mcp_tools}
+    return {
+        "plan": plan,
+        "can_use_tools": plans.can_use_tools(plan, is_admin),
+        "upgrade_message": "Plan premium requis pour utiliser les outils de l'agent.",
+        "native": native,
+        "mcp": mcp_tools,
+    }

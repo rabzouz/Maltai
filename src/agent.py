@@ -17,6 +17,7 @@ import json
 from typing import AsyncIterator
 
 from core import database as db
+from core import plans
 from src import llm, mcp, tools
 from src.prompts import SYSTEM_PROMPT
 
@@ -36,14 +37,15 @@ async def run_agent(
     temperature: float = 0.7,
     user_id: str | None = None,
     enabled_tools: list[str] | None = None,
+    plan: str = "premium",
 ) -> AsyncIterator[tuple[str, dict]]:
-    ctx = {"is_admin": is_admin, "provider": provider, "user_id": user_id, "model": model}
-    specs = tools.openai_tool_specs(is_admin)
+    ctx = {"is_admin": is_admin, "provider": provider, "user_id": user_id, "model": model, "plan": plan}
+    specs = tools.openai_tool_specs(is_admin, plan)
 
     # Outils MCP : decouverts au debut de chaque requete agent (best-effort).
     mcp_servers = db.list_mcp_servers(enabled_only=True)
     mcp_dispatch: dict = {}
-    if mcp_servers:
+    if mcp_servers and plans.can_use_tools(plan, is_admin):
         mcp_specs, mcp_dispatch = await mcp.load_mcp_tools(mcp_servers)
         specs = specs + mcp_specs
 
@@ -97,7 +99,9 @@ async def run_agent(
             except json.JSONDecodeError:
                 args = {}
             yield ("tool", {"name": name, "arguments": raw_args[:400]})
-            if enabled_tools is not None and name not in enabled_tools:
+            if not plans.tool_allowed(name, plan, is_admin) and name not in mcp_dispatch:
+                result = "Premium requis pour utiliser les outils de l'agent."
+            elif enabled_tools is not None and name not in enabled_tools:
                 result = "Outil desactive pour cette conversation"
             elif name in mcp_dispatch:
                 entry = mcp_dispatch[name]

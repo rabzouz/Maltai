@@ -16,6 +16,7 @@ import time
 
 from core.config import DATA_DIR, settings
 from core import database as db
+from core.plans import normalize_plan
 
 PBKDF2_ITERATIONS = 210_000
 SESSION_TTL = 60 * 60 * 24 * 14  # 14 jours
@@ -115,19 +116,20 @@ def get_user_by_username(username: str) -> dict | None:
         conn.close()
 
 
-def create_user(username: str, password: str, is_admin: bool = False) -> dict:
+def create_user(username: str, password: str, is_admin: bool = False, plan: str = "basic") -> dict:
     uid = db.new_id()
+    effective_plan = normalize_plan(plan, is_admin)
     conn = db.connect()
     try:
         conn.execute(
-            "INSERT INTO users (id, username, password_hash, is_admin, created_at) "
-            "VALUES (?,?,?,?,?)",
-            (uid, username, hash_password(password), int(is_admin), db.now()),
+            "INSERT INTO users (id, username, password_hash, is_admin, plan, created_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (uid, username, hash_password(password), int(is_admin), effective_plan, db.now()),
         )
         conn.commit()
     finally:
         conn.close()
-    return {"id": uid, "username": username, "is_admin": is_admin}
+    return {"id": uid, "username": username, "is_admin": is_admin, "plan": effective_plan}
 
 
 def change_password(user_id: str, new_password: str) -> None:

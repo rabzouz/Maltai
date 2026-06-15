@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=mobile-s24-1" />
+  <link rel="stylesheet" href="/static/style.css?v=plans-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -230,6 +230,7 @@
             <span class="composer-model-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <span id="composer-model-name">—</span>
+              <span id="plan-badge" class="plan-badge">basic</span>
             </span>
           </div>
           <div class="composer-toolbelt">
@@ -329,6 +330,13 @@
         <button id="close-settings" class="icon-btn">✕</button>
       </div>
       <p class="hint">Compatible OpenAI : Ollama, vLLM, llama.cpp, OpenRouter, OpenAI…</p>
+      <h2>Abonnement</h2>
+      <p class="hint" id="subscription-status">…</p>
+      <div id="subscription-admin" class="subscription-admin hidden">
+        <h3 class="sub">Utilisateurs</h3>
+        <div id="subscription-users" class="provider-rows"></div>
+      </div>
+      <hr class="sep" />
       <div id="provider-rows" class="provider-rows"></div>
       <div class="provider-form">
         <input id="p-name" placeholder="Nom (ex: Ollama local)" />
@@ -405,6 +413,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=mobile-s24-1"></script>
+  <script src="/static/js/app.js?v=plans-1"></script>
 </body>
 </html>
