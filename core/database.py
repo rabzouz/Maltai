@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     is_admin      INTEGER NOT NULL DEFAULT 0,
     plan          TEXT NOT NULL DEFAULT 'basic',
+    credit_balance INTEGER NOT NULL DEFAULT 100000,
     created_at    REAL NOT NULL
 );
 
@@ -131,6 +132,19 @@ CREATE TABLE IF NOT EXISTS skills (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_name ON skills(user_id, name);
 
+CREATE TABLE IF NOT EXISTS credit_ledger (
+    id            TEXT PRIMARY KEY,
+    user_id       TEXT NOT NULL,
+    delta         INTEGER NOT NULL,
+    balance_after INTEGER NOT NULL,
+    input_tokens  INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    reason        TEXT NOT NULL DEFAULT '',
+    meta          TEXT NOT NULL DEFAULT '{}',
+    created_at    REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_credit_ledger_user ON credit_ledger(user_id, created_at);
+
 -- FTS5 : recherche plein texte sur les messages
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
@@ -160,6 +174,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
     user_cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
     if "plan" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'basic'")
+    if "credit_balance" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN credit_balance INTEGER NOT NULL DEFAULT 100000")
     conn.execute("UPDATE users SET plan='admin' WHERE is_admin=1")
 
 
@@ -224,7 +240,7 @@ def list_users() -> list[dict[str, Any]]:
     conn = connect()
     try:
         rows = conn.execute(
-            "SELECT id, username, is_admin, plan, created_at FROM users ORDER BY created_at"
+            "SELECT id, username, is_admin, plan, credit_balance, created_at FROM users ORDER BY created_at"
         ).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -236,6 +252,101 @@ def set_user_plan(user_id: str, plan: str) -> None:
     try:
         conn.execute("UPDATE users SET plan=? WHERE id=? AND is_admin=0", (plan, user_id))
         conn.commit()
+    finally:
+        conn.close()
+
+
+def set_user_credits(user_id: str, credits: int, reason: str = "admin_set") -> int:
+    credits = max(0, int(credits))
+    conn = connect()
+    try:
+        row = conn.execute(
+            "SELECT credit_balance FROM users WHERE id=? AND is_admin=0", (user_id,)
+        ).fetchone()
+        if not row:
+            return 0
+        delta = credits - int(row["credit_balance"])
+        conn.execute("UPDATE users SET credit_balance=? WHERE id=? AND is_admin=0", (credits, user_id))
+        conn.execute(
+            "INSERT INTO credit_ledger (id, user_id, delta, balance_after, reason, created_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (new_id(), user_id, delta, credits, reason, now()),
+        )
+        conn.commit()
+        return credits
+    finally:
+        conn.close()
+
+
+def add_user_credits(user_id: str, credits: int, reason: str = "admin_add") -> int:
+    credits = int(credits)
+    conn = connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT credit_balance FROM users WHERE id=? AND is_admin=0", (user_id,)
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return 0
+        balance = max(0, int(row["credit_balance"]) + credits)
+        conn.execute("UPDATE users SET credit_balance=? WHERE id=?", (balance, user_id))
+        conn.execute(
+            "INSERT INTO credit_ledger (id, user_id, delta, balance_after, reason, created_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (new_id(), user_id, credits, balance, reason, now()),
+        )
+        conn.commit()
+        return balance
+    finally:
+        conn.close()
+
+
+def spend_user_credits(
+    user_id: str,
+    credits: int,
+    input_tokens: int = 0,
+    output_tokens: int = 0,
+    reason: str = "chat",
+    meta: dict[str, Any] | None = None,
+) -> tuple[int, int]:
+    requested = max(0, int(credits))
+    conn = connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT credit_balance FROM users WHERE id=? AND is_admin=0", (user_id,)
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return 0, 0
+        current = max(0, int(row["credit_balance"]))
+        spent = min(current, requested)
+        balance = current - spent
+        conn.execute("UPDATE users SET credit_balance=? WHERE id=?", (balance, user_id))
+        conn.execute(
+            "INSERT INTO credit_ledger "
+            "(id, user_id, delta, balance_after, input_tokens, output_tokens, reason, meta, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                new_id(), user_id, -spent, balance, int(input_tokens), int(output_tokens),
+                reason, json.dumps(meta or {}, ensure_ascii=False), now(),
+            ),
+        )
+        conn.commit()
+        return spent, balance
+    finally:
+        conn.close()
+
+
+def list_credit_ledger(user_id: str, limit: int = 20) -> list[dict[str, Any]]:
+    conn = connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM credit_ledger WHERE user_id=? ORDER BY created_at DESC LIMIT ?",
+            (user_id, max(1, min(int(limit), 100))),
+        ).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()
 

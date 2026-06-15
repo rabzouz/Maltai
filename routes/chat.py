@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from core import database as db
+from core import billing, database as db
 from core import plans
 from src import agent, llm, memory
 from src.prompts import SYSTEM_PROMPT
@@ -105,6 +105,8 @@ async def chat(body: ChatIn, request: Request):
     plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
     if body.agent and not plans.can_use_tools(plan, is_admin):
         raise HTTPException(403, "Plan premium requis pour utiliser les outils de l'agent")
+    if not billing.can_start_request(user):
+        raise HTTPException(402, "Solde de credits insuffisant")
 
     history = db.list_messages(body.session_id)
     stored_content = body.content
@@ -141,13 +143,17 @@ async def chat(body: ChatIn, request: Request):
     if recalled:
         ctx = memory.format_context(recalled)
         messages = [{"role": "system", "content": ctx}, *messages]
+    input_tokens = billing.estimate_messages_tokens(messages)
 
-    async def finalize(answer: str):
+    async def finalize(answer: str) -> dict:
         if answer:
             db.add_message(body.session_id, "assistant", answer)
         # Remember : on memorise le message user et la reponse (best-effort).
         await memory.remember(provider, user_id, body.session_id, "user", body.content)
         await memory.remember(provider, user_id, body.session_id, "assistant", answer)
+        return billing.charge_chat(
+            user, body.session_id, body.model, input_tokens, billing.estimate_text_tokens(answer)
+        )
 
     async def gen_simple():
         if recalled:
@@ -164,8 +170,8 @@ async def chat(body: ChatIn, request: Request):
             yield _sse("error", {"message": str(e)})
             return
         answer = "".join(full)
-        await finalize(answer)
-        yield _sse("done", {"length": len(answer)})
+        usage = await finalize(answer)
+        yield _sse("done", {"length": len(answer), "usage": usage})
 
     async def gen_agent():
         if recalled:
@@ -185,8 +191,8 @@ async def chat(body: ChatIn, request: Request):
             elif ev == "agent_error":
                 yield _sse("error", {"message": data["message"]})
         answer = "".join(full)
-        await finalize(answer)
-        yield _sse("done", {"length": len(answer)})
+        usage = await finalize(answer)
+        yield _sse("done", {"length": len(answer), "usage": usage})
 
     gen = gen_agent if body.agent else gen_simple
     return StreamingResponse(gen(), media_type="text/event-stream")

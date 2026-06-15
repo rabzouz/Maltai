@@ -33,12 +33,23 @@ function planLabel(plan = effectivePlan()) {
   return plan === "admin" ? "Admin" : plan === "premium" ? "Premium" : "Basic";
 }
 
+function formatCredits(value) {
+  if (value == null) return "∞ crédits";
+  const n = Number(value) || 0;
+  return `${n.toLocaleString("fr-FR")} crédits`;
+}
+
 function updateSubscriptionUI() {
   const plan = effectivePlan();
   const badge = $("#plan-badge");
   if (badge) {
     badge.textContent = planLabel(plan);
     badge.className = `plan-badge ${plan}`;
+  }
+  const creditBadge = $("#credit-badge");
+  if (creditBadge) {
+    creditBadge.textContent = formatCredits(state.user?.credit_balance);
+    creditBadge.classList.toggle("unlimited", state.user?.credit_balance == null);
   }
   const agentToggle = $("#agent-mode");
   if (agentToggle) {
@@ -48,8 +59,8 @@ function updateSubscriptionUI() {
   const status = $("#subscription-status");
   if (status) {
     status.textContent = canUseAgentTools()
-      ? `Plan ${planLabel(plan)} : outils agent actifs.`
-      : "Plan Basic : chat actif, outils agent reserves au plan Premium.";
+      ? `Plan ${planLabel(plan)} : outils agent actifs · solde ${formatCredits(state.user?.credit_balance)}.`
+      : `Plan Basic : chat actif, outils agent reserves au plan Premium · solde ${formatCredits(state.user?.credit_balance)}.`;
   }
   const adminBox = $("#subscription-admin");
   if (adminBox) adminBox.classList.toggle("hidden", !state.user?.is_admin);
@@ -64,6 +75,29 @@ async function loadMe() {
   updateSubscriptionUI();
 }
 
+async function loadCredits() {
+  const box = $("#credit-ledger");
+  if (!box || state.user?.is_admin) {
+    if (box) box.innerHTML = "";
+    return;
+  }
+  try {
+    const data = await api("/api/auth/credits");
+    if (state.user) state.user.credit_balance = data.credit_balance;
+    updateSubscriptionUI();
+    const rows = data.ledger || [];
+    box.innerHTML = rows.length ? "<h3 class=\"sub\">Dépenses récentes</h3>" : "";
+    rows.slice(0, 8).forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "credit-row";
+      const when = new Date((r.created_at || 0) * 1000).toLocaleString("fr-FR");
+      row.innerHTML = `<span>${esc(r.reason || "usage")} · ${esc(when)}</span>
+        <strong>${Number(r.delta).toLocaleString("fr-FR")}</strong>`;
+      box.appendChild(row);
+    });
+  } catch {}
+}
+
 async function loadSubscriptionUsers() {
   const box = $("#subscription-users");
   if (!box || !state.user?.is_admin) return;
@@ -75,7 +109,10 @@ async function loadSubscriptionUsers() {
       const row = document.createElement("div");
       row.className = "provider-row";
       const effective = u.is_admin ? "admin" : (u.plan || "basic");
-      row.innerHTML = `<div><strong>${esc(u.username)}</strong><div class="meta">${esc(planLabel(effective))}</div></div>`;
+      row.innerHTML = `<div><strong>${esc(u.username)}</strong>
+        <div class="meta">${esc(planLabel(effective))} · ${esc(formatCredits(u.credit_balance))}</div></div>`;
+      const actions = document.createElement("div");
+      actions.className = "credit-actions";
       const sel = document.createElement("select");
       sel.className = "plan-select";
       sel.disabled = !!u.is_admin;
@@ -94,7 +131,44 @@ async function loadSubscriptionUsers() {
         });
         await loadSubscriptionUsers();
       };
-      row.appendChild(sel);
+      actions.appendChild(sel);
+      if (!u.is_admin) {
+        const amount = document.createElement("input");
+        amount.className = "credit-input";
+        amount.type = "number";
+        amount.min = "0";
+        amount.step = "1000";
+        amount.placeholder = "crédits";
+        const add = document.createElement("button");
+        add.className = "section-mini-btn";
+        add.textContent = "+";
+        add.title = "Ajouter des crédits";
+        add.onclick = async () => {
+          const credits = parseInt(amount.value || "0", 10);
+          if (!credits) return;
+          await fetch(`/api/auth/users/${u.id}/credits`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "add", credits }),
+          });
+          await loadSubscriptionUsers();
+        };
+        const set = document.createElement("button");
+        set.className = "section-mini-btn";
+        set.textContent = "=";
+        set.title = "Fixer le solde";
+        set.onclick = async () => {
+          const credits = parseInt(amount.value || "0", 10);
+          await fetch(`/api/auth/users/${u.id}/credits`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "set", credits }),
+          });
+          await loadSubscriptionUsers();
+        };
+        actions.append(amount, add, set);
+      }
+      row.appendChild(actions);
       box.appendChild(row);
     });
   } catch {
@@ -466,6 +540,12 @@ async function send(contentOverride) {
         } else if (type && type.includes("error")) {
           acc += `\n\n⚠ ${data.message}`;
           renderMarkdown(bubble, acc);
+        } else if (type && type.includes("done")) {
+          if (data.usage && state.user && data.usage.balance !== undefined) {
+            state.user.credit_balance = data.usage.balance;
+            updateSubscriptionUI();
+            loadCredits();
+          }
         } else if (data.content) {
           if (!acc) { bubble.innerHTML = ""; setStatus("Maltai répond…"); }
           acc += data.content;
@@ -1232,6 +1312,7 @@ function bindEvents() {
   function openSettingsModal() {
     $("#settings-modal").classList.remove("hidden");
     updateSubscriptionUI();
+    loadCredits();
     loadSubscriptionUsers();
     refreshMemoryStatus();
     loadOllamaModels();
@@ -1569,6 +1650,7 @@ if ("serviceWorker" in navigator) {
   applyInitialLayout();
   window.addEventListener("resize", applyInitialLayout);
   await loadMe();
+  await loadCredits();
   await loadProviders();
   await loadSessions();
 })();

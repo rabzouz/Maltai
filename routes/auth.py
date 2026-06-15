@@ -25,12 +25,19 @@ class PlanIn(BaseModel):
     plan: str
 
 
+class CreditsIn(BaseModel):
+    credits: int
+    mode: str = "set"
+
+
 def _public_user(user: dict) -> dict:
+    is_admin = bool(user["is_admin"])
     return {
         "id": user["id"],
         "username": user["username"],
-        "is_admin": bool(user["is_admin"]),
-        "plan": normalize_plan(user.get("plan"), bool(user.get("is_admin"))),
+        "is_admin": is_admin,
+        "plan": normalize_plan(user.get("plan"), is_admin),
+        "credit_balance": None if is_admin else int(user.get("credit_balance") or 0),
     }
 
 
@@ -87,6 +94,29 @@ def set_plan(user_id: str, body: PlanIn, request: Request):
         raise HTTPException(400, "Le plan admin est reserve aux comptes administrateurs")
     db.set_user_plan(user_id, plan)
     return {"ok": True, "plan": plan}
+
+
+@router.patch("/users/{user_id}/credits")
+def set_credits(user_id: str, body: CreditsIn, request: Request):
+    user = getattr(request.state, "user", None)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(403, "Reserve aux administrateurs")
+    if body.mode == "add":
+        balance = db.add_user_credits(user_id, body.credits)
+    else:
+        balance = db.set_user_credits(user_id, body.credits)
+    return {"ok": True, "credit_balance": balance}
+
+
+@router.get("/credits")
+def credits(request: Request):
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(401, "Non authentifie")
+    return {
+        "credit_balance": None if user.get("is_admin") else int(user.get("credit_balance") or 0),
+        "ledger": [] if user.get("is_admin") else db.list_credit_ledger(user["id"], 20),
+    }
 
 
 @router.post("/change-password")
