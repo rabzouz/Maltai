@@ -936,9 +936,262 @@ select {
   .file-editor-head {
     grid-template-columns: 1fr;
   }
-  .file-editor textarea {
+.file-editor textarea {
     min-height: 220px;
     max-height: 38dvh;
+  }
+}
+
+/* Smartphone layout: Android/S24 first. Kept at the end to override older mobile rules. */
+.topbar-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    height: var(--vvh, 100dvh);
+    overflow: hidden;
+  }
+
+  #app {
+    width: 100vw;
+    height: var(--vvh, 100dvh);
+  }
+
+  #main {
+    height: var(--vvh, 100dvh);
+    min-height: 0;
+  }
+
+  #topbar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    min-height: 54px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+  }
+
+  .topbar-menu {
+    display: flex;
+  }
+
+  .selectors {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  select {
+    min-width: 0;
+    max-width: none;
+    height: 38px;
+    padding: 7px 8px;
+    font-size: 13px;
+  }
+
+  #sidebar {
+    width: min(86vw, 340px) !important;
+    max-width: 340px;
+    height: var(--vvh, 100dvh);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #sidebar.collapsed {
+    width: min(86vw, 340px) !important;
+    opacity: 1;
+    pointer-events: none;
+    transform: translateX(-110%);
+    border-right: 1px solid var(--border);
+  }
+
+  .sidebar-header {
+    min-height: 52px;
+  }
+
+  .sidebar-nav {
+    padding-inline: 8px;
+  }
+
+  .nav-item {
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+
+  .subpanel {
+    min-height: 0;
+  }
+
+  .sidebar-foot {
+    flex-direction: row;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  #overlay {
+    z-index: 90;
+  }
+
+  .messages {
+    min-height: 0;
+    padding: 14px 0 8px;
+    overscroll-behavior: contain;
+  }
+
+  .msg-row {
+    padding: 7px 10px;
+  }
+
+  .bubble {
+    max-width: 100%;
+    font-size: 15px;
+  }
+
+  .tool-card {
+    padding: 0 10px;
+  }
+
+  #composer {
+    margin: 0;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .composer-box {
+    border-radius: 12px;
+    padding: 8px;
+    gap: 5px;
+    box-shadow: none;
+  }
+
+  .composer-topbar {
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 5px;
+  }
+
+  .agent-group .agent-toggle {
+    min-height: 34px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .tools-btn {
+    min-height: 34px;
+  }
+
+  .composer-model-label {
+    min-width: 0;
+    max-width: 46%;
+    overflow: hidden;
+  }
+
+  .composer-model-label span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .composer-toolbelt {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .composer-toolbelt::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbelt-btn {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .attach-chips {
+    padding: 0;
+    max-height: 54px;
+    overflow-y: auto;
+  }
+
+  .composer-row {
+    gap: 6px;
+  }
+
+  .icon-btn.attach,
+  .btn-send {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+
+  .composer-row textarea {
+    min-height: 44px;
+    max-height: 34dvh;
+    padding: 10px 8px;
+    font-size: 16px;
+  }
+
+  .tools-panel {
+    position: fixed;
+    right: 8px;
+    bottom: calc(126px + env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    max-height: min(50dvh, 420px);
+    transform: none;
+    z-index: 65;
+  }
+
+  .modal-box {
+    height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
+  }
+
+  .terminal-window {
+    inset: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) 8px;
+    width: auto;
+    max-height: none;
+    border-radius: 10px;
+  }
+
+  .terminal-panel,
+  .files-panel {
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .terminal-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .terminal-output {
+    min-height: 170px;
+    max-height: 40dvh;
+  }
+
+  .files-list {
+    min-height: 110px;
+    max-height: 23dvh;
+  }
+
+  .file-editor textarea {
+    min-height: 170px;
+    max-height: 32dvh;
   }
 }
 

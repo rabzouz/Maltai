@@ -443,6 +443,11 @@ function renderMarkdown(el, text) {
 // --- Drawer mobile -------------------------------------------------------
 function isMobile() { return window.matchMedia("(max-width: 760px)").matches; }
 
+function syncViewportHeight() {
+  const h = window.visualViewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty("--vvh", `${Math.round(h)}px`);
+}
+
 function openSidebar() {
   $("#sidebar").classList.remove("collapsed");
   $("#overlay").classList.add("show");
@@ -1193,6 +1198,8 @@ function bindEvents() {
   // --- Sidebar toggle -------------------------------------------------------
   const sideToggle = $("#sidebar-toggle");
   if (sideToggle) sideToggle.onclick = toggleSidebar;
+  const topbarMenu = $("#topbar-menu");
+  if (topbarMenu) topbarMenu.onclick = openSidebar;
   $("#overlay").onclick = closeSidebar;
 
   // --- Nouveau Chat ---------------------------------------------------------
@@ -1307,6 +1314,10 @@ function bindEvents() {
   $("#attach-btn").onclick = () => $("#file-input").click();
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
+  });
+  $("#input").addEventListener("focus", () => {
+    syncViewportHeight();
+    setTimeout(() => $("#input").scrollIntoView({ block: "nearest" }), 120);
   });
   const _logout = $("#logout");
   if (_logout) _logout.onclick = async () => {
@@ -1436,9 +1447,17 @@ function bindEvents() {
 
 // --- Init ----------------------------------------------------------------
 function applyInitialLayout() {
+  syncViewportHeight();
   // Sur mobile le drawer demarre ferme ; sur desktop il reste ouvert.
   if (isMobile()) closeSidebar();
   else { $("#sidebar").classList.remove("collapsed"); $("#overlay").classList.remove("show"); }
+}
+
+window.addEventListener("resize", syncViewportHeight);
+window.addEventListener("orientationchange", () => setTimeout(syncViewportHeight, 250));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncViewportHeight);
+  window.visualViewport.addEventListener("scroll", syncViewportHeight);
 }
 
 if ("serviceWorker" in navigator) {
