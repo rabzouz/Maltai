@@ -64,6 +64,8 @@ function updateSubscriptionUI() {
   }
   const adminBox = $("#subscription-admin");
   if (adminBox) adminBox.classList.toggle("hidden", !state.user?.is_admin);
+  const topbarAdmin = $("#topbar-admin");
+  if (topbarAdmin) topbarAdmin.classList.toggle("hidden", !state.user?.is_admin);
 }
 
 async function loadMe() {
@@ -1321,6 +1323,11 @@ function bindEvents() {
     loadWorkspace();
   }
 
+  function openAdminPanel() {
+    openSettingsModal();
+    setTimeout(() => $("#subscription-status")?.scrollIntoView({ block: "start" }), 0);
+  }
+
   async function refreshBrainPanel() {
     const status = $("#brain-memory-status");
     if (status) status.textContent = "chargement...";
@@ -1379,6 +1386,8 @@ function bindEvents() {
   if (sideToggle) sideToggle.onclick = toggleSidebar;
   const topbarMenu = $("#topbar-menu");
   if (topbarMenu) topbarMenu.onclick = openSidebar;
+  const topbarAdmin = $("#topbar-admin");
+  if (topbarAdmin) topbarAdmin.onclick = openAdminPanel;
   $("#overlay").onclick = closeSidebar;
 
   // --- Nouveau Chat ---------------------------------------------------------
