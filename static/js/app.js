@@ -1429,6 +1429,31 @@ function bindEvents() {
     $("#terminal-window").classList.add("hidden");
   }
 
+  function closePanelWindow() {
+    const win = $("#panel-window");
+    if (win) win.classList.add("hidden");
+    document.querySelectorAll(".subpanel").forEach((p) => p.classList.add("hidden"));
+  }
+
+  function openPanelWindow(id, title) {
+    const cfg = SUBPANELS[id];
+    if (!cfg) return;
+    const win = $("#panel-window");
+    const body = $("#panel-window-body");
+    const titleEl = $("#panel-window-title");
+    const panel = $(cfg.el);
+    if (!win || !body || !panel) return;
+    document.querySelectorAll(".subpanel").forEach((p) => {
+      if (p !== panel) p.classList.add("hidden");
+    });
+    panel.classList.remove("hidden");
+    body.appendChild(panel);
+    if (titleEl) titleEl.textContent = title;
+    win.classList.remove("hidden");
+    cfg.load();
+    if (isMobile()) closeSidebar();
+  }
+
   function openSettingsModal() {
     $("#settings-modal").classList.remove("hidden");
     updateSubscriptionUI();
@@ -1513,31 +1538,28 @@ function bindEvents() {
 
   // --- Nav items ------------------------------------------------------------
   const SUBPANELS = {
-    discussions: { el: "#subpanel-discussions", load: () => {} },
-    brain:       { el: "#subpanel-brain",       load: () => refreshBrainPanel() },
-    email:       { el: "#subpanel-email",       load: () => {} },
-    models:      { el: "#subpanel-models",      load: () => refreshModelsPanelData() },
-    tools:       { el: "#subpanel-tools",       load: () => loadToolsPanel("#side-tools-list") },
-    notes:       { el: "#subpanel-notes",        load: () => loadNotesPanel("note") },
-    tasks:       { el: "#subpanel-tasks",        load: () => loadNotesPanel("todo") },
-    research:    { el: "#subpanel-research",     load: () => initDeepResearch() },
+    discussions: { el: "#subpanel-discussions", title: "Discussions", load: () => {} },
+    brain:       { el: "#subpanel-brain",       title: "Brain", load: () => refreshBrainPanel() },
+    email:       { el: "#subpanel-email",       title: "Email", load: () => {} },
+    models:      { el: "#subpanel-models",      title: "Models", load: () => refreshModelsPanelData() },
+    tools:       { el: "#subpanel-tools",       title: "Tools", load: () => loadToolsPanel("#side-tools-list") },
+    notes:       { el: "#subpanel-notes",       title: "Notes", load: () => loadNotesPanel("note") },
+    tasks:       { el: "#subpanel-tasks",       title: "Tâches", load: () => loadNotesPanel("todo") },
+    research:    { el: "#subpanel-research",    title: "Deep Research", load: () => initDeepResearch() },
   };
 
   function activateNav(id) {
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
     const btn = $(`#nav-${id}`);
     if (btn) btn.classList.add("active");
-    // Hide all subpanels
-    document.querySelectorAll(".subpanel").forEach((p) => p.classList.add("hidden"));
-    // Show relevant subpanel
-    if (SUBPANELS[id]) {
-      const panel = $(SUBPANELS[id].el);
-      if (panel) {
-        panel.classList.remove("hidden");
-        SUBPANELS[id].load();
-      }
+    if (id === "chat") {
+      closePanelWindow();
+      if (isMobile()) closeSidebar();
+      return;
     }
-    if (isMobile() && id !== "chat") openSidebar();
+    if (SUBPANELS[id]) {
+      openPanelWindow(id, SUBPANELS[id].title);
+    }
   }
 
   $("#nav-chat").onclick        = () => activateNav("chat");
@@ -1701,6 +1723,8 @@ function bindEvents() {
   };
   $("#close-settings").onclick = () => $("#settings-modal").classList.add("hidden");
   $("#terminal-close").onclick = closeTerminalWindow;
+  const panelWindowClose = $("#panel-window-close");
+  if (panelWindowClose) panelWindowClose.onclick = closePanelWindow;
   // Click hors du modal-box pour fermer
   $("#settings-modal").addEventListener("click", (e) => {
     if (e.target === $("#settings-modal")) $("#settings-modal").classList.add("hidden");
@@ -1711,6 +1735,8 @@ function bindEvents() {
       $("#settings-modal").classList.add("hidden");
     } else if (e.key === "Escape" && !$("#terminal-window").classList.contains("hidden")) {
       closeTerminalWindow();
+    } else if (e.key === "Escape" && !$("#panel-window").classList.contains("hidden")) {
+      closePanelWindow();
     }
   });
 

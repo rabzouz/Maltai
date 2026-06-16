@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=tool-runner-1" />
+  <link rel="stylesheet" href="/static/style.css?v=panel-window-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -339,6 +339,14 @@
     </div>
   </div>
 
+  <div id="panel-window" class="panel-window hidden">
+    <div class="panel-window-titlebar">
+      <strong id="panel-window-title">Panneau</strong>
+      <button id="panel-window-close" class="icon-btn" title="Fermer">✕</button>
+    </div>
+    <div id="panel-window-body" class="panel-window-body"></div>
+  </div>
+
   <!-- Modal réglages providers -->
   <div id="settings-modal" class="modal hidden">
     <div class="modal-box">
@@ -431,6 +439,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=tool-runner-1"></script>
+  <script src="/static/js/app.js?v=panel-window-1"></script>
 </body>
 </html>
