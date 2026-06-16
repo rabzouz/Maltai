@@ -911,6 +911,31 @@ function addToolCard(name, argsPreview) {
   scrollDown();
 }
 
+function workspaceDownloadLinks(text) {
+  const paths = new Set();
+  const re = /(?:Screenshot sauvegarde\s*:\s*)?((?:browser_screenshots|notes|exports|files)\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|pdf|zip))/gi;
+  let m;
+  while ((m = re.exec(text || ""))) {
+    paths.add(m[1].replace(/[).,;:]+$/, ""));
+  }
+  if (!paths.size) return null;
+  const wrap = document.createElement("div");
+  wrap.className = "tool-downloads";
+  const title = document.createElement("div");
+  title.className = "lbl";
+  title.textContent = "Fichiers";
+  wrap.appendChild(title);
+  paths.forEach((path) => {
+    const a = document.createElement("a");
+    a.className = "ws-link";
+    a.href = `/api/workspace/download?path=${encodeURIComponent(path)}`;
+    a.download = path.split("/").pop();
+    a.textContent = `Télécharger ${path}`;
+    wrap.appendChild(a);
+  });
+  return wrap;
+}
+
 function finishToolCard(name, result) {
   const idx = runningCards.findIndex((c) => c.name === name);
   if (idx === -1) return;
@@ -918,7 +943,10 @@ function finishToolCard(name, result) {
   const st = el.querySelector(".t-status");
   st.classList.remove("spin");
   st.textContent = result.startsWith("Erreur") || result.startsWith("[erreur") ? "✗" : "✓";
-  el.querySelector(".t-result").textContent = result;
+  const resultEl = el.querySelector(".t-result");
+  resultEl.textContent = result;
+  const links = workspaceDownloadLinks(result);
+  if (links) resultEl.after(links);
 }
 
 // --- Pieces jointes --------------------------------------------------------

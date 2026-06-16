@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from core.config import DATA_DIR, settings
@@ -79,13 +79,22 @@ async def upload(file: UploadFile):
 
 # --- Workspace de l'agent (fichiers crees par write_file / shell) ------------
 
+def _workspace_root_for_request(request: Request) -> Path:
+    user = getattr(request.state, "user", None)
+    uid = user.get("id") if user else None
+    if not uid:
+        return WORKSPACE
+    safe = "".join(c for c in str(uid) if c.isalnum() or c in "-_")[:32] or "shared"
+    return WORKSPACE / safe
+
 @router.get("/workspace")
-def workspace_list():
+def workspace_list(request: Request):
+    root = _workspace_root_for_request(request)
     files = []
-    for p in sorted(WORKSPACE.rglob("*")):
+    for p in sorted(root.rglob("*")):
         if p.is_file():
             files.append({
-                "path": str(p.relative_to(WORKSPACE)),
+                "path": str(p.relative_to(root)),
                 "size": p.stat().st_size,
             })
         if len(files) >= 300:
@@ -94,8 +103,9 @@ def workspace_list():
 
 
 @router.get("/workspace/download")
-def workspace_download(path: str):
-    target = (WORKSPACE / path).resolve()
-    if not str(target).startswith(str(WORKSPACE.resolve())) or not target.is_file():
+def workspace_download(path: str, request: Request):
+    root = _workspace_root_for_request(request).resolve()
+    target = (root / path).resolve()
+    if not str(target).startswith(str(root)) or not target.is_file():
         raise HTTPException(404, "Fichier introuvable")
     return FileResponse(str(target), filename=target.name)

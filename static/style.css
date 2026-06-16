@@ -700,6 +700,24 @@ select {
   padding:8px 10px; font-size:12px; overflow-x:auto; margin:0 0 8px;
   white-space:pre-wrap; word-break:break-word; font-family:var(--mono); color:var(--text);
 }
+.tool-downloads {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:8px;
+}
+.tool-downloads .ws-link {
+  display:inline-flex;
+  width:fit-content;
+  max-width:100%;
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:6px 9px;
+  background:var(--panel-2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
 
 /* ---------- Actions sur les messages ---------- */
 .msg-actions { display:flex; gap:6px; margin-top:4px; opacity:0; transition:opacity .15s; }
