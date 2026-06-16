@@ -1320,6 +1320,27 @@ function bindEvents() {
     return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
   }
 
+  function isPreviewableImage(path) {
+    return /\.(png|jpe?g|webp|gif)$/i.test(path || "");
+  }
+
+  function isTextLikeFile(path) {
+    return /\.(txt|md|csv|json|py|js|ts|html|css|xml|ya?ml|sh|sql|log|kt|java|dart)$/i.test(path || "");
+  }
+
+  function setFileDownload(path, text = "Télécharger") {
+    const status = $("#file-status");
+    if (!status) return;
+    status.innerHTML = "";
+    status.className = "file-status ok";
+    const a = document.createElement("a");
+    a.className = "ws-link";
+    a.href = `/api/workspace/download?path=${encodeURIComponent(path)}`;
+    a.download = path.split("/").pop();
+    a.textContent = `${text} ${path}`;
+    status.appendChild(a);
+  }
+
   function setFileStatus(text, kind = "") {
     const el = $("#file-status");
     if (!el) return;
@@ -1374,6 +1395,17 @@ function bindEvents() {
   }
 
   async function openWorkspaceFile(path) {
+    $("#file-path").value = path;
+    if (isPreviewableImage(path)) {
+      $("#file-content").value = "";
+      setFileDownload(path, "Télécharger l'image");
+      return;
+    }
+    if (!isTextLikeFile(path)) {
+      $("#file-content").value = "";
+      setFileDownload(path);
+      return;
+    }
     setFileStatus("Lecture...");
     try {
       const d = await terminalApi(`/api/terminal/file?path=${encodeURIComponent(path)}`);
@@ -1381,7 +1413,12 @@ function bindEvents() {
       $("#file-content").value = d.content || "";
       setFileStatus(`${d.path} ouvert (${formatBytes(d.size)})`, "ok");
     } catch (e) {
-      setFileStatus(e.message, "error");
+      if (String(e.message || "").includes("trop volumineux")) {
+        $("#file-content").value = "";
+        setFileDownload(path, "Télécharger le fichier volumineux");
+      } else {
+        setFileStatus(e.message, "error");
+      }
     }
   }
 
