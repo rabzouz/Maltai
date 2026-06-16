@@ -4,6 +4,38 @@ from __future__ import annotations
 VALID_PLANS = {"basic", "premium", "admin"}
 PREMIUM_PLANS = {"premium", "admin"}
 ADMIN_TOOLS = {"shell", "python_exec"}
+TOOL_CREDIT_COSTS = {
+    "calculator": 2,
+    "get_datetime": 1,
+    "list_files": 3,
+    "read_file": 8,
+    "write_file": 15,
+    "patch_file": 20,
+    "code_execute": 40,
+    "web_search": 25,
+    "web_fetch": 25,
+    "http_request": 30,
+    "wikipedia": 15,
+    "weather": 15,
+    "rss_fetch": 20,
+    "youtube_transcript": 30,
+    "deep_research": 250,
+    "memory_search": 10,
+    "memory_save": 10,
+    "note_add": 5,
+    "note_list": 3,
+    "note_delete": 3,
+    "todo_add": 5,
+    "todo_list": 3,
+    "todo_done": 3,
+    "email_send": 50,
+    "generate_image": 500,
+    "image_generate": 500,
+    "page_summary": 35,
+    "skill_save": 15,
+    "skill_list": 5,
+    "skill_run": 30,
+}
 
 
 def normalize_plan(plan: str | None, is_admin: bool = False) -> str:
@@ -24,3 +56,9 @@ def tool_allowed(name: str, plan: str | None, is_admin: bool = False) -> bool:
     if name in ADMIN_TOOLS and not is_admin:
         return False
     return True
+
+
+def tool_credit_cost(name: str, is_admin: bool = False) -> int:
+    if is_admin:
+        return 0
+    return int(TOOL_CREDIT_COSTS.get(name, 20))

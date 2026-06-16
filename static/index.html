@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=admin-access-1" />
+  <link rel="stylesheet" href="/static/style.css?v=tool-runner-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -115,6 +115,21 @@
         <nav id="session-list" class="session-list"></nav>
       </div>
       <div id="subpanel-tools" class="subpanel hidden">
+        <div class="tool-runner">
+          <div class="tool-runner-head">
+            <strong>Run Tool</strong>
+            <span id="direct-tool-cost">—</span>
+          </div>
+          <select id="direct-tool-select" title="Outil direct"></select>
+          <textarea id="direct-tool-args" spellcheck="false" placeholder='{"path":"video_ltx2_3_i2v.json"}'></textarea>
+          <div class="tool-runner-actions">
+            <button class="section-mini-btn" data-tool-example="read_file">read_file</button>
+            <button class="section-mini-btn" data-tool-example="code_execute">code_execute</button>
+            <button class="section-mini-btn" data-tool-example="web_search">web_search</button>
+            <button class="section-add-btn" id="direct-tool-run">→</button>
+          </div>
+          <pre id="direct-tool-result" class="tool-runner-result"></pre>
+        </div>
         <div class="subpanel-actions">
           <button class="section-mini-btn" id="side-tools-all">tout</button>
           <button class="section-mini-btn" id="side-tools-none">aucun</button>
@@ -416,6 +431,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=admin-access-1"></script>
+  <script src="/static/js/app.js?v=tool-runner-1"></script>
 </body>
 </html>

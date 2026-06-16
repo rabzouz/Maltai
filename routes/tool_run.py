@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from core import billing
 from core import database as db
 from core import plans
 from src.tools import execute_tool, TOOLS
@@ -30,6 +31,9 @@ async def run_tool(request: Request, body: ToolRunIn):
     plan = plans.normalize_plan(user.get("plan"), is_admin)
     if not plans.tool_allowed(body.tool, plan, is_admin):
         raise HTTPException(403, "Plan premium requis pour utiliser cet outil")
+    cost = plans.tool_credit_cost(body.tool, is_admin)
+    if not is_admin and int(user.get("credit_balance") or 0) < cost:
+        raise HTTPException(402, f"Solde de credits insuffisant ({cost} credits requis)")
 
     # Build ctx identique à celui de la boucle agent
     provider_row = None
@@ -49,7 +53,30 @@ async def run_tool(request: Request, body: ToolRunIn):
     }
 
     result = await execute_tool(body.tool, body.args, ctx)
-    return {"result": result}
+    usage = {
+        "credits_spent": 0,
+        "balance": None,
+        "cost": cost,
+    }
+    if cost and not is_admin:
+        args_tokens = billing.estimate_text_tokens(str(body.args or {}))
+        result_tokens = billing.estimate_text_tokens(result)
+        spent, balance = db.spend_user_credits(
+            user["id"],
+            cost,
+            input_tokens=args_tokens,
+            output_tokens=result_tokens,
+            reason=f"tool:{body.tool}",
+            meta={"tool": body.tool, "model": ctx.get("model")},
+        )
+        usage = {
+            "credits_spent": spent,
+            "balance": balance,
+            "cost": cost,
+            "input_tokens": args_tokens,
+            "output_tokens": result_tokens,
+        }
+    return {"result": result, "usage": usage}
 
 
 @router.get("/list")

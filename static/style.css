@@ -121,6 +121,83 @@ body {
   margin-bottom: 10px;
   line-height: 1.35;
 }
+.tool-runner {
+  margin: 4px 4px 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tool-runner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tool-runner-head strong {
+  font-size: 13px;
+}
+.tool-runner-head span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.tool-runner select {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: 34px;
+}
+.tool-runner textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #080b10;
+  color: #d8e1ea;
+  padding: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.tool-runner textarea:focus {
+  outline: none;
+  border-color: var(--accent-2);
+}
+.tool-runner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.tool-runner-actions #direct-tool-run {
+  margin-left: auto;
+  min-width: 34px;
+}
+.tool-runner-result {
+  min-height: 74px;
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #080b10;
+  color: #d8e1ea;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tool-runner-result.error {
+  color: #ff8b8b;
+  border-color: rgba(255, 107, 107, 0.45);
+}
 
 /* Section mini btns (shared with subpanels) */
 .section-mini-btn {

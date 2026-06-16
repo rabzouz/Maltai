@@ -17,6 +17,7 @@ const state = {
   attachments: [],   // {id, filename, kind}
   disabledTools: new Set(JSON.parse(localStorage.getItem("maltai_disabled_tools") || "[]")),
   allTools: [],      // noms de tous les outils connus
+  toolMeta: {},       // metadata des outils natifs
   abort: null,       // AbortController du stream en cours
 };
 
@@ -639,6 +640,104 @@ function saveToolPrefs() {
   localStorage.setItem("maltai_disabled_tools", JSON.stringify([...state.disabledTools]));
 }
 
+const DIRECT_TOOL_EXAMPLES = {
+  read_file: { path: "video_ltx2_3_i2v.json" },
+  list_files: { path: "." },
+  write_file: { path: "notes/exemple.txt", content: "Bonjour depuis Maltai." },
+  code_execute: { code: "print('Bonjour Maltai')\nprint(2 + 2)" },
+  web_search: { query: "actualité intelligence artificielle France" },
+  web_fetch: { url: "https://example.com" },
+  wikipedia: { query: "intelligence artificielle" },
+  weather: { city: "Paris" },
+  deep_research: { topic: "Outils agent IA pour développeurs" },
+};
+
+function directToolCostLabel(name) {
+  const t = state.toolMeta[name];
+  if (!t) return "—";
+  const cost = Number(t.credit_cost || 0);
+  return cost ? `${cost.toLocaleString("fr-FR")} crédits` : "admin";
+}
+
+function setDirectToolExample(name) {
+  const select = $("#direct-tool-select");
+  const args = $("#direct-tool-args");
+  if (!select || !args) return;
+  if (state.toolMeta[name]) select.value = name;
+  const example = DIRECT_TOOL_EXAMPLES[name] || {};
+  args.value = JSON.stringify(example, null, 2);
+  updateDirectToolCost();
+}
+
+function updateDirectToolCost() {
+  const select = $("#direct-tool-select");
+  const cost = $("#direct-tool-cost");
+  if (select && cost) cost.textContent = directToolCostLabel(select.value);
+}
+
+function renderDirectToolRunner(nativeTools) {
+  const select = $("#direct-tool-select");
+  if (!select) return;
+  const previous = select.value;
+  select.innerHTML = "";
+  nativeTools.forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t.name;
+    opt.textContent = t.name;
+    select.appendChild(opt);
+  });
+  if (previous && state.toolMeta[previous]) select.value = previous;
+  else if (state.toolMeta.read_file) select.value = "read_file";
+  updateDirectToolCost();
+  const args = $("#direct-tool-args");
+  if (args && !args.value.trim()) setDirectToolExample(select.value || "read_file");
+}
+
+async function runDirectTool() {
+  const select = $("#direct-tool-select");
+  const argsBox = $("#direct-tool-args");
+  const result = $("#direct-tool-result");
+  const btn = $("#direct-tool-run");
+  if (!select || !argsBox || !result || !select.value) return;
+  let args = {};
+  try {
+    args = argsBox.value.trim() ? JSON.parse(argsBox.value) : {};
+  } catch {
+    result.textContent = "JSON invalide dans les arguments.";
+    result.classList.add("error");
+    return;
+  }
+  btn.disabled = true;
+  result.classList.remove("error");
+  result.textContent = `Execution ${select.value}...`;
+  try {
+    const r = await fetch("/api/tool/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tool: select.value,
+        args,
+        provider: state.providerId,
+        model: state.model,
+      }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.detail || `Erreur ${r.status}`);
+    if (d.usage && state.user && d.usage.balance !== undefined) {
+      state.user.credit_balance = d.usage.balance;
+      updateSubscriptionUI();
+      loadCredits();
+    }
+    const spent = d.usage?.credits_spent ? `\n\n[credits: -${d.usage.credits_spent} | solde: ${formatCredits(d.usage.balance)}]` : "";
+    result.textContent = String(d.result || "") + spent;
+  } catch (e) {
+    result.classList.add("error");
+    result.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function loadToolsPanel(sel) {
   const list = $(sel || "#tools-list");
   list.innerHTML = '<p class="hint">chargement…</p>';
@@ -646,9 +745,16 @@ async function loadToolsPanel(sel) {
     const d = await api("/api/tools");
     if (!d.can_use_tools) {
       state.allTools = [];
+      state.toolMeta = {};
+      renderDirectToolRunner([]);
+      const result = $("#direct-tool-result");
+      if (result) result.textContent = d.upgrade_message || "Plan premium requis.";
       list.innerHTML = `<p class="hint">${esc(d.upgrade_message || "Plan premium requis.")}</p>`;
       return;
     }
+    state.toolMeta = {};
+    d.native.forEach((t) => { state.toolMeta[t.name] = t; });
+    renderDirectToolRunner(d.native);
     state.allTools = [...d.native.map((t) => t.name), ...d.mcp.map((t) => t.name)];
     list.innerHTML = "";
     const addOpt = (t, badge) => {
@@ -663,8 +769,10 @@ async function loadToolsPanel(sel) {
         saveToolPrefs();
       };
       const info = document.createElement("div");
+      const cost = t.credit_cost ? ` · ${Number(t.credit_cost).toLocaleString("fr-FR")} crédits` : "";
       info.innerHTML = `<div class="t-name">${esc(t.name)}${badge}</div>
         <div class="t-desc">${esc(t.description || "")}</div>`;
+      if (cost) info.querySelector(".t-desc").textContent += cost;
       lbl.append(cb, info);
       list.appendChild(lbl);
     };
@@ -975,6 +1083,16 @@ function bindEvents() {
   });
   $("#tools-all").onclick = () => { state.disabledTools.clear(); saveToolPrefs(); loadToolsPanel(); };
   $("#tools-none").onclick = () => { state.allTools.forEach((n) => state.disabledTools.add(n)); saveToolPrefs(); loadToolsPanel(); };
+  const directToolSelect = $("#direct-tool-select");
+  if (directToolSelect) directToolSelect.onchange = () => {
+    updateDirectToolCost();
+    setDirectToolExample(directToolSelect.value);
+  };
+  const directToolRun = $("#direct-tool-run");
+  if (directToolRun) directToolRun.onclick = runDirectTool;
+  document.querySelectorAll("[data-tool-example]").forEach((btn) => {
+    btn.onclick = () => setDirectToolExample(btn.dataset.toolExample);
+  });
 
 
   // --- Deep Research ---------------------------------------------------------
@@ -1006,7 +1124,7 @@ function bindEvents() {
             tool: "deep_research",
             args: { topic },
             model: state.model,
-            provider: state.provider,
+            provider: state.providerId,
           }),
         });
         if (!r.ok) throw new Error(await r.text());

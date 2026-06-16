@@ -29,6 +29,7 @@ async def list_tools(request: Request):
             "name": name,
             "description": t["spec"].get("description", ""),
             "admin_only": admin_only,
+            "credit_cost": plans.tool_credit_cost(name, is_admin),
         })
 
     mcp_tools = []
