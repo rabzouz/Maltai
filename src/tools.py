@@ -21,6 +21,7 @@ import socket
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import urljoin
 from typing import Any, Awaitable, Callable
 
 import httpx
@@ -189,15 +190,30 @@ def _html_links(raw: str, base_url: str, limit: int = 20) -> list[dict[str, str]
     return links
 
 
-def _html_forms(raw: str, limit: int = 10) -> list[dict[str, Any]]:
+def _html_forms(raw: str, base_url: str = "", limit: int = 10) -> list[dict[str, Any]]:
     forms = []
-    for form in re.findall(r"<form\b[^>]*>.*?</form>", raw, re.I | re.S)[:limit]:
+    for index, form in enumerate(re.findall(r"<form\b[^>]*>.*?</form>", raw, re.I | re.S)[:limit]):
         method = re.search(r'\bmethod=["\']?([^"\'>\s]+)', form, re.I)
         action = re.search(r'\baction=["\']?([^"\'>\s]+)', form, re.I)
-        inputs = re.findall(r'<(?:input|textarea|select)\b[^>]*\bname=["\']([^"\']+)["\']', form, re.I)
+        inputs = []
+        for tag in re.findall(r"<(?:input|textarea|select)\b[^>]*>", form, re.I | re.S):
+            name = re.search(r'\bname=["\']([^"\']+)["\']', tag, re.I)
+            if not name:
+                continue
+            typ = re.search(r'\btype=["\']?([^"\'>\s]+)', tag, re.I)
+            value = re.search(r'\bvalue=["\']([^"\']*)["\']', tag, re.I)
+            inputs.append({
+                "name": html.unescape(name.group(1)),
+                "type": (typ.group(1).lower() if typ else "text"),
+                "value": html.unescape(value.group(1)) if value else "",
+            })
+        action_url = html.unescape(action.group(1)) if action else base_url
+        if base_url:
+            action_url = urljoin(base_url, action_url or base_url)
         forms.append({
+            "index": index,
             "method": (method.group(1).upper() if method else "GET"),
-            "action": html.unescape(action.group(1)) if action else "",
+            "action": action_url,
             "fields": inputs[:30],
         })
     return forms
@@ -233,7 +249,7 @@ async def tool_browser_navigate(args: dict, ctx: dict) -> str:
         "content_type": ctype,
         "text": text,
         "links": _html_links(raw, final_url) if "html" in ctype else [],
-        "forms": _html_forms(raw) if "html" in ctype else [],
+        "forms": _html_forms(raw, final_url) if "html" in ctype else [],
     }
     _BROWSER_STATE[_browser_key(ctx)] = state
     return _truncate(
@@ -267,7 +283,8 @@ async def tool_browser_snapshot(args: dict, ctx: dict) -> str:
     if forms:
         lines += ["", "Formulaires:"]
         lines += [
-            f"- {f['method']} {f['action'] or '(page courante)'} fields={', '.join(f['fields']) or '-'}"
+            f"- #{f['index']} {f['method']} {f['action'] or '(page courante)'} "
+            f"fields={', '.join(field['name'] for field in f['fields']) or '-'}"
             for f in forms[:6]
         ]
     return _truncate("\n".join(lines))
@@ -281,6 +298,83 @@ async def tool_browser_links(args: dict, ctx: dict) -> str:
     if not links:
         return "Aucun lien trouve."
     return "\n".join(f"- {item['text']}\n  {item['url']}" for item in links[:50])
+
+
+async def tool_browser_form_list(args: dict, ctx: dict) -> str:
+    url = str(args.get("url", "")).strip()
+    if url:
+        nav = await tool_browser_navigate({"url": url}, ctx)
+        if nav.startswith("Erreur") or nav.startswith("URL invalide") or nav.startswith("Refuse"):
+            return nav
+    state = _BROWSER_STATE.get(_browser_key(ctx))
+    if not state:
+        return "Aucune page ouverte. Appelle browser_navigate avec une URL."
+    forms = state.get("forms") or []
+    if not forms:
+        return "Aucun formulaire trouve."
+    lines = []
+    for form in forms:
+        fields = ", ".join(
+            f"{field['name']}:{field['type']}" + (f"={field['value']}" if field.get("value") else "")
+            for field in form.get("fields", [])
+        )
+        lines.append(
+            f"#{form['index']} {form['method']} {form['action'] or state.get('url')}\n"
+            f"  fields: {fields or '-'}"
+        )
+    return _truncate("\n".join(lines))
+
+
+async def tool_browser_submit(args: dict, ctx: dict) -> str:
+    state = _BROWSER_STATE.get(_browser_key(ctx))
+    if not state:
+        return "Aucune page ouverte. Appelle browser_navigate avec une URL."
+    forms = state.get("forms") or []
+    if not forms:
+        return "Aucun formulaire sur la page actuelle."
+    index = int(args.get("index", 0))
+    if index < 0 or index >= len(forms):
+        return f"Formulaire #{index} introuvable"
+    form = forms[index]
+    data = args.get("data") or {}
+    if not isinstance(data, dict):
+        return "data doit etre un objet JSON"
+    payload = {field["name"]: field.get("value", "") for field in form.get("fields", [])}
+    payload.update({str(k): str(v) for k, v in data.items()})
+    method = str(args.get("method") or form.get("method") or "GET").upper()
+    if method not in ("GET", "POST"):
+        return "Seules les methodes GET et POST sont supportees par browser_submit"
+    action = str(args.get("action") or form.get("action") or state.get("url"))
+    action = urljoin(str(state.get("url")), action)
+    host = re.sub(r"^https?://", "", action).split("/")[0].split(":")[0]
+    if not ctx.get("is_admin") and _is_private_host(host):
+        return "Refuse : hote prive/interne (reserve aux administrateurs)"
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            if method == "GET":
+                r = await client.get(action, params=payload, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
+            else:
+                r = await client.post(action, data=payload, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
+            r.raise_for_status()
+    except httpx.HTTPError as e:
+        return f"Erreur submit : {e}"
+    ctype = r.headers.get("content-type", "")
+    raw = r.text
+    text = _strip_html(raw) if "html" in ctype else raw
+    final_url = str(r.url)
+    _BROWSER_STATE[_browser_key(ctx)] = {
+        "url": final_url,
+        "title": _html_title(raw) if "html" in ctype else "",
+        "content_type": ctype,
+        "text": text,
+        "links": _html_links(raw, final_url) if "html" in ctype else [],
+        "forms": _html_forms(raw, final_url) if "html" in ctype else [],
+    }
+    return _truncate(
+        f"Submitted #{index} {method} {action}\n"
+        f"Final URL: {final_url}\n"
+        f"Status: {r.status_code}\n\n{text[:2500]}"
+    )
 
 
 async def tool_web_fetch(args: dict, ctx: dict) -> str:
@@ -1227,6 +1321,33 @@ TOOLS: dict[str, dict] = {
             "name": "browser_links",
             "description": "Liste les liens trouves sur la page actuellement ouverte par browser_navigate.",
             "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    "browser_form_list": {
+        "run": tool_browser_form_list,
+        "spec": {
+            "name": "browser_form_list",
+            "description": "Liste les formulaires de la page ouverte : index, methode, action et champs.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "URL optionnelle a ouvrir avant de lister les formulaires"}},
+            },
+        },
+    },
+    "browser_submit": {
+        "run": tool_browser_submit,
+        "spec": {
+            "name": "browser_submit",
+            "description": "Soumet un formulaire simple de la page ouverte via GET ou POST. N'execute pas de JavaScript.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "index": {"type": "integer", "description": "Index du formulaire, defaut 0"},
+                    "data": {"type": "object", "description": "Champs a envoyer"},
+                    "method": {"type": "string", "description": "GET ou POST optionnel"},
+                    "action": {"type": "string", "description": "URL action optionnelle"},
+                },
+            },
         },
     },
     "web_fetch": {

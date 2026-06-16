@@ -17,6 +17,8 @@ TOOL_CREDIT_COSTS = {
     "browser_navigate": 30,
     "browser_snapshot": 20,
     "browser_links": 10,
+    "browser_form_list": 15,
+    "browser_submit": 35,
     "http_request": 30,
     "wikipedia": 15,
     "weather": 15,

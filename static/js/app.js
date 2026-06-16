@@ -650,6 +650,8 @@ const DIRECT_TOOL_EXAMPLES = {
   browser_navigate: { url: "https://example.com" },
   browser_snapshot: { url: "https://maltai.fr" },
   browser_links: {},
+  browser_form_list: { url: "https://www.aqua-r-fly.com/" },
+  browser_submit: { index: 0, data: { q: "test" } },
   wikipedia: { query: "intelligence artificielle" },
   weather: { city: "Paris" },
   deep_research: { topic: "Outils agent IA pour développeurs" },
