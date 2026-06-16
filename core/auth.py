@@ -96,11 +96,23 @@ def verify_token(token: str) -> str | None:
 
 # --- Utilisateurs ---------------------------------------------------------
 
+def _is_configured_admin_username(username: str | None) -> bool:
+    return (username or "").strip() == settings.ADMIN_USER
+
+
+def _with_effective_admin(user: dict | None) -> dict | None:
+    if user and _is_configured_admin_username(user.get("username")):
+        user = dict(user)
+        user["is_admin"] = 1
+        user["plan"] = "admin"
+    return user
+
+
 def get_user(user_id: str) -> dict | None:
     conn = db.connect()
     try:
         row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
-        return dict(row) if row else None
+        return _with_effective_admin(dict(row) if row else None)
     finally:
         conn.close()
 
@@ -111,7 +123,7 @@ def get_user_by_username(username: str) -> dict | None:
         row = conn.execute(
             "SELECT * FROM users WHERE username=?", (username,)
         ).fetchone()
-        return dict(row) if row else None
+        return _with_effective_admin(dict(row) if row else None)
     finally:
         conn.close()
 
@@ -152,10 +164,44 @@ def count_users() -> int:
         conn.close()
 
 
+def ensure_configured_admin() -> bool:
+    """Garantit que MALTAI_ADMIN_USER garde les droits admin si le compte existe."""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, is_admin, plan FROM users WHERE username=?",
+            (settings.ADMIN_USER,),
+        ).fetchone()
+        if not row:
+            return False
+        if not row["is_admin"] or row["plan"] != "admin":
+            conn.execute(
+                "UPDATE users SET is_admin=1, plan='admin' WHERE id=?",
+                (row["id"],),
+            )
+            conn.commit()
+            print(
+                f"\n[MALTAI] Compte admin '{settings.ADMIN_USER}' promu administrateur.\n",
+                flush=True,
+            )
+        return True
+    finally:
+        conn.close()
+
+
 def seed_admin() -> None:
     """Au premier boot : cree l'admin. Mot de passe depuis l'env si fourni,
     sinon genere et affiche en console."""
+    if ensure_configured_admin():
+        return
     if count_users() > 0:
+        if settings.ADMIN_PASSWORD:
+            create_user(settings.ADMIN_USER, settings.ADMIN_PASSWORD, is_admin=True)
+            print(
+                f"\n[MALTAI] Compte admin '{settings.ADMIN_USER}' cree "
+                "avec le mot de passe fourni (MALTAI_ADMIN_PASSWORD).\n",
+                flush=True,
+            )
         return
     if settings.ADMIN_PASSWORD:
         create_user(settings.ADMIN_USER, settings.ADMIN_PASSWORD, is_admin=True)
