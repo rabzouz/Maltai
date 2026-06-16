@@ -1142,6 +1142,11 @@ select {
   gap: 8px;
   align-items: center;
 }
+.process-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .process-start-row input {
   min-width: 0;
   border: 1px solid var(--border);

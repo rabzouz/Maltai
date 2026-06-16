@@ -59,10 +59,27 @@ def _expand_alias(command: str) -> str:
         ),
         "pwd": "pwd",
         "ls": "ls -la",
-        "process": "ps -eo pid,ppid,stat,comm,args --sort=-pid | head -40",
+        "process": (
+            "python - <<'PY'\n"
+            "import os\n"
+            "for pid in sorted([p for p in os.listdir('/proc') if p.isdigit()], key=int, reverse=True)[:40]:\n"
+            "    try:\n"
+            "        cmd = open(f'/proc/{pid}/cmdline','rb').read().replace(b'\\0', b' ').decode(errors='replace').strip()\n"
+            "        stat = open(f'/proc/{pid}/stat').read().split()\n"
+            "        ppid = stat[3] if len(stat) > 3 else '?'\n"
+            "        state = stat[2] if len(stat) > 2 else '?'\n"
+            "    except Exception:\n"
+            "        continue\n"
+            "    print(f'{pid:>6} {ppid:>6} {state:>2} {cmd[:160]}')\n"
+            "PY"
+        ),
+        "kill": (
+            "echo \"Utilise l'onglet Process puis le bouton Kill sur le process selectionne.\""
+        ),
         "models": "curl -fsS ${OLLAMA_BASE_URL:-http://127.0.0.1:11434}/api/tags",
     }
-    return aliases.get(command.strip(), command)
+    key = command.strip()
+    return aliases.get(key.lower(), command)
 
 
 def _safe_workspace_path(path: str) -> Path:

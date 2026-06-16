@@ -1466,6 +1466,18 @@ function bindEvents() {
     }
   }
 
+  function setProcessExample(name) {
+    const input = $("#process-command");
+    if (!input) return;
+    const examples = {
+      ticks: "python -c \"import time; [print('tick', i, flush=True) or time.sleep(1) for i in range(20)]\"",
+      server: "python -m http.server 9000",
+      ollama: "python -c \"import urllib.request; print(urllib.request.urlopen('http://10.0.1.1:11434/api/tags', timeout=10).read().decode())\"",
+    };
+    input.value = examples[name] || "";
+    input.focus();
+  }
+
   async function killSelectedProcess() {
     if (!selectedProcessId) return;
     try {
@@ -1489,6 +1501,9 @@ function bindEvents() {
         if (selectedProcessId) await selectProcess(selectedProcessId);
       };
       $("#process-kill").onclick = killSelectedProcess;
+      document.querySelectorAll("[data-process-example]").forEach((btn) => {
+        btn.onclick = () => setProcessExample(btn.dataset.processExample);
+      });
       $("#process-command").addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
