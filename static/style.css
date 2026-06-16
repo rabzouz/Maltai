@@ -1437,3 +1437,74 @@ select {
   }
 }
 
+/* Stronger Odysseus-style text contrast */
+.brand-name,
+.nav-item span,
+.sidebar-new-chat span,
+.panel-window-titlebar strong,
+.terminal-titlebar strong,
+.modal-head h2,
+.subpanel-card h3,
+.tool-runner-head strong,
+.provider-row strong,
+.panel-item .p-text,
+.tools-panel-head strong {
+  font-weight: 800;
+  color: #f4f0ea;
+}
+
+.nav-label,
+.tools-sep,
+.role-tag {
+  color: #aeb6c2;
+  opacity: 0.9;
+  font-weight: 800;
+}
+
+.nav-item {
+  color: #d4d8df;
+  opacity: 0.72;
+  font-weight: 700;
+}
+
+.nav-item:hover {
+  opacity: 1;
+  color: #f4f0ea;
+}
+
+.nav-item.active {
+  color: var(--accent);
+  font-weight: 850;
+}
+
+.tool-opt .t-name,
+.file-name,
+.session-item .title,
+.composer-model-label,
+.credit-row strong,
+.tool-card-head .t-tool {
+  font-weight: 750;
+}
+
+.tool-opt .t-desc,
+.provider-row .meta,
+.hint,
+.dr-desc,
+.file-meta,
+.terminal-titlebar span {
+  color: #a5adba;
+}
+
+.bubble strong,
+.bubble b {
+  color: #fff7eb;
+  font-weight: 850;
+}
+
+.bubble h1,
+.bubble h2,
+.bubble h3 {
+  color: #fff7eb;
+  font-weight: 850;
+}
+
