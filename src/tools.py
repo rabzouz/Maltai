@@ -146,6 +146,143 @@ def _strip_html(raw: str) -> str:
     return re.sub(r"\s{2,}", " ", text).strip()
 
 
+_BROWSER_STATE: dict[str, dict[str, Any]] = {}
+
+
+def _browser_key(ctx: dict | None) -> str:
+    return str((ctx or {}).get("user_id") or "shared")
+
+
+def _resolve_browser_url(url: str, ctx: dict | None) -> str:
+    url = (url or "").strip()
+    if url.startswith(("http://", "https://")):
+        return url
+    current = _BROWSER_STATE.get(_browser_key(ctx), {}).get("url", "")
+    if current and url.startswith("/"):
+        base = re.match(r"^https?://[^/]+", current)
+        if base:
+            return base.group(0) + url
+    return url
+
+
+def _html_title(raw: str) -> str:
+    match = re.search(r"<title[^>]*>(.*?)</title>", raw, re.I | re.S)
+    return _strip_html(match.group(1)) if match else ""
+
+
+def _html_links(raw: str, base_url: str, limit: int = 20) -> list[dict[str, str]]:
+    links = []
+    for href, label in re.findall(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', raw, re.I | re.S):
+        href = html.unescape(href.strip())
+        if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
+            continue
+        if href.startswith("/"):
+            base = re.match(r"^https?://[^/]+", base_url)
+            if base:
+                href = base.group(0) + href
+        elif not href.startswith(("http://", "https://")):
+            href = base_url.rstrip("/") + "/" + href.lstrip("./")
+        text = _strip_html(label)[:120] or href
+        links.append({"text": text, "url": href})
+        if len(links) >= limit:
+            break
+    return links
+
+
+def _html_forms(raw: str, limit: int = 10) -> list[dict[str, Any]]:
+    forms = []
+    for form in re.findall(r"<form\b[^>]*>.*?</form>", raw, re.I | re.S)[:limit]:
+        method = re.search(r'\bmethod=["\']?([^"\'>\s]+)', form, re.I)
+        action = re.search(r'\baction=["\']?([^"\'>\s]+)', form, re.I)
+        inputs = re.findall(r'<(?:input|textarea|select)\b[^>]*\bname=["\']([^"\']+)["\']', form, re.I)
+        forms.append({
+            "method": (method.group(1).upper() if method else "GET"),
+            "action": html.unescape(action.group(1)) if action else "",
+            "fields": inputs[:30],
+        })
+    return forms
+
+
+async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
+    target = _resolve_browser_url(url, ctx)
+    if not target.startswith(("http://", "https://")):
+        raise ValueError("URL invalide (http/https requis)")
+    host = re.sub(r"^https?://", "", target).split("/")[0].split(":")[0]
+    if not (ctx or {}).get("is_admin") and _is_private_host(host):
+        raise ValueError("Refuse : hote prive/interne (reserve aux administrateurs)")
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            r = await client.get(target, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
+            r.raise_for_status()
+    except httpx.HTTPError as e:
+        raise ValueError(f"Erreur browser : {e}") from e
+    return str(r.url), r.headers.get("content-type", ""), r.text
+
+
+async def tool_browser_navigate(args: dict, ctx: dict) -> str:
+    url = str(args.get("url", "")).strip()
+    try:
+        final_url, ctype, raw = await _browser_fetch(url, ctx)
+    except ValueError as e:
+        return str(e)
+    title = _html_title(raw) if "html" in ctype else ""
+    text = _strip_html(raw) if "html" in ctype else raw
+    state = {
+        "url": final_url,
+        "title": title,
+        "content_type": ctype,
+        "text": text,
+        "links": _html_links(raw, final_url) if "html" in ctype else [],
+        "forms": _html_forms(raw) if "html" in ctype else [],
+    }
+    _BROWSER_STATE[_browser_key(ctx)] = state
+    return _truncate(
+        f"URL: {final_url}\nTitle: {title or '-'}\nContent-Type: {ctype or '-'}\n\n"
+        f"{text[:2500]}"
+    )
+
+
+async def tool_browser_snapshot(args: dict, ctx: dict) -> str:
+    url = str(args.get("url", "")).strip()
+    if url:
+        nav = await tool_browser_navigate({"url": url}, ctx)
+        if nav.startswith("Erreur") or nav.startswith("URL invalide"):
+            return nav
+    state = _BROWSER_STATE.get(_browser_key(ctx))
+    if not state:
+        return "Aucune page ouverte. Appelle browser_navigate avec une URL."
+    lines = [
+        f"URL: {state.get('url')}",
+        f"Title: {state.get('title') or '-'}",
+        f"Content-Type: {state.get('content_type') or '-'}",
+        "",
+        "Texte:",
+        str(state.get("text") or "")[:2500],
+    ]
+    links = state.get("links") or []
+    if links:
+        lines += ["", "Liens:"]
+        lines += [f"- {item['text']} -> {item['url']}" for item in links[:15]]
+    forms = state.get("forms") or []
+    if forms:
+        lines += ["", "Formulaires:"]
+        lines += [
+            f"- {f['method']} {f['action'] or '(page courante)'} fields={', '.join(f['fields']) or '-'}"
+            for f in forms[:6]
+        ]
+    return _truncate("\n".join(lines))
+
+
+async def tool_browser_links(args: dict, ctx: dict) -> str:
+    state = _BROWSER_STATE.get(_browser_key(ctx))
+    if not state:
+        return "Aucune page ouverte. Appelle browser_navigate avec une URL."
+    links = state.get("links") or []
+    if not links:
+        return "Aucun lien trouve."
+    return "\n".join(f"- {item['text']}\n  {item['url']}" for item in links[:50])
+
+
 async def tool_web_fetch(args: dict, ctx: dict) -> str:
     url = str(args.get("url", ""))
     if not url.startswith(("http://", "https://")):
@@ -1059,6 +1196,37 @@ TOOLS: dict[str, dict] = {
                 "properties": {"query": {"type": "string"}},
                 "required": ["query"],
             },
+        },
+    },
+    "browser_navigate": {
+        "run": tool_browser_navigate,
+        "spec": {
+            "name": "browser_navigate",
+            "description": "Ouvre une page web dans le navigateur texte de Maltai et garde son etat pour les outils browser_*.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "URL http/https a ouvrir"}},
+                "required": ["url"],
+            },
+        },
+    },
+    "browser_snapshot": {
+        "run": tool_browser_snapshot,
+        "spec": {
+            "name": "browser_snapshot",
+            "description": "Retourne un snapshot lisible de la page ouverte : titre, texte, liens et formulaires.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "URL optionnelle a ouvrir avant le snapshot"}},
+            },
+        },
+    },
+    "browser_links": {
+        "run": tool_browser_links,
+        "spec": {
+            "name": "browser_links",
+            "description": "Liste les liens trouves sur la page actuellement ouverte par browser_navigate.",
+            "parameters": {"type": "object", "properties": {}},
         },
     },
     "web_fetch": {
