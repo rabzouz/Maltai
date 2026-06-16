@@ -1210,6 +1210,9 @@ function bindEvents() {
   // --- Terminal admin -------------------------------------------------------
   let terminalInitialized = false;
   let filesInitialized = false;
+  let processInitialized = false;
+  let selectedProcessId = null;
+  let processPollTimer = null;
   let currentFilesPath = ".";
   let filesParentPath = "";
   const terminalHistory = [];
@@ -1232,7 +1235,9 @@ function bindEvents() {
     });
     $("#console-terminal-pane")?.classList.toggle("hidden", tab !== "terminal");
     $("#console-files-pane")?.classList.toggle("hidden", tab !== "files");
+    $("#console-process-pane")?.classList.toggle("hidden", tab !== "process");
     if (tab === "files") initFilesPanel();
+    if (tab === "process") initProcessPanel();
     if (tab === "terminal") setTimeout(() => $("#terminal-input")?.focus(), 0);
   }
 
@@ -1384,6 +1389,125 @@ function bindEvents() {
     loadFiles(".");
   }
 
+  function processStatusLabel(p) {
+    const code = p.exit_code === null || p.exit_code === undefined ? "" : ` · exit ${p.exit_code}`;
+    return `${p.status || "unknown"}${code}`;
+  }
+
+  function renderProcesses(processes) {
+    const list = $("#process-list");
+    if (!list) return;
+    list.innerHTML = "";
+    if (!processes.length) {
+      const empty = document.createElement("p");
+      empty.className = "hint";
+      empty.textContent = "Aucun process lance.";
+      list.appendChild(empty);
+      return;
+    }
+    processes.forEach((p) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = `process-row ${p.status || ""}` + (p.id === selectedProcessId ? " active" : "");
+      row.innerHTML = `<span class="process-cmd">${esc(p.command || p.id)}</span>
+        <span class="process-meta">pid ${esc(String(p.pid || "-"))} · ${esc(processStatusLabel(p))}</span>`;
+      row.onclick = () => selectProcess(p.id);
+      list.appendChild(row);
+    });
+  }
+
+  async function loadProcesses() {
+    try {
+      const d = await terminalApi("/api/terminal/process");
+      renderProcesses(d.processes || []);
+    } catch (e) {
+      const list = $("#process-list");
+      if (list) list.innerHTML = `<p class="hint">${esc(e.message)}</p>`;
+    }
+  }
+
+  async function selectProcess(id) {
+    if (!id) return;
+    selectedProcessId = id;
+    try {
+      const d = await terminalApi(`/api/terminal/process/${encodeURIComponent(id)}`);
+      const title = $("#process-selected");
+      const log = $("#process-log");
+      if (title) title.textContent = `${d.id} · ${processStatusLabel(d)}`;
+      if (log) {
+        log.textContent = d.output || "";
+        log.scrollTop = log.scrollHeight;
+      }
+      const kill = $("#process-kill");
+      if (kill) kill.disabled = d.status !== "running";
+      await loadProcesses();
+    } catch (e) {
+      const log = $("#process-log");
+      if (log) log.textContent = e.message;
+    }
+  }
+
+  async function startProcess() {
+    const input = $("#process-command");
+    const command = input?.value.trim();
+    if (!command) return;
+    try {
+      const d = await terminalApi("/api/terminal/process/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+      input.value = "";
+      await loadProcesses();
+      await selectProcess(d.id);
+    } catch (e) {
+      const log = $("#process-log");
+      if (log) log.textContent = e.message;
+    }
+  }
+
+  async function killSelectedProcess() {
+    if (!selectedProcessId) return;
+    try {
+      const d = await terminalApi(`/api/terminal/process/${encodeURIComponent(selectedProcessId)}`, {
+        method: "DELETE",
+      });
+      await loadProcesses();
+      await selectProcess(d.id);
+    } catch (e) {
+      const log = $("#process-log");
+      if (log) log.textContent = e.message;
+    }
+  }
+
+  function initProcessPanel() {
+    if (!processInitialized) {
+      processInitialized = true;
+      $("#process-start").onclick = startProcess;
+      $("#process-refresh").onclick = async () => {
+        await loadProcesses();
+        if (selectedProcessId) await selectProcess(selectedProcessId);
+      };
+      $("#process-kill").onclick = killSelectedProcess;
+      $("#process-command").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          startProcess();
+        }
+      });
+    }
+    loadProcesses();
+    if (!processPollTimer) {
+      processPollTimer = setInterval(() => {
+        if ($("#terminal-window")?.classList.contains("hidden")) return;
+        if (!$("#console-process-pane")?.classList.contains("hidden")) {
+          loadProcesses();
+          if (selectedProcessId) selectProcess(selectedProcessId);
+        }
+      }, 2500);
+    }
+  }
+
   function initTerminal() {
     if (terminalInitialized) return;
     terminalInitialized = true;
@@ -1427,6 +1551,10 @@ function bindEvents() {
 
   function closeTerminalWindow() {
     $("#terminal-window").classList.add("hidden");
+    if (processPollTimer) {
+      clearInterval(processPollTimer);
+      processPollTimer = null;
+    }
   }
 
   function closePanelWindow() {

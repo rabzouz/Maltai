@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -19,6 +21,10 @@ TIMEOUT = 30
 
 
 class TerminalIn(BaseModel):
+    command: str
+
+
+class ProcessStartIn(BaseModel):
     command: str
 
 
@@ -72,6 +78,63 @@ def _workspace_rel(path: Path) -> str:
     return str(path.relative_to(WORKSPACE.resolve())).replace("\\", "/")
 
 
+PROCESSES: dict[str, dict] = {}
+
+
+def _append_process_output(session_id: str, text: str) -> None:
+    item = PROCESSES.get(session_id)
+    if not item:
+        return
+    output = (item.get("output") or "") + text
+    if len(output) > MAX_OUTPUT:
+        output = output[-MAX_OUTPUT:]
+    item["output"] = output
+    item["updated_at"] = time.time()
+
+
+async def _watch_process(session_id: str) -> None:
+    item = PROCESSES.get(session_id)
+    if not item:
+        return
+    proc = item["proc"]
+    try:
+        while True:
+            chunk = await proc.stdout.readline()
+            if not chunk:
+                break
+            _append_process_output(session_id, chunk.decode(errors="replace"))
+        await proc.wait()
+    except Exception as e:
+        _append_process_output(session_id, f"\n[watch error] {e}\n")
+    finally:
+        item = PROCESSES.get(session_id)
+        if item:
+            item["exit_code"] = proc.returncode
+            if item.get("status") != "killed":
+                item["status"] = "exited"
+            item["updated_at"] = time.time()
+
+
+def _public_process(item: dict, include_output: bool = False) -> dict:
+    proc = item.get("proc")
+    status = item.get("status")
+    if proc and proc.returncode is not None and status == "running":
+        status = "exited"
+    data = {
+        "id": item["id"],
+        "command": item["command"],
+        "expanded": item.get("expanded"),
+        "pid": getattr(proc, "pid", None),
+        "status": status,
+        "exit_code": item.get("exit_code"),
+        "created_at": item["created_at"],
+        "updated_at": item.get("updated_at", item["created_at"]),
+    }
+    if include_output:
+        data["output"] = item.get("output", "")
+    return data
+
+
 @router.post("/run")
 async def run_terminal(body: TerminalIn, request: Request):
     _require_admin(request)
@@ -111,6 +174,76 @@ async def run_terminal(body: TerminalIn, request: Request):
         "exit_code": proc.returncode,
         "output": text,
     }
+
+
+@router.post("/process/start")
+async def start_process(body: ProcessStartIn, request: Request):
+    _require_admin(request)
+    command = body.command.strip()
+    if not command:
+        raise HTTPException(400, "Commande vide")
+    expanded = _expand_alias(command)
+    env = os.environ.copy()
+    env.setdefault("PYTHONUNBUFFERED", "1")
+    session_id = "proc_" + secrets.token_urlsafe(8)
+    try:
+        proc = await asyncio.create_subprocess_shell(
+            expanded,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=str(BASE_DIR),
+            env=env,
+        )
+    except OSError as e:
+        raise HTTPException(500, f"Erreur process : {e}")
+
+    now = time.time()
+    PROCESSES[session_id] = {
+        "id": session_id,
+        "command": command,
+        "expanded": expanded,
+        "proc": proc,
+        "status": "running",
+        "exit_code": None,
+        "output": "",
+        "created_at": now,
+        "updated_at": now,
+    }
+    asyncio.create_task(_watch_process(session_id))
+    return _public_process(PROCESSES[session_id], include_output=True)
+
+
+@router.get("/process")
+def list_processes(request: Request):
+    _require_admin(request)
+    rows = sorted(PROCESSES.values(), key=lambda item: item["created_at"], reverse=True)
+    return {"processes": [_public_process(item) for item in rows[:50]]}
+
+
+@router.get("/process/{session_id}")
+def get_process(session_id: str, request: Request):
+    _require_admin(request)
+    item = PROCESSES.get(session_id)
+    if not item:
+        raise HTTPException(404, "Process introuvable")
+    return _public_process(item, include_output=True)
+
+
+@router.delete("/process/{session_id}")
+async def kill_process(session_id: str, request: Request):
+    _require_admin(request)
+    item = PROCESSES.get(session_id)
+    if not item:
+        raise HTTPException(404, "Process introuvable")
+    proc = item["proc"]
+    if proc.returncode is None:
+        proc.kill()
+        await proc.wait()
+        item["status"] = "killed"
+        item["exit_code"] = proc.returncode
+        item["updated_at"] = time.time()
+        _append_process_output(session_id, "\n[killed]\n")
+    return _public_process(item, include_output=True)
 
 
 @router.get("/files")
