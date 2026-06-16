@@ -15,6 +15,7 @@ RUN apt-get update \
 # Dependances d'abord (cache de build).
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+RUN python -m playwright install --with-deps chromium
 
 # Code applicatif.
 COPY . .

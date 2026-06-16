@@ -6,3 +6,4 @@ pydantic>=2.6
 pypdf>=4.0
 python-multipart>=0.0.9
 youtube-transcript-api>=0.6
+playwright>=1.44

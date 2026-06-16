@@ -148,6 +148,9 @@ def _strip_html(raw: str) -> str:
 
 
 _BROWSER_STATE: dict[str, dict[str, Any]] = {}
+_PW = None
+_PW_BROWSER = None
+_PW_SESSIONS: dict[str, dict[str, Any]] = {}
 
 
 def _browser_key(ctx: dict | None) -> str:
@@ -164,6 +167,16 @@ def _resolve_browser_url(url: str, ctx: dict | None) -> str:
         if base:
             return base.group(0) + url
     return url
+
+
+def _check_browser_url_allowed(url: str, ctx: dict | None) -> str:
+    target = _resolve_browser_url(url, ctx)
+    if not target.startswith(("http://", "https://")):
+        raise ValueError("URL invalide (http/https requis)")
+    host = re.sub(r"^https?://", "", target).split("/")[0].split(":")[0]
+    if not (ctx or {}).get("is_admin") and _is_private_host(host):
+        raise ValueError("Refuse : hote prive/interne (reserve aux administrateurs)")
+    return target
 
 
 def _html_title(raw: str) -> str:
@@ -220,12 +233,7 @@ def _html_forms(raw: str, base_url: str = "", limit: int = 10) -> list[dict[str,
 
 
 async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
-    target = _resolve_browser_url(url, ctx)
-    if not target.startswith(("http://", "https://")):
-        raise ValueError("URL invalide (http/https requis)")
-    host = re.sub(r"^https?://", "", target).split("/")[0].split(":")[0]
-    if not (ctx or {}).get("is_admin") and _is_private_host(host):
-        raise ValueError("Refuse : hote prive/interne (reserve aux administrateurs)")
+    target = _check_browser_url_allowed(url, ctx)
     try:
         async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
             r = await client.get(target, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
@@ -233,6 +241,151 @@ async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
     except httpx.HTTPError as e:
         raise ValueError(f"Erreur browser : {e}") from e
     return str(r.url), r.headers.get("content-type", ""), r.text
+
+
+async def _get_playwright_page(ctx: dict | None):
+    global _PW, _PW_BROWSER
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError as e:
+        raise RuntimeError("Playwright indisponible. Redeploie l'image Docker avec les dependances browser.") from e
+    if _PW is None:
+        _PW = await async_playwright().start()
+    if _PW_BROWSER is None or not _PW_BROWSER.is_connected():
+        _PW_BROWSER = await _PW.chromium.launch(headless=True, args=["--no-sandbox"])
+    key = _browser_key(ctx)
+    session = _PW_SESSIONS.get(key)
+    if not session:
+        context = await _PW_BROWSER.new_context(
+            viewport={"width": 1365, "height": 768},
+            ignore_https_errors=True,
+            user_agent="Mozilla/5.0 (Maltai Playwright)",
+        )
+        page = await context.new_page()
+        session = {"context": context, "page": page}
+        _PW_SESSIONS[key] = session
+    return session["page"]
+
+
+async def _playwright_snapshot(page, ctx: dict | None, prefix: str = "") -> str:
+    title = await page.title()
+    url = page.url
+    try:
+        text = await page.locator("body").inner_text(timeout=3000)
+    except Exception:
+        text = ""
+    links = await page.locator("a").evaluate_all(
+        """els => els.slice(0, 30).map(a => ({
+            text: (a.innerText || a.textContent || '').trim().slice(0, 120),
+            url: a.href || ''
+        })).filter(x => x.url)"""
+    )
+    forms = await page.locator("form").evaluate_all(
+        """forms => forms.slice(0, 10).map((form, index) => ({
+            index,
+            method: (form.method || 'GET').toUpperCase(),
+            action: form.action || location.href,
+            fields: Array.from(form.querySelectorAll('input, textarea, select')).slice(0, 30).map(el => ({
+                name: el.name || '',
+                type: el.type || el.tagName.toLowerCase()
+            })).filter(x => x.name)
+        }))"""
+    )
+    _BROWSER_STATE[_browser_key(ctx)] = {
+        "url": url,
+        "title": title,
+        "content_type": "playwright",
+        "text": text,
+        "links": links,
+        "forms": forms,
+    }
+    lines = []
+    if prefix:
+        lines.append(prefix)
+    lines += [f"URL: {url}", f"Title: {title or '-'}", "", "Texte:", text[:2500]]
+    if links:
+        lines += ["", "Liens:"]
+        lines += [f"- {(item.get('text') or item.get('url'))} -> {item.get('url')}" for item in links[:15]]
+    if forms:
+        lines += ["", "Formulaires:"]
+        lines += [
+            f"- #{form.get('index')} {form.get('method')} {form.get('action')} "
+            f"fields={', '.join(field.get('name', '') for field in form.get('fields', [])) or '-'}"
+            for form in forms[:6]
+        ]
+    return _truncate("\n".join(lines))
+
+
+async def tool_browser_open(args: dict, ctx: dict) -> str:
+    url = str(args.get("url", "")).strip()
+    wait_until = str(args.get("wait_until", "domcontentloaded"))
+    timeout = max(1000, min(int(args.get("timeout_ms", 20000)), 60000))
+    try:
+        target = _check_browser_url_allowed(url, ctx)
+        page = await _get_playwright_page(ctx)
+        await page.goto(target, wait_until=wait_until, timeout=timeout)
+        return await _playwright_snapshot(page, ctx, "Page ouverte avec Playwright.")
+    except Exception as e:
+        return f"Erreur browser_open : {e}"
+
+
+async def tool_browser_click(args: dict, ctx: dict) -> str:
+    selector = str(args.get("selector", "")).strip()
+    text = str(args.get("text", "")).strip()
+    timeout = max(1000, min(int(args.get("timeout_ms", 10000)), 60000))
+    try:
+        page = await _get_playwright_page(ctx)
+        if selector:
+            await page.locator(selector).first.click(timeout=timeout)
+        elif text:
+            await page.get_by_text(text, exact=False).first.click(timeout=timeout)
+        else:
+            return "selector ou text requis"
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=5000)
+        except Exception:
+            pass
+        return await _playwright_snapshot(page, ctx, "Click execute.")
+    except Exception as e:
+        return f"Erreur browser_click : {e}"
+
+
+async def tool_browser_type(args: dict, ctx: dict) -> str:
+    selector = str(args.get("selector", "")).strip()
+    label = str(args.get("label", "")).strip()
+    text = str(args.get("text", ""))
+    clear = bool(args.get("clear", True))
+    timeout = max(1000, min(int(args.get("timeout_ms", 10000)), 60000))
+    try:
+        page = await _get_playwright_page(ctx)
+        if not selector and not label:
+            return "selector ou label requis"
+        target = page.locator(selector).first if selector else page.get_by_label(label, exact=False).first
+        if clear:
+            await target.fill(text, timeout=timeout)
+        else:
+            await target.type(text, timeout=timeout)
+        return await _playwright_snapshot(page, ctx, "Texte saisi.")
+    except Exception as e:
+        return f"Erreur browser_type : {e}"
+
+
+async def tool_browser_screenshot(args: dict, ctx: dict) -> str:
+    full_page = bool(args.get("full_page", True))
+    name = str(args.get("path", "")).strip() or f"browser_{int(datetime.datetime.now().timestamp())}.png"
+    if not name.lower().endswith(".png"):
+        name += ".png"
+    safe_name = "".join(c for c in name.replace("\\", "/").split("/")[-1] if c.isalnum() or c in "-_.") or "browser.png"
+    try:
+        page = await _get_playwright_page(ctx)
+        out_dir = _user_workspace(ctx) / "browser_screenshots"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        target = out_dir / safe_name
+        await page.screenshot(path=str(target), full_page=full_page)
+        rel = target.relative_to(_user_workspace(ctx)).as_posix()
+        return f"Screenshot sauvegarde : {rel}\nURL: {page.url}"
+    except Exception as e:
+        return f"Erreur browser_screenshot : {e}"
 
 
 async def tool_browser_navigate(args: dict, ctx: dict) -> str:
@@ -1346,6 +1499,69 @@ TOOLS: dict[str, dict] = {
                     "data": {"type": "object", "description": "Champs a envoyer"},
                     "method": {"type": "string", "description": "GET ou POST optionnel"},
                     "action": {"type": "string", "description": "URL action optionnelle"},
+                },
+            },
+        },
+    },
+    "browser_open": {
+        "run": tool_browser_open,
+        "spec": {
+            "name": "browser_open",
+            "description": "Ouvre une page dans un vrai navigateur Chromium headless via Playwright.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL http/https a ouvrir"},
+                    "wait_until": {"type": "string", "description": "load | domcontentloaded | networkidle"},
+                    "timeout_ms": {"type": "integer"},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    "browser_click": {
+        "run": tool_browser_click,
+        "spec": {
+            "name": "browser_click",
+            "description": "Clique dans la page ouverte avec Playwright, par selecteur CSS ou texte visible.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "Selecteur CSS optionnel"},
+                    "text": {"type": "string", "description": "Texte visible optionnel"},
+                    "timeout_ms": {"type": "integer"},
+                },
+            },
+        },
+    },
+    "browser_type": {
+        "run": tool_browser_type,
+        "spec": {
+            "name": "browser_type",
+            "description": "Saisit du texte dans un champ via Playwright, par selecteur CSS ou label.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "Selecteur CSS optionnel"},
+                    "label": {"type": "string", "description": "Label accessible optionnel"},
+                    "text": {"type": "string"},
+                    "clear": {"type": "boolean"},
+                    "timeout_ms": {"type": "integer"},
+                },
+                "required": ["text"],
+            },
+        },
+    },
+    "browser_screenshot": {
+        "run": tool_browser_screenshot,
+        "spec": {
+            "name": "browser_screenshot",
+            "description": "Prend une capture PNG de la page Playwright ouverte et la sauvegarde dans le workspace.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Nom du fichier PNG optionnel"},
+                    "full_page": {"type": "boolean"},
                 },
             },
         },
