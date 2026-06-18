@@ -245,6 +245,7 @@ body {
 }
 .foot-btn:hover { opacity: 1; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .foot-danger:hover { color: #e05555 !important; background: rgba(224,85,85,0.1) !important; }
+.logout-btn span { display: none; }
 
 /* Buttons */
 .btn-primary {
@@ -1465,9 +1466,27 @@ select {
   }
 
   .sidebar-foot {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(44px, 1fr));
+    gap: 8px;
     padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
+
+  .logout-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 42px;
+    gap: 8px;
+    justify-content: center;
+    border: 1px solid rgba(224,85,85,0.26);
+    background: rgba(224,85,85,0.08);
+    color: #ff8f8f;
+    opacity: 1;
+    font-size: 13px;
+    font-weight: 750;
+  }
+
+  .logout-btn span { display: inline; }
 
   #overlay {
     z-index: 90;
