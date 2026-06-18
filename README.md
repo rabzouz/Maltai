@@ -17,14 +17,19 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 - **Mémoire vectorielle** : embeddings dans SQLite, recherche cosine pur Python
 - **MCP** : connecte des serveurs MCP distants (Streamable HTTP, JSON-RPC 2.0)
 - **Connecteurs** : bot Telegram natif + API externe à clé
+- **Browser automation** : navigateur texte + Playwright/Chromium headless
+- **Billing** : plans Basic/Premium/Admin, crédits, suivi tokens et coûts
 
 ## Fonctionnalités
 
 ### Interface
 - Sidebar style Odysseus : Chat, Discussions, Outils, Notes, Tâches, Deep Research, Librairie, Thème
+- Chaque section de sidebar s'ouvre dans une fenêtre dédiée, utilisable sur mobile
 - Composer flottant centré avec toggle Agent, nom du modèle, textarea auto-resize
 - Thème sombre avec accent teal (`#00d4c4`)
 - Markdown rendu avec code coloré (highlight.js), tableaux, citations
+- Footer d'usage sous les réponses : provider, modèle, mode, tokens, crédits ou statut admin
+- Console admin : terminal, explorateur de fichiers et gestion de process avec logs + kill
 
 ### Outils de l'agent
 
@@ -35,9 +40,15 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `list/read/write_file` | Fichiers du workspace (sandbox par user) | tous |
 | `web_search` | Recherche DuckDuckGo (sans clé API) | tous |
 | `web_fetch` | Lecture d'une page web + SSRF protection | tous |
+| `browser_navigate/snapshot/links` | Navigateur texte : ouvrir une page, extraire texte/liens/formulaires | tous |
+| `browser_form_list/submit` | Liste et soumission HTTP de formulaires simples | tous |
+| `browser_open/click/type/screenshot` | Automatisation Chromium via Playwright + captures PNG | tous |
 | `page_summary` | Résumé d'une page web | tous |
 | `http_request` | Requête HTTP vers une API publique | tous |
 | `memory_search` | Recherche dans la mémoire vectorielle | tous |
+| `memory_save` | Ajoute un souvenir explicite en mémoire vectorielle | tous |
+| `session_search` | Recherche dans les anciennes conversations | tous |
+| `patch_file` | Remplace un bloc de texte dans un fichier workspace | tous |
 | `wikipedia` | Résumé d'article Wikipédia (fr) | tous |
 | `weather` | Météo + prévisions 3 jours (Open-Meteo, sans clé) | tous |
 | `rss_fetch` | Derniers articles d'un flux RSS/Atom | tous |
@@ -50,6 +61,27 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `note_add/list/delete` | Notes persistantes | tous |
 | `todo_add/list/done` | Tâches avec statut | tous |
 | `mcp_*` | Outils des serveurs MCP connectés | tous |
+
+### Gestion Ollama intégrée
+Depuis **Réglages → Modèles Ollama** :
+- liste des modèles installés ;
+- téléchargement via l'API Ollama `/api/pull` avec barre de progression ;
+- suppression d'un modèle ;
+- fallback Docker vers `host.docker.internal` et `10.0.1.1`.
+
+### Console admin
+La console intégrée contient :
+- **Terminal** : commandes rapides `version`, `health`, `process`, `models`, commandes libres ;
+- **Fichiers** : navigation du workspace utilisateur, édition texte, téléchargement images/gros fichiers ;
+- **Process** : lancer une commande longue, suivre les logs, arrêter avec `Kill`.
+
+### Browser automation
+Deux niveaux sont disponibles :
+- **Léger HTTP** : `browser_snapshot`, `browser_links`, `browser_form_list`, `browser_submit` ;
+- **Réel Chromium** : `browser_open`, `browser_click`, `browser_type`, `browser_screenshot`.
+
+Les screenshots sont sauvegardés dans le workspace, par exemple :
+`browser_screenshots/aqua-reservation.png`, avec lien de téléchargement dans l'UI.
 
 ### Deep Research
 Enchaîne : plan de requêtes → recherches web → lecture des meilleures pages → rapport markdown structuré avec sources. Accessible via le panneau **Deep Research** dans la sidebar ou en mode 🛠 Agent.
@@ -67,6 +99,22 @@ Sécurité : webhook avec secret dans l'URL + header `X-Telegram-Bot-Api-Secret-
 
 ### Mémoire vectorielle
 Mémorise les conversations et rappelle le contexte pertinent d'une session à l'autre. Active en configurant un modèle d'embeddings sur le provider.
+
+Le panneau **Brain** permet :
+- lister les souvenirs ;
+- rechercher dans la mémoire ;
+- filtrer `user` / `assistant` ;
+- épingler / désépingler un souvenir ;
+- supprimer un souvenir précis ;
+- supprimer les résultats filtrés sans toucher aux souvenirs épinglés.
+
+### Plans, crédits et usage
+- `Basic` : chat principal.
+- `Premium` : outils agent.
+- `Admin` : accès complet, usage non facturé.
+
+Chaque réponse affiche un footer d'usage :
+`provider · modèle · Chat/Agent · tokens in/out · crédits · solde`.
 
 ## Démarrage rapide
 
@@ -114,17 +162,24 @@ core/
   auth.py           # PBKDF2 + cookies signés + seed admin
 src/
   llm.py            # client LLM compatible OpenAI (streaming + tool calls)
-  tools.py          # registre d'outils (32+ outils)
+  tools.py          # registre d'outils : fichiers, web, browser, code, mémoire, etc.
   agent.py          # boucle agentique multi-étapes
+  ollama.py         # client API Ollama
+  memory.py         # embeddings + rappel vectoriel
   telegram.py       # connecteur Telegram (webhook sécurisé)
   connector.py      # moteur partagé (Telegram, API externe)
 routes/
   auth.py           # login / logout / me / change-password
   providers.py      # CRUD providers + liste des modèles
+  ollama.py         # gestion modèles Ollama
+  memory.py         # Brain manager
+  terminal.py       # console admin, fichiers, process
   sessions.py       # sessions + messages
   chat.py           # chat simple ou agent, en streaming (SSE)
   notes.py          # notes & tâches (CRUD)
   tool_run.py       # exécution directe d'outils depuis l'UI
+  tools.py          # catalogue des outils disponibles
+  uploads.py        # uploads + téléchargement workspace
   telegram.py       # webhook Telegram + config
 static/
   index.html, style.css, js/app.js
@@ -135,8 +190,10 @@ data/               # app.db (gitignore)
 
 - `AUTH_ENABLED=true` par défaut
 - Workspace isolé par utilisateur (`data/workspace/<user_id>/`)
-- SSRF protection sur `web_fetch` et `page_summary`
+- SSRF protection sur `web_fetch`, `page_summary`, `http_request` et les outils browser pour les non-admins
 - Outils `shell` et `python_exec` réservés aux admins
+- Console admin réservée aux admins
+- Suppression mémoire filtrée protège les souvenirs épinglés
 - `SECURE_COOKIES=true` en production (HTTPS)
 - Sessions signées HMAC, pas de JWT tiers
 
