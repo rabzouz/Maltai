@@ -1723,6 +1723,8 @@ function bindEvents() {
 
   async function refreshBrainPanel() {
     const status = $("#brain-memory-status");
+    const list = $("#brain-memory-list");
+    const query = $("#brain-search")?.value.trim() || "";
     if (status) status.textContent = "chargement...";
     try {
       const m = await fetch("/api/memory").then((r) => r.json());
@@ -1731,8 +1733,36 @@ function bindEvents() {
           ? `${m.count} souvenir(s) memorise(s) · top-${m.top_k} rappeles par message.`
           : "Memoire desactivee (MEMORY_ENABLED=false).";
       }
+      if (list) {
+        const data = await api(`/api/memory/items?limit=80&q=${encodeURIComponent(query)}`);
+        list.innerHTML = "";
+        const items = data.items || [];
+        if (!items.length) {
+          list.innerHTML = '<p class="hint">Aucun souvenir.</p>';
+        } else {
+          items.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "memory-item";
+            const when = new Date((item.created_at || 0) * 1000).toLocaleString("fr-FR");
+            const content = String(item.content || "");
+            row.innerHTML = `<div class="memory-meta">${esc(item.role || "memory")} · ${esc(when)} · ${esc(item.id.slice(0, 8))}</div>
+              <div class="memory-content">${esc(content.length > 420 ? content.slice(0, 420) + "…" : content)}</div>`;
+            const del = document.createElement("button");
+            del.className = "section-mini-btn";
+            del.textContent = "supprimer";
+            del.onclick = async () => {
+              if (!confirm("Supprimer ce souvenir ?")) return;
+              await fetch(`/api/memory/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+              await refreshBrainPanel();
+            };
+            row.appendChild(del);
+            list.appendChild(row);
+          });
+        }
+      }
     } catch {
       if (status) status.textContent = "Memoire indisponible.";
+      if (list) list.innerHTML = '<p class="hint">Impossible de charger les souvenirs.</p>';
     }
     loadToolsPanel("#brain-tools-preview");
   }
@@ -1837,6 +1867,18 @@ function bindEvents() {
   if (brainSettings) brainSettings.onclick = openSettingsModal;
   const brainRefresh = $("#brain-refresh");
   if (brainRefresh) brainRefresh.onclick = refreshBrainPanel;
+  const brainSearch = $("#brain-search");
+  const brainSearchBtn = $("#brain-search-btn");
+  if (brainSearchBtn) brainSearchBtn.onclick = refreshBrainPanel;
+  if (brainSearch) brainSearch.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") refreshBrainPanel();
+  });
+  const brainClear = $("#brain-clear");
+  if (brainClear) brainClear.onclick = async () => {
+    if (!confirm("Effacer toute la mémoire vectorielle ? Cette action est irréversible.")) return;
+    await fetch("/api/memory", { method: "DELETE" });
+    await refreshBrainPanel();
+  };
   const emailSettings = $("#email-settings");
   if (emailSettings) emailSettings.onclick = openSettingsModal;
   const modelsSettings = $("#models-settings");

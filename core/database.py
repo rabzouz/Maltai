@@ -482,6 +482,47 @@ def iter_memories(user_id: str | None):
         conn.close()
 
 
+def list_memories(user_id: str | None, limit: int = 50, query: str = "") -> list[dict[str, Any]]:
+    conn = connect()
+    try:
+        lim = max(1, min(int(limit), 200))
+        q = (query or "").strip().lower()
+        if user_id is None:
+            sql = "SELECT id, session_id, role, content, dim, created_at FROM memories WHERE user_id IS NULL"
+            params: list[Any] = []
+        else:
+            sql = "SELECT id, session_id, role, content, dim, created_at FROM memories WHERE user_id = ?"
+            params = [user_id]
+        if q:
+            sql += " AND lower(content) LIKE ?"
+            params.append(f"%{q}%")
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        params.append(lim)
+        rows = conn.execute(sql, tuple(params)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def delete_memory(user_id: str | None, memory_id: str) -> bool:
+    conn = connect()
+    try:
+        if user_id is None:
+            cur = conn.execute(
+                "DELETE FROM memories WHERE id=? AND user_id IS NULL",
+                (memory_id,),
+            )
+        else:
+            cur = conn.execute(
+                "DELETE FROM memories WHERE id=? AND user_id=?",
+                (memory_id, user_id),
+            )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
 def count_memories(user_id: str | None) -> int:
     conn = connect()
     try:

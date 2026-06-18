@@ -844,6 +844,36 @@ select {
   cursor: pointer; font-size: 12px; padding: 2px 4px;
 }
 .panel-item .p-del:hover { color: var(--accent); }
+.memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 6px 8px;
+}
+.memory-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 9px;
+}
+.memory-meta {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.memory-content {
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.memory-item .section-mini-btn {
+  align-self: flex-start;
+}
 
 /* Etat vide : style Odysseus */
 .empty-state h1 { color: var(--accent); font-family: var(--mono); letter-spacing: 1px; }
