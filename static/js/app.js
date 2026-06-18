@@ -472,14 +472,16 @@ function addUsageFooter(bubble, usage) {
   const model = usage.model ? String(usage.model) : state.model || "modèle";
   const provider = usage.provider ? String(usage.provider) : "";
   const balance = usage.balance == null ? "∞" : formatUsageNumber(usage.balance);
+  const billingBits = usage.balance == null
+    ? "<span>Admin · usage non facturé</span>"
+    : `<span>-${formatUsageNumber(spent)} crédits</span><span>solde ${esc(balance)}</span>`;
   footer.innerHTML = `
     <span>${esc(provider ? `${provider} · ${model}` : model)}</span>
     <span>${usage.agent ? "Agent" : "Chat"}</span>
     <span>${formatUsageNumber(input)} in</span>
     <span>${formatUsageNumber(output)} out</span>
     <span>${formatUsageNumber(total)} tokens</span>
-    <span>-${formatUsageNumber(spent)} crédits</span>
-    <span>solde ${esc(balance)}</span>
+    ${billingBits}
   `;
   bubble.after(footer);
 }
