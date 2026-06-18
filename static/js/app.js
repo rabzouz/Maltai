@@ -966,7 +966,7 @@ function addToolCard(name, argsPreview) {
 
 function workspaceDownloadLinks(text) {
   const paths = new Set();
-  const re = /(?:Screenshot sauvegarde\s*:\s*)?((?:browser_screenshots|notes|exports|files)\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|pdf|zip))/gi;
+  const re = /(?:Screenshot sauvegarde\s*:\s*)?((?:browser_screenshots|notes|exports|files)\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|html|pdf|zip))/gi;
   let m;
   while ((m = re.exec(text || ""))) {
     paths.add(m[1].replace(/[).,;:]+$/, ""));

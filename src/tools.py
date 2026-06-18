@@ -374,7 +374,10 @@ def _extract_json_ld(raw: str, limit: int = 5) -> list[Any]:
 def _safe_export_filename(name: str, fmt: str) -> str:
     name = re.sub(r"[^\w.\-]+", "_", (name or "scrape").strip())[:100] or "scrape"
     ext = "." + fmt
-    if not name.lower().endswith(ext):
+    suffix = Path(name).suffix.lower()
+    if suffix != ext:
+        if suffix in {".json", ".csv", ".md", ".txt", ".html"}:
+            name = name[: -len(suffix)]
         name += ext
     return name
 
@@ -440,12 +443,61 @@ def _scrape_to_markdown(data: dict[str, Any]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _scrape_to_text(data: dict[str, Any]) -> str:
+    lines = [
+        str(data.get("title") or "Scraping web"),
+        "=" * 72,
+        f"URL: {data.get('url', '')}",
+        f"Status: {data.get('status', '')}",
+        "",
+    ]
+    fields = data.get("fields") or {}
+    if isinstance(fields, dict):
+        for key, value in fields.items():
+            lines.append(str(key).upper())
+            if isinstance(value, list):
+                lines.extend([f"- {v}" for v in value])
+            else:
+                lines.append(str(value))
+            lines.append("")
+    return "\n".join(lines).strip() + "\n"
+
+
+def _scrape_to_html(data: dict[str, Any]) -> str:
+    title = html.escape(str(data.get("title") or "Scraping web"))
+    parts = [
+        "<!doctype html>",
+        "<html lang=\"fr\"><head><meta charset=\"utf-8\">",
+        f"<title>{title}</title>",
+        "<style>body{font-family:Arial,sans-serif;max-width:980px;margin:32px auto;padding:0 18px;line-height:1.5;color:#16202a}h1,h2{color:#0b3b42}code,pre{background:#f4f6f8;padding:12px;border-radius:8px;display:block;overflow:auto}li{margin:4px 0}</style>",
+        "</head><body>",
+        f"<h1>{title}</h1>",
+        f"<p><strong>URL:</strong> {html.escape(str(data.get('url', '')))}</p>",
+        f"<p><strong>Status:</strong> {html.escape(str(data.get('status', '')))}</p>",
+    ]
+    fields = data.get("fields") or {}
+    if isinstance(fields, dict) and fields:
+        parts.append("<h2>Champs extraits</h2>")
+        for key, value in fields.items():
+            parts.append(f"<h3>{html.escape(str(key))}</h3>")
+            if isinstance(value, list):
+                parts.append("<ul>")
+                parts.extend([f"<li>{html.escape(str(v))}</li>" for v in value])
+                parts.append("</ul>")
+            else:
+                parts.append(f"<p>{html.escape(str(value))}</p>")
+    parts.append("<h2>JSON complet</h2>")
+    parts.append(f"<pre>{html.escape(json.dumps(data, ensure_ascii=False, indent=2))}</pre>")
+    parts.append("</body></html>")
+    return "\n".join(parts)
+
+
 def _save_scrape_export(data: dict[str, Any], args: dict, ctx: dict) -> str:
     save_as = str(args.get("save_as", "")).strip()
     if not save_as:
         return ""
     fmt = str(args.get("format", "") or Path(save_as).suffix.lstrip(".") or "json").lower()
-    if fmt not in {"json", "csv", "md"}:
+    if fmt not in {"json", "csv", "md", "txt", "html"}:
         fmt = "json"
     filename = _safe_export_filename(save_as, fmt)
     rel = f"exports/{filename}"
@@ -455,6 +507,10 @@ def _save_scrape_export(data: dict[str, Any], args: dict, ctx: dict) -> str:
         content = _scrape_to_csv(data)
     elif fmt == "md":
         content = _scrape_to_markdown(data)
+    elif fmt == "txt":
+        content = _scrape_to_text(data)
+    elif fmt == "html":
+        content = _scrape_to_html(data)
     else:
         content = json.dumps(data, ensure_ascii=False, indent=2)
     target.write_text(content, encoding="utf-8")
@@ -2050,8 +2106,8 @@ TOOLS: dict[str, dict] = {
                         "type": "object",
                         "description": "Options booleennes: metadata, headings, links, images, tables, json_ld, text",
                     },
-                    "save_as": {"type": "string", "description": "Nom du fichier a creer dans exports/ (ex: arf-reparation.json, data.csv, rapport.md)"},
-                    "format": {"type": "string", "description": "Format d'export: json, csv ou md"},
+                    "save_as": {"type": "string", "description": "Nom du fichier a creer dans exports/ (ex: arf-reparation.json, data.csv, rapport.md, page.txt, rapport.html)"},
+                    "format": {"type": "string", "description": "Format d'export: json, csv, md, txt ou html"},
                     "limit": {"type": "integer", "description": "Nombre maximum d'elements par liste, max 100"},
                 },
                 "required": ["url"],

@@ -94,7 +94,7 @@ Les screenshots sont sauvegardés dans le workspace, par exemple :
 `web_scrape` retourne du JSON exploitable depuis une page HTML :
 - `metadata`, `headings`, `links`, `images`, `tables`, `json_ld` ;
 - champs personnalisés avec sélecteurs simples : `h1`, `.price`, `#main`, `a[href]`, `meta[name=description]`.
-- export optionnel dans le workspace avec `save_as` + `format` (`json`, `csv`, `md`), puis téléchargement depuis l'UI.
+- export optionnel dans le workspace avec `save_as` + `format` (`json`, `csv`, `md`, `txt`, `html`), puis téléchargement depuis l'UI.
 
 Exemple :
 ```json
@@ -109,6 +109,8 @@ Exemple :
   "format": "json"
 }
 ```
+
+Extensions possibles : `.json` pour données brutes, `.csv` pour tableur, `.md` pour rapport Markdown, `.txt` pour texte simple, `.html` pour rapport ouvrable dans un navigateur.
 
 ### Deep Research
 Enchaîne : plan de requêtes → recherches web → lecture des meilleures pages → rapport markdown structuré avec sources. Accessible via le panneau **Deep Research** dans la sidebar ou en mode 🛠 Agent.
