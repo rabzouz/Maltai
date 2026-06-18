@@ -58,6 +58,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `code_execute` | Code Python sandbox isolé, timeout 10s, imports système bloqués | tous |
 | `python_exec` | Code Python isolé (`-I`), timeout 30s | admin |
 | `shell` | Commande shell, timeout 30s | admin |
+| `git_status/branch/log/diff/show` | Inspection Git read-only de l'installation Maltai | admin |
 | `note_add/list/delete` | Notes persistantes | tous |
 | `todo_add/list/done` | Tâches avec statut | tous |
 | `mcp_*` | Outils des serveurs MCP connectés | tous |
@@ -74,6 +75,8 @@ La console intégrée contient :
 - **Terminal** : commandes rapides `version`, `health`, `process`, `models`, commandes libres ;
 - **Fichiers** : navigation du workspace utilisateur, édition texte, téléchargement images/gros fichiers ;
 - **Process** : lancer une commande longue, suivre les logs, arrêter avec `Kill`.
+
+Les outils Git admin (`git_status`, `git_branch`, `git_log`, `git_diff`, `git_show`) sont en lecture seule : ils servent à vérifier la version installée, la branche, les derniers commits et les changements locaux sans exposer de commit/push aux utilisateurs.
 
 ### Browser automation
 Deux niveaux sont disponibles :
@@ -191,7 +194,7 @@ data/               # app.db (gitignore)
 - `AUTH_ENABLED=true` par défaut
 - Workspace isolé par utilisateur (`data/workspace/<user_id>/`)
 - SSRF protection sur `web_fetch`, `page_summary`, `http_request` et les outils browser pour les non-admins
-- Outils `shell` et `python_exec` réservés aux admins
+- Outils sensibles (`shell`, `python_exec`, `git_*`) réservés aux admins
 - Console admin réservée aux admins
 - Suppression mémoire filtrée protège les souvenirs épinglés
 - `SECURE_COOKIES=true` en production (HTTPS)

@@ -29,6 +29,8 @@ async def run_tool(request: Request, body: ToolRunIn):
         raise HTTPException(400, f"Outil inconnu : {body.tool}")
     is_admin = bool(user.get("is_admin"))
     plan = plans.normalize_plan(user.get("plan"), is_admin)
+    if body.tool in plans.ADMIN_TOOLS and not is_admin:
+        raise HTTPException(403, "Administrateur requis pour utiliser cet outil")
     if not plans.tool_allowed(body.tool, plan, is_admin):
         raise HTTPException(403, "Plan premium requis pour utiliser cet outil")
     cost = plans.tool_credit_cost(body.tool, is_admin)

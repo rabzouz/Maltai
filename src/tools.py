@@ -26,7 +26,7 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 
-from core.config import DATA_DIR
+from core.config import BASE_DIR, DATA_DIR
 from core import plans
 
 WORKSPACE = DATA_DIR / "workspace"
@@ -597,6 +597,94 @@ async def tool_shell(args: dict, ctx: dict) -> str:
         return "Timeout (30s) — commande interrompue"
     except OSError as e:
         return f"Erreur shell : {e}"
+
+
+# --- Git read-only (admin uniquement) ----------------------------------------
+
+def _safe_git_ref(value: str, default: str = "HEAD") -> str:
+    ref = (value or default).strip()[:100] or default
+    if ref.startswith("-") or not re.fullmatch(r"[A-Za-z0-9._/@:+-]+", ref):
+        raise ValueError("Reference git invalide")
+    return ref
+
+
+def _safe_git_pathspec(value: str) -> str | None:
+    raw = (value or "").strip().replace("\\", "/")
+    if not raw:
+        return None
+    if raw.startswith("/") or raw.startswith("../") or "/../" in raw or raw == "..":
+        raise ValueError("Chemin git invalide")
+    return raw
+
+
+async def _run_git(args: list[str], timeout: int = 12) -> str:
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "git", *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=str(BASE_DIR),
+        )
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        text = out.decode(errors="replace").strip()
+        return _truncate(f"[exit {proc.returncode}]\n{text}" if text else f"[exit {proc.returncode}]")
+    except asyncio.TimeoutError:
+        proc.kill()
+        return "Timeout git — commande interrompue"
+    except OSError as e:
+        return f"Erreur git : {e}"
+
+
+async def tool_git_status(args: dict, ctx: dict) -> str:
+    if not ctx.get("is_admin"):
+        return "Refuse : outil git reserve aux administrateurs"
+    return await _run_git(["status", "--short", "--branch"])
+
+
+async def tool_git_branch(args: dict, ctx: dict) -> str:
+    if not ctx.get("is_admin"):
+        return "Refuse : outil git reserve aux administrateurs"
+    branch = await _run_git(["branch", "--show-current"])
+    commit = await _run_git(["rev-parse", "--short", "HEAD"])
+    remote = await _run_git(["remote", "-v"])
+    return _truncate(f"Branche:\n{branch}\n\nCommit:\n{commit}\n\nRemote:\n{remote}")
+
+
+async def tool_git_log(args: dict, ctx: dict) -> str:
+    if not ctx.get("is_admin"):
+        return "Refuse : outil git reserve aux administrateurs"
+    limit = max(1, min(30, int(args.get("limit") or 10)))
+    return await _run_git(["log", "--oneline", "--decorate", f"-n{limit}"])
+
+
+async def tool_git_diff(args: dict, ctx: dict) -> str:
+    if not ctx.get("is_admin"):
+        return "Refuse : outil git reserve aux administrateurs"
+    try:
+        path = _safe_git_pathspec(str(args.get("path", "")))
+    except ValueError as e:
+        return str(e)
+    cmd = ["diff", "--no-ext-diff"]
+    if bool(args.get("stat")):
+        cmd.append("--stat")
+    if path:
+        cmd.extend(["--", path])
+    return await _run_git(cmd, timeout=15)
+
+
+async def tool_git_show(args: dict, ctx: dict) -> str:
+    if not ctx.get("is_admin"):
+        return "Refuse : outil git reserve aux administrateurs"
+    try:
+        ref = _safe_git_ref(str(args.get("ref", "HEAD")))
+    except ValueError as e:
+        return str(e)
+    mode = str(args.get("mode", "summary")).strip().lower()
+    if mode == "patch":
+        cmd = ["show", "--no-ext-diff", "--stat", "--patch", ref]
+    else:
+        cmd = ["show", "--no-ext-diff", "--stat", "--oneline", "--decorate", ref]
+    return await _run_git(cmd, timeout=15)
 
 
 
@@ -1586,6 +1674,61 @@ TOOLS: dict[str, dict] = {
             "parameters": {"type": "object", "properties": {}},
         },
     },
+    "git_status": {
+        "run": tool_git_status,
+        "spec": {
+            "name": "git_status",
+            "description": "Affiche l'etat git read-only de l'installation Maltai (ADMIN seulement).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    "git_branch": {
+        "run": tool_git_branch,
+        "spec": {
+            "name": "git_branch",
+            "description": "Affiche branche, commit courant et remote git (ADMIN seulement).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    "git_log": {
+        "run": tool_git_log,
+        "spec": {
+            "name": "git_log",
+            "description": "Liste les derniers commits git read-only (ADMIN seulement).",
+            "parameters": {
+                "type": "object",
+                "properties": {"limit": {"type": "integer", "description": "Nombre de commits, max 30"}},
+            },
+        },
+    },
+    "git_diff": {
+        "run": tool_git_diff,
+        "spec": {
+            "name": "git_diff",
+            "description": "Affiche le diff git read-only, optionnellement limite a un fichier (ADMIN seulement).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin relatif optionnel"},
+                    "stat": {"type": "boolean", "description": "Afficher seulement les statistiques"},
+                },
+            },
+        },
+    },
+    "git_show": {
+        "run": tool_git_show,
+        "spec": {
+            "name": "git_show",
+            "description": "Affiche un commit git en lecture seule (ADMIN seulement).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ref": {"type": "string", "description": "Reference git, defaut HEAD"},
+                    "mode": {"type": "string", "description": "summary ou patch"},
+                },
+            },
+        },
+    },
     "http_request": {
         "run": tool_http_request,
         "spec": {
@@ -1926,6 +2069,8 @@ async def execute_tool(name: str, args: dict, ctx: dict) -> str:
     tool = TOOLS.get(name)
     if not tool:
         return f"Outil inconnu : {name}"
+    if name in plans.ADMIN_TOOLS and not bool(ctx.get("is_admin")):
+        return "Administrateur requis pour utiliser cet outil."
     if not plans.tool_allowed(name, ctx.get("plan"), bool(ctx.get("is_admin"))):
         return "Premium requis pour utiliser les outils de l'agent."
     runner: Callable[[dict, dict], Awaitable[str]] = tool["run"]

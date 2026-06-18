@@ -22,7 +22,7 @@ async def list_tools(request: Request):
 
     native = []
     for name, t in tools.TOOLS.items():
-        admin_only = name in ("shell", "python_exec")
+        admin_only = name in plans.ADMIN_TOOLS
         if not plans.tool_allowed(name, plan, is_admin):
             continue
         native.append({

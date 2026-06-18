@@ -3,7 +3,15 @@ from __future__ import annotations
 
 VALID_PLANS = {"basic", "premium", "admin"}
 PREMIUM_PLANS = {"premium", "admin"}
-ADMIN_TOOLS = {"shell", "python_exec"}
+ADMIN_TOOLS = {
+    "shell",
+    "python_exec",
+    "git_status",
+    "git_branch",
+    "git_log",
+    "git_diff",
+    "git_show",
+}
 TOOL_CREDIT_COSTS = {
     "calculator": 2,
     "get_datetime": 1,
