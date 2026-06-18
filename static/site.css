@@ -316,7 +316,7 @@ h1 {
   padding: 26px 0 12px;
 }
 
-.metrics div, .feature-grid article, .plan-list div, .install pre,
+.metrics div, .feature-grid article, .plan-list div, .install pre, .release-card,
 .workflow-list div, .usecase-grid div, .security-grid div, .final-cta {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -478,6 +478,37 @@ h3 {
 
 .install .primary-link {
   justify-self: start;
+}
+
+.release-card {
+  margin-top: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+  border-color: rgba(0, 212, 196, 0.3);
+}
+
+.release-card > span {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.release-card strong {
+  font-size: 24px;
+}
+
+.release-card p {
+  margin: 0;
+}
+
+.release-actions, .install-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .final-cta {
