@@ -41,6 +41,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `list/read/write_file` | Fichiers du workspace (sandbox par user) | tous |
 | `web_search` | Recherche DuckDuckGo (sans clé API) | tous |
 | `web_fetch` | Lecture d'une page web + SSRF protection | tous |
+| `web_scrape` | Scraping HTML structuré : metadata, titres, liens, images, tables, JSON-LD, champs par sélecteurs | tous |
 | `browser_navigate/snapshot/links` | Navigateur texte : ouvrir une page, extraire texte/liens/formulaires | tous |
 | `browser_form_list/submit` | Liste et soumission HTTP de formulaires simples | tous |
 | `browser_open/click/type/screenshot` | Automatisation Chromium via Playwright + captures PNG | tous |
@@ -88,6 +89,23 @@ Deux niveaux sont disponibles :
 
 Les screenshots sont sauvegardés dans le workspace, par exemple :
 `browser_screenshots/page-example.png`, avec lien de téléchargement dans l'UI.
+
+### Scraping structuré
+`web_scrape` retourne du JSON exploitable depuis une page HTML :
+- `metadata`, `headings`, `links`, `images`, `tables`, `json_ld` ;
+- champs personnalisés avec sélecteurs simples : `h1`, `.price`, `#main`, `a[href]`, `meta[name=description]`.
+
+Exemple :
+```json
+{
+  "url": "https://example.com",
+  "fields": {
+    "title": "h1",
+    "links": { "selector": "a", "attr": "href", "all": true }
+  },
+  "include": { "metadata": true, "headings": true, "links": true, "json_ld": true }
+}
+```
 
 ### Deep Research
 Enchaîne : plan de requêtes → recherches web → lecture des meilleures pages → rapport markdown structuré avec sources. Accessible via le panneau **Deep Research** dans la sidebar ou en mode 🛠 Agent.

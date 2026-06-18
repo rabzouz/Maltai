@@ -22,6 +22,7 @@ TOOL_CREDIT_COSTS = {
     "code_execute": 40,
     "web_search": 25,
     "web_fetch": 25,
+    "web_scrape": 35,
     "browser_navigate": 30,
     "browser_snapshot": 20,
     "browser_links": 10,

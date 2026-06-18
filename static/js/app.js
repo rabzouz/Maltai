@@ -680,6 +680,15 @@ const DIRECT_TOOL_EXAMPLES = {
   code_execute: { code: "print('Bonjour Maltai')\nprint(2 + 2)" },
   web_search: { query: "actualité intelligence artificielle France" },
   web_fetch: { url: "https://example.com" },
+  web_scrape: {
+    url: "https://example.com",
+    fields: {
+      title: "h1",
+      links: { selector: "a", attr: "href", all: true }
+    },
+    include: { metadata: true, headings: true, links: true, json_ld: true },
+    limit: 10
+  },
   browser_navigate: { url: "https://example.com" },
   browser_snapshot: { url: "https://maltai.fr" },
   browser_links: {},

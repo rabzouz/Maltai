@@ -21,6 +21,7 @@ import re
 import socket
 import sys
 import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin
 from typing import Any, Awaitable, Callable
@@ -231,6 +232,218 @@ def _html_forms(raw: str, base_url: str = "", limit: int = 10) -> list[dict[str,
             "fields": inputs[:30],
         })
     return forms
+
+
+class _ScrapeHTMLParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.nodes: list[dict[str, Any]] = []
+        self.stack: list[int] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        node = {
+            "tag": tag.lower(),
+            "attrs": {k.lower(): (v or "") for k, v in attrs},
+            "text": "",
+            "children": [],
+        }
+        idx = len(self.nodes)
+        if self.stack:
+            self.nodes[self.stack[-1]]["children"].append(idx)
+        self.nodes.append(node)
+        if tag.lower() not in {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}:
+            self.stack.append(idx)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        while self.stack:
+            idx = self.stack.pop()
+            if self.nodes[idx]["tag"] == tag:
+                break
+
+    def handle_data(self, data: str) -> None:
+        if self.stack and data.strip():
+            self.nodes[self.stack[-1]]["text"] += data
+
+
+def _node_text(nodes: list[dict[str, Any]], idx: int) -> str:
+    node = nodes[idx]
+    parts = [node.get("text", "")]
+    for child in node.get("children", []):
+        parts.append(_node_text(nodes, child))
+    return re.sub(r"\s+", " ", html.unescape(" ".join(parts))).strip()
+
+
+def _parse_selector(selector: str) -> dict[str, str]:
+    selector = selector.strip()
+    if not selector:
+        return {}
+    selector = selector.split()[0]
+    parsed: dict[str, str] = {}
+    attr = re.search(r"\[([A-Za-z0-9_-]+)(?:=['\"]?([^'\"]+)['\"]?)?\]", selector)
+    if attr:
+        parsed["attr"] = attr.group(1).lower()
+        if attr.group(2) is not None:
+            parsed["attr_value"] = attr.group(2)
+        selector = selector[:attr.start()] + selector[attr.end():]
+    node_id = re.search(r"#([A-Za-z0-9_-]+)", selector)
+    if node_id:
+        parsed["id"] = node_id.group(1)
+        selector = selector.replace(node_id.group(0), "")
+    klass = re.search(r"\.([A-Za-z0-9_-]+)", selector)
+    if klass:
+        parsed["class"] = klass.group(1)
+        selector = selector.replace(klass.group(0), "")
+    tag = selector.strip().lower()
+    if tag:
+        parsed["tag"] = tag
+    return parsed
+
+
+def _matches_selector(node: dict[str, Any], selector: str) -> bool:
+    parsed = _parse_selector(selector)
+    if not parsed:
+        return False
+    attrs = node.get("attrs", {})
+    if parsed.get("tag") and node.get("tag") != parsed["tag"]:
+        return False
+    if parsed.get("id") and attrs.get("id") != parsed["id"]:
+        return False
+    if parsed.get("class"):
+        classes = set((attrs.get("class") or "").split())
+        if parsed["class"] not in classes:
+            return False
+    if parsed.get("attr"):
+        if parsed["attr"] not in attrs:
+            return False
+        if parsed.get("attr_value") is not None and attrs.get(parsed["attr"]) != parsed["attr_value"]:
+            return False
+    return True
+
+
+def _extract_by_selector(nodes: list[dict[str, Any]], selector: str, attr: str = "text", all_items: bool = False, limit: int = 20) -> Any:
+    values = []
+    for idx, node in enumerate(nodes):
+        if not _matches_selector(node, selector):
+            continue
+        value = _node_text(nodes, idx) if attr == "text" else node.get("attrs", {}).get(attr.lower(), "")
+        if value:
+            values.append(value)
+        if len(values) >= limit:
+            break
+    return values if all_items else (values[0] if values else "")
+
+
+def _extract_tables(raw: str, limit: int = 3) -> list[dict[str, Any]]:
+    tables = []
+    for table_raw in re.findall(r"<table\b[^>]*>(.*?)</table>", raw, re.I | re.S)[:limit]:
+        rows = []
+        for row_raw in re.findall(r"<tr\b[^>]*>(.*?)</tr>", table_raw, re.I | re.S):
+            cells = re.findall(r"<t[hd]\b[^>]*>(.*?)</t[hd]>", row_raw, re.I | re.S)
+            row = [_strip_html(c) for c in cells]
+            if row:
+                rows.append(row)
+        if rows:
+            tables.append({"rows": rows[:30]})
+    return tables
+
+
+def _extract_json_ld(raw: str, limit: int = 5) -> list[Any]:
+    items = []
+    for block in re.findall(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', raw, re.I | re.S)[:limit]:
+        try:
+            items.append(json.loads(html.unescape(block.strip())))
+        except json.JSONDecodeError:
+            continue
+    return items
+
+
+async def tool_web_scrape(args: dict, ctx: dict) -> str:
+    url = str(args.get("url", "")).strip()
+    if not url.startswith(("http://", "https://")):
+        return "Erreur : URL http/https requise."
+    host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0]
+    if not ctx.get("is_admin") and _is_private_host(host):
+        return "Refuse : hote prive/interne (reserve aux administrateurs)"
+    limit = max(1, min(100, int(args.get("limit") or 30)))
+    fields = args.get("fields") or {}
+    include = args.get("include") or {}
+    if not isinstance(fields, dict):
+        fields = {}
+    if not isinstance(include, dict):
+        include = {}
+    try:
+        async with httpx.AsyncClient(
+            timeout=25,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; MaltaiScraper/1.0)"},
+        ) as client:
+            r = await client.get(url)
+        if r.status_code >= 400:
+            return f"Erreur HTTP {r.status_code} sur {url}"
+    except httpx.HTTPError as e:
+        return f"Erreur reseau : {e}"
+
+    raw = r.text
+    parser = _ScrapeHTMLParser()
+    parser.feed(raw)
+    nodes = parser.nodes
+    result: dict[str, Any] = {
+        "url": str(r.url),
+        "status": r.status_code,
+        "content_type": r.headers.get("content-type", ""),
+        "title": _html_title(raw),
+    }
+    metas = {}
+    for node in nodes:
+        if node.get("tag") != "meta":
+            continue
+        attrs = node.get("attrs", {})
+        key = attrs.get("name") or attrs.get("property")
+        if key and attrs.get("content"):
+            metas[key] = attrs["content"]
+    if include.get("metadata", True):
+        result["metadata"] = metas
+    if include.get("headings", True):
+        result["headings"] = {
+            f"h{level}": [_node_text(nodes, i) for i, n in enumerate(nodes) if n.get("tag") == f"h{level}"][:limit]
+            for level in range(1, 4)
+        }
+    if include.get("links", True):
+        result["links"] = [
+            {"text": _node_text(nodes, i), "url": urljoin(str(r.url), n.get("attrs", {}).get("href", ""))}
+            for i, n in enumerate(nodes)
+            if n.get("tag") == "a" and n.get("attrs", {}).get("href")
+        ][:limit]
+    if include.get("images", False):
+        result["images"] = [
+            {"alt": n.get("attrs", {}).get("alt", ""), "src": urljoin(str(r.url), n.get("attrs", {}).get("src", ""))}
+            for n in nodes
+            if n.get("tag") == "img" and n.get("attrs", {}).get("src")
+        ][:limit]
+    if include.get("tables", False):
+        result["tables"] = _extract_tables(raw)
+    if include.get("json_ld", True):
+        result["json_ld"] = _extract_json_ld(raw)
+    if include.get("text", False):
+        result["text"] = _strip_html(raw)[:4000]
+
+    extracted: dict[str, Any] = {}
+    for name, spec in fields.items():
+        if isinstance(spec, str):
+            selector, attr_name, all_items = spec, "text", False
+        elif isinstance(spec, dict):
+            selector = str(spec.get("selector", ""))
+            attr_name = str(spec.get("attr", "text"))
+            all_items = bool(spec.get("all"))
+        else:
+            continue
+        if selector:
+            extracted[str(name)] = _extract_by_selector(nodes, selector, attr=attr_name, all_items=all_items, limit=limit)
+    if extracted:
+        result["fields"] = extracted
+
+    return _truncate(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
@@ -1709,6 +1922,29 @@ TOOLS: dict[str, dict] = {
             "parameters": {
                 "type": "object",
                 "properties": {"url": {"type": "string"}},
+                "required": ["url"],
+            },
+        },
+    },
+    "web_scrape": {
+        "run": tool_web_scrape,
+        "spec": {
+            "name": "web_scrape",
+            "description": "Scrape une page web et extrait des donnees structurees JSON : metadata, titres, liens, images, tables, JSON-LD et champs via selecteurs CSS simples.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL http/https a scraper"},
+                    "fields": {
+                        "type": "object",
+                        "description": "Champs a extraire. Ex: {\"titre\":\"h1\", \"prix\":{\"selector\":\".price\", \"attr\":\"text\"}, \"liens\":{\"selector\":\"a\", \"attr\":\"href\", \"all\":true}}",
+                    },
+                    "include": {
+                        "type": "object",
+                        "description": "Options booleennes: metadata, headings, links, images, tables, json_ld, text",
+                    },
+                    "limit": {"type": "integer", "description": "Nombre maximum d'elements par liste, max 100"},
+                },
                 "required": ["url"],
             },
         },
