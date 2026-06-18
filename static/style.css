@@ -302,6 +302,24 @@ select {
 .msg-row.user .bubble { background: var(--user-bubble); }
 .msg-row.assistant .bubble { background: transparent; padding-left: 0; }
 .role-tag { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.usage-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+.usage-footer span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+  padding: 2px 7px;
+}
 
 .empty-state { max-width: 520px; margin: 12vh auto; text-align: center; color: var(--muted); }
 .empty-state h1 { color: var(--text); font-size: 34px; margin-bottom: 8px; letter-spacing: .5px; }

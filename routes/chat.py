@@ -151,9 +151,13 @@ async def chat(body: ChatIn, request: Request):
         # Remember : on memorise le message user et la reponse (best-effort).
         await memory.remember(provider, user_id, body.session_id, "user", body.content)
         await memory.remember(provider, user_id, body.session_id, "assistant", answer)
-        return billing.charge_chat(
+        usage = billing.charge_chat(
             user, body.session_id, body.model, input_tokens, billing.estimate_text_tokens(answer)
         )
+        usage["model"] = body.model
+        usage["provider"] = provider.get("name") or provider.get("base_url")
+        usage["agent"] = bool(body.agent)
+        return usage
 
     async def gen_simple():
         if recalled:

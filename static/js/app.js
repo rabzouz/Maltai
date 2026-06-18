@@ -454,6 +454,36 @@ function addMessage(role, content) {
   return bubble;
 }
 
+function formatUsageNumber(value) {
+  return Number(value || 0).toLocaleString("fr-FR");
+}
+
+function addUsageFooter(bubble, usage) {
+  if (!bubble || !usage) return;
+  const wrap = bubble.parentElement;
+  if (!wrap) return;
+  wrap.querySelector(".usage-footer")?.remove();
+  const input = Number(usage.input_tokens || 0);
+  const output = Number(usage.output_tokens || 0);
+  const total = Number(usage.total_tokens || input + output);
+  const spent = Number(usage.credits_spent || 0);
+  const footer = document.createElement("div");
+  footer.className = "usage-footer";
+  const model = usage.model ? String(usage.model) : state.model || "modèle";
+  const provider = usage.provider ? String(usage.provider) : "";
+  const balance = usage.balance == null ? "∞" : formatUsageNumber(usage.balance);
+  footer.innerHTML = `
+    <span>${esc(provider ? `${provider} · ${model}` : model)}</span>
+    <span>${usage.agent ? "Agent" : "Chat"}</span>
+    <span>${formatUsageNumber(input)} in</span>
+    <span>${formatUsageNumber(output)} out</span>
+    <span>${formatUsageNumber(total)} tokens</span>
+    <span>-${formatUsageNumber(spent)} crédits</span>
+    <span>solde ${esc(balance)}</span>
+  `;
+  bubble.after(footer);
+}
+
 function wrap(tag, bubble) {
   const d = document.createElement("div");
   d.appendChild(tag); d.appendChild(bubble);
@@ -549,6 +579,7 @@ async function send(contentOverride) {
             updateSubscriptionUI();
             loadCredits();
           }
+          if (data.usage) addUsageFooter(bubble, data.usage);
         } else if (data.content) {
           if (!acc) { bubble.innerHTML = ""; setStatus("Maltai répond…"); }
           acc += data.content;
