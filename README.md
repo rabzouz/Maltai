@@ -87,7 +87,7 @@ Deux niveaux sont disponibles :
 - **Réel Chromium** : `browser_open`, `browser_click`, `browser_type`, `browser_screenshot`.
 
 Les screenshots sont sauvegardés dans le workspace, par exemple :
-`browser_screenshots/aqua-reservation.png`, avec lien de téléchargement dans l'UI.
+`browser_screenshots/page-example.png`, avec lien de téléchargement dans l'UI.
 
 ### Deep Research
 Enchaîne : plan de requêtes → recherches web → lecture des meilleures pages → rapport markdown structuré avec sources. Accessible via le panneau **Deep Research** dans la sidebar ou en mode 🛠 Agent.
