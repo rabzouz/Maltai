@@ -16,6 +16,7 @@ import ipaddress
 import json
 import operator
 import base64
+import os
 import re
 import socket
 import sys
@@ -26,7 +27,7 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 
-from core.config import BASE_DIR, DATA_DIR
+from core.config import BASE_DIR, DATA_DIR, settings
 from core import plans
 
 WORKSPACE = DATA_DIR / "workspace"
@@ -635,15 +636,55 @@ async def _run_git(args: list[str], timeout: int = 12) -> str:
         return f"Erreur git : {e}"
 
 
+def _git_repo_available() -> bool:
+    return (BASE_DIR / ".git").exists()
+
+
+def _build_metadata() -> str:
+    commit = (
+        os.getenv("MALTAI_GIT_COMMIT")
+        or os.getenv("SOURCE_COMMIT")
+        or os.getenv("GIT_COMMIT")
+        or os.getenv("COOLIFY_GIT_COMMIT")
+        or os.getenv("COMMIT_SHA")
+        or ""
+    ).strip()
+    branch = (
+        os.getenv("MALTAI_GIT_BRANCH")
+        or os.getenv("SOURCE_BRANCH")
+        or os.getenv("GIT_BRANCH")
+        or os.getenv("COOLIFY_GIT_BRANCH")
+        or ""
+    ).strip()
+    lines = [
+        f"Application: {settings.APP_NAME} {settings.APP_VERSION}",
+        "Git repository: absent dans ce conteneur Docker",
+    ]
+    if branch:
+        lines.append(f"Branch: {branch}")
+    if commit:
+        lines.append(f"Commit: {commit}")
+    if not branch and not commit:
+        lines.append("Commit/branch: non fournis par l'environnement de deploiement")
+    lines.append("")
+    lines.append("Note: git_status complet est disponible sur une installation lancee depuis un clone Git.")
+    lines.append("Pour Docker/Coolify, definissez MALTAI_GIT_COMMIT et MALTAI_GIT_BRANCH si vous voulez afficher ces infos.")
+    return "\n".join(lines)
+
+
 async def tool_git_status(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin"):
         return "Refuse : outil git reserve aux administrateurs"
+    if not _git_repo_available():
+        return _build_metadata()
     return await _run_git(["status", "--short", "--branch"])
 
 
 async def tool_git_branch(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin"):
         return "Refuse : outil git reserve aux administrateurs"
+    if not _git_repo_available():
+        return _build_metadata()
     branch = await _run_git(["branch", "--show-current"])
     commit = await _run_git(["rev-parse", "--short", "HEAD"])
     remote = await _run_git(["remote", "-v"])
@@ -653,6 +694,8 @@ async def tool_git_branch(args: dict, ctx: dict) -> str:
 async def tool_git_log(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin"):
         return "Refuse : outil git reserve aux administrateurs"
+    if not _git_repo_available():
+        return _build_metadata() + "\n\nHistorique git indisponible car .git n'est pas copie dans l'image Docker."
     limit = max(1, min(30, int(args.get("limit") or 10)))
     return await _run_git(["log", "--oneline", "--decorate", f"-n{limit}"])
 
@@ -660,6 +703,8 @@ async def tool_git_log(args: dict, ctx: dict) -> str:
 async def tool_git_diff(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin"):
         return "Refuse : outil git reserve aux administrateurs"
+    if not _git_repo_available():
+        return _build_metadata() + "\n\nDiff git indisponible car .git n'est pas copie dans l'image Docker."
     try:
         path = _safe_git_pathspec(str(args.get("path", "")))
     except ValueError as e:
@@ -675,6 +720,8 @@ async def tool_git_diff(args: dict, ctx: dict) -> str:
 async def tool_git_show(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin"):
         return "Refuse : outil git reserve aux administrateurs"
+    if not _git_repo_available():
+        return _build_metadata() + "\n\nDetails commit indisponibles car .git n'est pas copie dans l'image Docker."
     try:
         ref = _safe_git_ref(str(args.get("ref", "HEAD")))
     except ValueError as e:

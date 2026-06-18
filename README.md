@@ -78,6 +78,8 @@ La console intégrée contient :
 
 Les outils Git admin (`git_status`, `git_branch`, `git_log`, `git_diff`, `git_show`) sont en lecture seule : ils servent à vérifier la version installée, la branche, les derniers commits et les changements locaux sans exposer de commit/push aux utilisateurs.
 
+En Docker/Coolify, le dossier `.git` n'est généralement pas copié dans l'image. Dans ce cas Maltai affiche la version de l'app et les variables optionnelles `MALTAI_GIT_BRANCH` / `MALTAI_GIT_COMMIT` si elles sont définies.
+
 ### Browser automation
 Deux niveaux sont disponibles :
 - **Léger HTTP** : `browser_snapshot`, `browser_links`, `browser_form_list`, `browser_submit` ;
