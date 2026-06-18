@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import csv
 import datetime
 import html
+import io
 import ipaddress
 import json
 import operator
@@ -280,11 +282,12 @@ def _parse_selector(selector: str) -> dict[str, str]:
         return {}
     selector = selector.split()[0]
     parsed: dict[str, str] = {}
-    attr = re.search(r"\[([A-Za-z0-9_-]+)(?:=['\"]?([^'\"]+)['\"]?)?\]", selector)
+    attr = re.search(r"\[([A-Za-z0-9_-]+)(\^=|\$=|\*=|=)?['\"]?([^'\"]*)['\"]?\]", selector)
     if attr:
         parsed["attr"] = attr.group(1).lower()
-        if attr.group(2) is not None:
-            parsed["attr_value"] = attr.group(2)
+        if attr.group(2):
+            parsed["attr_op"] = attr.group(2)
+            parsed["attr_value"] = attr.group(3) or ""
         selector = selector[:attr.start()] + selector[attr.end():]
     node_id = re.search(r"#([A-Za-z0-9_-]+)", selector)
     if node_id:
@@ -316,8 +319,18 @@ def _matches_selector(node: dict[str, Any], selector: str) -> bool:
     if parsed.get("attr"):
         if parsed["attr"] not in attrs:
             return False
-        if parsed.get("attr_value") is not None and attrs.get(parsed["attr"]) != parsed["attr_value"]:
-            return False
+        if parsed.get("attr_value") is not None:
+            actual = attrs.get(parsed["attr"], "")
+            expected = parsed["attr_value"]
+            op = parsed.get("attr_op", "=")
+            if op == "=" and actual != expected:
+                return False
+            if op == "^=" and not actual.startswith(expected):
+                return False
+            if op == "$=" and not actual.endswith(expected):
+                return False
+            if op == "*=" and expected not in actual:
+                return False
     return True
 
 
@@ -356,6 +369,96 @@ def _extract_json_ld(raw: str, limit: int = 5) -> list[Any]:
         except json.JSONDecodeError:
             continue
     return items
+
+
+def _safe_export_filename(name: str, fmt: str) -> str:
+    name = re.sub(r"[^\w.\-]+", "_", (name or "scrape").strip())[:100] or "scrape"
+    ext = "." + fmt
+    if not name.lower().endswith(ext):
+        name += ext
+    return name
+
+
+def _scrape_to_csv(data: dict[str, Any]) -> str:
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["section", "key", "value"])
+    for key in ("url", "status", "content_type", "title"):
+        writer.writerow(["meta", key, data.get(key, "")])
+    fields = data.get("fields") or {}
+    if isinstance(fields, dict):
+        for key, value in fields.items():
+            if isinstance(value, list):
+                for item in value:
+                    writer.writerow(["fields", key, item])
+            else:
+                writer.writerow(["fields", key, value])
+    for group in ("links", "images"):
+        for item in data.get(group, []) or []:
+            if isinstance(item, dict):
+                writer.writerow([group, item.get("text") or item.get("alt") or "", item.get("url") or item.get("src") or ""])
+    headings = data.get("headings") or {}
+    if isinstance(headings, dict):
+        for level, values in headings.items():
+            for value in values or []:
+                writer.writerow(["headings", level, value])
+    return out.getvalue()
+
+
+def _scrape_to_markdown(data: dict[str, Any]) -> str:
+    lines = [
+        f"# {data.get('title') or 'Scraping web'}",
+        "",
+        f"- URL: {data.get('url', '')}",
+        f"- Status: {data.get('status', '')}",
+        f"- Content-Type: {data.get('content_type', '')}",
+        "",
+    ]
+    fields = data.get("fields") or {}
+    if isinstance(fields, dict) and fields:
+        lines.extend(["## Champs extraits", ""])
+        for key, value in fields.items():
+            lines.append(f"### {key}")
+            if isinstance(value, list):
+                lines.extend([f"- {v}" for v in value])
+            else:
+                lines.append(str(value))
+            lines.append("")
+    headings = data.get("headings") or {}
+    if isinstance(headings, dict) and headings:
+        lines.extend(["## Titres", ""])
+        for level, values in headings.items():
+            if values:
+                lines.append(f"### {level}")
+                lines.extend([f"- {v}" for v in values])
+                lines.append("")
+    links = data.get("links") or []
+    if links:
+        lines.extend(["## Liens", ""])
+        for item in links:
+            lines.append(f"- [{item.get('text') or item.get('url')}]({item.get('url')})")
+    return "\n".join(lines).strip() + "\n"
+
+
+def _save_scrape_export(data: dict[str, Any], args: dict, ctx: dict) -> str:
+    save_as = str(args.get("save_as", "")).strip()
+    if not save_as:
+        return ""
+    fmt = str(args.get("format", "") or Path(save_as).suffix.lstrip(".") or "json").lower()
+    if fmt not in {"json", "csv", "md"}:
+        fmt = "json"
+    filename = _safe_export_filename(save_as, fmt)
+    rel = f"exports/{filename}"
+    target = _safe_path(rel, ctx)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if fmt == "csv":
+        content = _scrape_to_csv(data)
+    elif fmt == "md":
+        content = _scrape_to_markdown(data)
+    else:
+        content = json.dumps(data, ensure_ascii=False, indent=2)
+    target.write_text(content, encoding="utf-8")
+    return rel
 
 
 async def tool_web_scrape(args: dict, ctx: dict) -> str:
@@ -443,7 +546,11 @@ async def tool_web_scrape(args: dict, ctx: dict) -> str:
     if extracted:
         result["fields"] = extracted
 
-    return _truncate(json.dumps(result, ensure_ascii=False, indent=2))
+    saved_path = _save_scrape_export(result, args, ctx)
+    payload = json.dumps(result, ensure_ascii=False, indent=2)
+    if saved_path:
+        return _truncate(f"Fichier exporte : {saved_path}\n\n{payload}")
+    return _truncate(payload)
 
 
 async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
@@ -1943,6 +2050,8 @@ TOOLS: dict[str, dict] = {
                         "type": "object",
                         "description": "Options booleennes: metadata, headings, links, images, tables, json_ld, text",
                     },
+                    "save_as": {"type": "string", "description": "Nom du fichier a creer dans exports/ (ex: arf-reparation.json, data.csv, rapport.md)"},
+                    "format": {"type": "string", "description": "Format d'export: json, csv ou md"},
                     "limit": {"type": "integer", "description": "Nombre maximum d'elements par liste, max 100"},
                 },
                 "required": ["url"],

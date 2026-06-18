@@ -687,6 +687,8 @@ const DIRECT_TOOL_EXAMPLES = {
       links: { selector: "a", attr: "href", all: true }
     },
     include: { metadata: true, headings: true, links: true, json_ld: true },
+    save_as: "scrape-example.json",
+    format: "json",
     limit: 10
   },
   browser_navigate: { url: "https://example.com" },
@@ -785,7 +787,11 @@ async function runDirectTool() {
       loadCredits();
     }
     const spent = d.usage?.credits_spent ? `\n\n[credits: -${d.usage.credits_spent} | solde: ${formatCredits(d.usage.balance)}]` : "";
-    result.textContent = String(d.result || "") + spent;
+    const text = String(d.result || "") + spent;
+    result.textContent = text;
+    result.parentElement?.querySelector(".tool-downloads")?.remove();
+    const links = workspaceDownloadLinks(text);
+    if (links) result.after(links);
   } catch (e) {
     result.classList.add("error");
     result.textContent = e.message;

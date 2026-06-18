@@ -94,6 +94,7 @@ Les screenshots sont sauvegardés dans le workspace, par exemple :
 `web_scrape` retourne du JSON exploitable depuis une page HTML :
 - `metadata`, `headings`, `links`, `images`, `tables`, `json_ld` ;
 - champs personnalisés avec sélecteurs simples : `h1`, `.price`, `#main`, `a[href]`, `meta[name=description]`.
+- export optionnel dans le workspace avec `save_as` + `format` (`json`, `csv`, `md`), puis téléchargement depuis l'UI.
 
 Exemple :
 ```json
@@ -103,7 +104,9 @@ Exemple :
     "title": "h1",
     "links": { "selector": "a", "attr": "href", "all": true }
   },
-  "include": { "metadata": true, "headings": true, "links": true, "json_ld": true }
+  "include": { "metadata": true, "headings": true, "links": true, "json_ld": true },
+  "save_as": "scrape-example.json",
+  "format": "json"
 }
 ```
 
