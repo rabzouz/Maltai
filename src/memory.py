@@ -82,17 +82,22 @@ async def recall(
         return []
 
     scored = []
-    for mid, sess, role, content, blob, dim in db.iter_memories(user_id):
+    pinned = []
+    for mid, sess, role, content, blob, dim, is_pinned in db.iter_memories(user_id):
         if exclude_session and sess == exclude_session:
             continue  # deja dans le contexte de la session courante
         if dim != len(qvec):
             continue  # modele d'embedding different : on ignore
         score = _dot(qvec, _unpack(blob, dim))
+        if is_pinned:
+            pinned.append({"content": content, "role": role, "score": max(score, 1.0), "pinned": True})
+            continue
         if score >= settings.MEMORY_MIN_SCORE:
             scored.append({"content": content, "role": role, "score": score})
 
     scored.sort(key=lambda x: x["score"], reverse=True)
-    return scored[:k]
+    pinned.sort(key=lambda x: x["score"], reverse=True)
+    return (pinned + scored)[:k]
 
 
 def format_context(memories: list[dict]) -> str:

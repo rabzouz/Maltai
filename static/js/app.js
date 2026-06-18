@@ -1725,6 +1725,8 @@ function bindEvents() {
     const status = $("#brain-memory-status");
     const list = $("#brain-memory-list");
     const query = $("#brain-search")?.value.trim() || "";
+    const role = $("#brain-role-filter")?.value || "";
+    const pinnedOnly = $("#brain-pinned-filter")?.checked ? "1" : "";
     if (status) status.textContent = "chargement...";
     try {
       const m = await fetch("/api/memory").then((r) => r.json());
@@ -1734,7 +1736,7 @@ function bindEvents() {
           : "Memoire desactivee (MEMORY_ENABLED=false).";
       }
       if (list) {
-        const data = await api(`/api/memory/items?limit=80&q=${encodeURIComponent(query)}`);
+        const data = await api(`/api/memory/items?limit=80&q=${encodeURIComponent(query)}&role=${encodeURIComponent(role)}&pinned=${encodeURIComponent(pinnedOnly)}`);
         list.innerHTML = "";
         const items = data.items || [];
         if (!items.length) {
@@ -1745,8 +1747,20 @@ function bindEvents() {
             row.className = "memory-item";
             const when = new Date((item.created_at || 0) * 1000).toLocaleString("fr-FR");
             const content = String(item.content || "");
-            row.innerHTML = `<div class="memory-meta">${esc(item.role || "memory")} · ${esc(when)} · ${esc(item.id.slice(0, 8))}</div>
+            const pinMark = item.pinned ? " épinglé ·" : "";
+            row.innerHTML = `<div class="memory-meta">${esc(item.role || "memory")} ·${pinMark} ${esc(when)} · ${esc(item.id.slice(0, 8))}</div>
               <div class="memory-content">${esc(content.length > 420 ? content.slice(0, 420) + "…" : content)}</div>`;
+            const pin = document.createElement("button");
+            pin.className = "section-mini-btn";
+            pin.textContent = item.pinned ? "désépingler" : "épingler";
+            pin.onclick = async () => {
+              await fetch(`/api/memory/${encodeURIComponent(item.id)}/pin`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pinned: !item.pinned }),
+              });
+              await refreshBrainPanel();
+            };
             const del = document.createElement("button");
             del.className = "section-mini-btn";
             del.textContent = "supprimer";
@@ -1755,7 +1769,10 @@ function bindEvents() {
               await fetch(`/api/memory/${encodeURIComponent(item.id)}`, { method: "DELETE" });
               await refreshBrainPanel();
             };
-            row.appendChild(del);
+            const actions = document.createElement("div");
+            actions.className = "memory-actions";
+            actions.append(pin, del);
+            row.appendChild(actions);
             list.appendChild(row);
           });
         }
@@ -1873,6 +1890,23 @@ function bindEvents() {
   if (brainSearch) brainSearch.addEventListener("keydown", (e) => {
     if (e.key === "Enter") refreshBrainPanel();
   });
+  const brainRoleFilter = $("#brain-role-filter");
+  if (brainRoleFilter) brainRoleFilter.onchange = refreshBrainPanel;
+  const brainPinnedFilter = $("#brain-pinned-filter");
+  if (brainPinnedFilter) brainPinnedFilter.onchange = refreshBrainPanel;
+  const brainDeleteFiltered = $("#brain-delete-filtered");
+  if (brainDeleteFiltered) brainDeleteFiltered.onclick = async () => {
+    const query = $("#brain-search")?.value.trim() || "";
+    const role = $("#brain-role-filter")?.value || "";
+    if (!query && !role) {
+      alert("Ajoute une recherche ou un filtre rôle avant de supprimer les résultats.");
+      return;
+    }
+    if (!confirm("Supprimer tous les résultats filtrés non épinglés ?")) return;
+    const d = await api(`/api/memory/filtered?q=${encodeURIComponent(query)}&role=${encodeURIComponent(role)}`, { method: "DELETE" });
+    alert(`${d.removed || 0} souvenir(s) supprimé(s). Les souvenirs épinglés sont conservés.`);
+    await refreshBrainPanel();
+  };
   const brainClear = $("#brain-clear");
   if (brainClear) brainClear.onclick = async () => {
     if (!confirm("Effacer toute la mémoire vectorielle ? Cette action est irréversible.")) return;

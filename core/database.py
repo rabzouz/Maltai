@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS memories (
     content    TEXT NOT NULL,
     embedding  BLOB NOT NULL,
     dim        INTEGER NOT NULL,
+    pinned     INTEGER NOT NULL DEFAULT 0,
     created_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_memories_user ON memories(user_id);
@@ -177,6 +178,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "credit_balance" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN credit_balance INTEGER NOT NULL DEFAULT 100000")
     conn.execute("UPDATE users SET plan='admin' WHERE is_admin=1")
+    memory_cols = {r["name"] for r in conn.execute("PRAGMA table_info(memories)")}
+    if "pinned" not in memory_cols:
+        conn.execute("ALTER TABLE memories ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
 
 
 def new_id() -> str:
@@ -464,17 +468,17 @@ def add_memory(
 
 
 def iter_memories(user_id: str | None):
-    """Retourne (id, session_id, role, content, embedding, dim) pour cet utilisateur."""
+    """Retourne (id, session_id, role, content, embedding, dim, pinned) pour cet utilisateur."""
     conn = connect()
     try:
         if user_id is None:
             rows = conn.execute(
-                "SELECT id, session_id, role, content, embedding, dim "
+                "SELECT id, session_id, role, content, embedding, dim, pinned "
                 "FROM memories WHERE user_id IS NULL"
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT id, session_id, role, content, embedding, dim "
+                "SELECT id, session_id, role, content, embedding, dim, pinned "
                 "FROM memories WHERE user_id = ?", (user_id,)
             ).fetchall()
         return [tuple(r) for r in rows]
@@ -482,21 +486,32 @@ def iter_memories(user_id: str | None):
         conn.close()
 
 
-def list_memories(user_id: str | None, limit: int = 50, query: str = "") -> list[dict[str, Any]]:
+def list_memories(
+    user_id: str | None,
+    limit: int = 50,
+    query: str = "",
+    role: str = "",
+    pinned: str = "",
+) -> list[dict[str, Any]]:
     conn = connect()
     try:
         lim = max(1, min(int(limit), 200))
         q = (query or "").strip().lower()
         if user_id is None:
-            sql = "SELECT id, session_id, role, content, dim, created_at FROM memories WHERE user_id IS NULL"
+            sql = "SELECT id, session_id, role, content, dim, pinned, created_at FROM memories WHERE user_id IS NULL"
             params: list[Any] = []
         else:
-            sql = "SELECT id, session_id, role, content, dim, created_at FROM memories WHERE user_id = ?"
+            sql = "SELECT id, session_id, role, content, dim, pinned, created_at FROM memories WHERE user_id = ?"
             params = [user_id]
         if q:
             sql += " AND lower(content) LIKE ?"
             params.append(f"%{q}%")
-        sql += " ORDER BY created_at DESC LIMIT ?"
+        if role in ("user", "assistant"):
+            sql += " AND role = ?"
+            params.append(role)
+        if pinned == "1":
+            sql += " AND pinned = 1"
+        sql += " ORDER BY pinned DESC, created_at DESC LIMIT ?"
         params.append(lim)
         rows = conn.execute(sql, tuple(params)).fetchall()
         return [dict(r) for r in rows]
@@ -519,6 +534,49 @@ def delete_memory(user_id: str | None, memory_id: str) -> bool:
             )
         conn.commit()
         return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def set_memory_pinned(user_id: str | None, memory_id: str, pinned: bool) -> bool:
+    conn = connect()
+    try:
+        if user_id is None:
+            cur = conn.execute(
+                "UPDATE memories SET pinned=? WHERE id=? AND user_id IS NULL",
+                (1 if pinned else 0, memory_id),
+            )
+        else:
+            cur = conn.execute(
+                "UPDATE memories SET pinned=? WHERE id=? AND user_id=?",
+                (1 if pinned else 0, memory_id, user_id),
+            )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def delete_memories_filtered(user_id: str | None, query: str = "", role: str = "") -> int:
+    q = (query or "").strip().lower()
+    conn = connect()
+    try:
+        if user_id is None:
+            sql = "DELETE FROM memories WHERE user_id IS NULL"
+            params: list[Any] = []
+        else:
+            sql = "DELETE FROM memories WHERE user_id = ?"
+            params = [user_id]
+        if q:
+            sql += " AND lower(content) LIKE ?"
+            params.append(f"%{q}%")
+        if role in ("user", "assistant"):
+            sql += " AND role = ?"
+            params.append(role)
+        sql += " AND pinned = 0"
+        cur = conn.execute(sql, tuple(params))
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 

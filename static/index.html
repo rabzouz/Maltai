@@ -151,7 +151,16 @@
         </div>
         <div class="section-add-row">
           <input id="brain-search" type="text" placeholder="Rechercher dans la mémoire…" />
+          <select id="brain-role-filter" title="Rôle">
+            <option value="">tous</option>
+            <option value="user">user</option>
+            <option value="assistant">assistant</option>
+          </select>
+          <label class="brain-pin-filter"><input id="brain-pinned-filter" type="checkbox" /> épinglés</label>
           <button id="brain-search-btn" class="section-add-btn">→</button>
+        </div>
+        <div class="subpanel-actions">
+          <button class="section-mini-btn" id="brain-delete-filtered">Supprimer les résultats</button>
         </div>
         <div id="brain-memory-list" class="memory-list"></div>
         <div class="tools-sep">Outils actifs</div>

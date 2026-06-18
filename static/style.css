@@ -850,6 +850,19 @@ select {
   gap: 8px;
   padding: 4px 6px 8px;
 }
+.brain-pin-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 7px;
+}
+.brain-pin-filter input {
+  accent-color: var(--accent-2);
+}
 .memory-item {
   display: flex;
   flex-direction: column;
@@ -871,8 +884,10 @@ select {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.memory-item .section-mini-btn {
-  align-self: flex-start;
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 /* Etat vide : style Odysseus */
