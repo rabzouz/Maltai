@@ -2,7 +2,7 @@
   "name": "Maltai",
   "short_name": "Maltai",
   "description": "Workspace IA auto-hébergé",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

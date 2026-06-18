@@ -23,6 +23,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 ## Fonctionnalités
 
 ### Interface
+- Page publique sur `/` pour présenter MaltaiAI, avec accès à `/app` pour le dashboard privé
 - Sidebar style Odysseus : Chat, Discussions, Outils, Notes, Tâches, Deep Research, Librairie, Thème
 - Chaque section de sidebar s'ouvre dans une fenêtre dédiée, utilisable sur mobile
 - Composer flottant centré avec toggle Agent, nom du modèle, textarea auto-resize

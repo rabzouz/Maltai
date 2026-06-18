@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d14" />
+  <meta name="description" content="MaltaiAI, workspace IA auto-heberge avec chat, agents, outils, Ollama, navigateur, terminal admin et memoire." />
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="apple-touch-icon" href="/static/icon-180.png" />
+  <title>MaltaiAI - Workspace IA auto-heberge</title>
+  <link rel="stylesheet" href="/static/site.css" />
+</head>
+<body>
+  <header class="site-topbar">
+    <a class="site-brand" href="/" aria-label="Accueil MaltaiAI">
+      <img src="/static/logo-emblem.png" alt="" />
+      <span>Maltai<span>AI</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation">
+      <a href="#outils">Outils</a>
+      <a href="#plans">Plans</a>
+      <a href="#installer">Installer</a>
+    </nav>
+    <div class="site-actions">
+      <a class="ghost-link" href="/login">Connexion</a>
+      <a class="primary-link" href="/app">Ouvrir l'app</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-backdrop" aria-hidden="true">
+        <img src="/static/logo-full.png" alt="" />
+      </div>
+      <div class="hero-content">
+        <p class="eyebrow">Workspace IA auto-heberge</p>
+        <h1>MaltaiAI</h1>
+        <p class="hero-copy">
+          Un espace unique pour discuter avec OpenAI, Ollama ou OpenRouter, lancer des outils,
+          lire le web, manipuler des fichiers, garder une memoire et piloter ton instance depuis mobile.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-link large" href="/app">Lancer Maltai</a>
+          <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">GitHub</a>
+        </div>
+      </div>
+      <div class="hero-preview" aria-label="Apercu de Maltai">
+        <div class="preview-sidebar">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="preview-main">
+          <div class="preview-row user">Utilise browser_open sur aqua-r-fly.com</div>
+          <div class="preview-tool">browser_open - page ouverte avec Playwright</div>
+          <div class="preview-row ai">Resume la page, extrait les liens et cree une note.</div>
+          <div class="preview-footer">openAI · gpt-4o-mini · Agent · Admin</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Capacites">
+      <div><strong>Ollama</strong><span>telechargement des modeles depuis l'interface</span></div>
+      <div><strong>Agent</strong><span>outils web, fichiers, terminal, navigateur</span></div>
+      <div><strong>Mobile</strong><span>interface adaptee Android, iPhone et tablette</span></div>
+      <div><strong>Open source</strong><span>installation Docker, Linux, macOS, Windows</span></div>
+    </section>
+
+    <section id="outils" class="section">
+      <div class="section-head">
+        <p class="eyebrow">Outils natifs</p>
+        <h2>Un agent utile, pas seulement un chat.</h2>
+      </div>
+      <div class="feature-grid">
+        <article>
+          <h3>Browser</h3>
+          <p>Navigation web, extraction de texte, liens, formulaires, clics Playwright et captures PNG.</p>
+        </article>
+        <article>
+          <h3>Fichiers</h3>
+          <p>Lecture, ecriture, patch et telechargement dans un workspace isole par utilisateur.</p>
+        </article>
+        <article>
+          <h3>Terminal admin</h3>
+          <p>Console, process longs, logs, kill, version app et inspection Git read-only.</p>
+        </article>
+        <article>
+          <h3>Brain</h3>
+          <p>Memoire vectorielle, recherche, souvenirs epingles et nettoyage controle.</p>
+        </article>
+        <article>
+          <h3>Ollama</h3>
+          <p>Liste, telechargement avec progression et suppression des modeles locaux.</p>
+        </article>
+        <article>
+          <h3>Credits</h3>
+          <p>Plans Basic, Premium, Admin, suivi tokens et balance pour cadrer l'usage des outils.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="plans" class="section split">
+      <div class="section-head">
+        <p class="eyebrow">Acces</p>
+        <h2>Des permissions claires pour chaque utilisateur.</h2>
+        <p>Basic pour discuter, Premium pour les outils agent, Admin pour administrer l'instance.</p>
+      </div>
+      <div class="plan-list">
+        <div><strong>Basic</strong><span>Chat principal et providers configures.</span></div>
+        <div><strong>Premium</strong><span>Outils agent, recherche, fichiers, browser, code sandbox.</span></div>
+        <div><strong>Admin</strong><span>Console, terminal, process, Git read-only et usage non facture.</span></div>
+      </div>
+    </section>
+
+    <section id="installer" class="section install">
+      <div>
+        <p class="eyebrow">Installer</p>
+        <h2>Telecharger Maltai</h2>
+        <p>Le projet est disponible sur GitHub. Tu peux l'installer avec Git, Docker ou le deployer sur Coolify.</p>
+      </div>
+      <pre><code>git clone https://github.com/rabzouz/Maltai.git
+cd Maltai
+python3 -m venv venv
+pip install -r requirements.txt
+python app.py</code></pre>
+      <a class="primary-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">Voir le depot GitHub</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>MaltaiAI</span>
+    <span>Workspace IA auto-heberge</span>
+    <a href="/login">Connexion</a>
+  </footer>
+</body>
+</html>

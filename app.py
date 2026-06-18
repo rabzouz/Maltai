@@ -26,7 +26,7 @@ app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 # Chemins accessibles sans authentification.
 OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/health",
                  "/api/telegram/webhook/", "/api/external/chat")
-OPEN_EXACT = {"/login", "/favicon.ico"}
+OPEN_EXACT = {"/", "/login", "/favicon.ico"}
 
 
 @app.on_event("startup")
@@ -117,7 +117,12 @@ def login_page():
 
 
 @app.get("/")
-def index():
+def site_page():
+    return FileResponse(str(STATIC_DIR / "site.html"))
+
+
+@app.get("/app")
+def app_page():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 

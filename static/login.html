@@ -48,7 +48,7 @@
           password: document.getElementById("password").value,
         }),
       });
-      if (r.ok) { location.href = "/"; }
+      if (r.ok) { location.href = "/app"; }
       else {
         const d = await r.json().catch(() => ({}));
         err.textContent = d.detail || "Erreur de connexion";
