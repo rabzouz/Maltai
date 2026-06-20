@@ -677,6 +677,11 @@ const DIRECT_TOOL_EXAMPLES = {
   read_file: { path: "video_ltx2_3_i2v.json" },
   list_files: { path: "." },
   write_file: { path: "notes/exemple.txt", content: "Bonjour depuis Maltai." },
+  context_compress: {
+    mode: "auto",
+    max_chars: 1200,
+    text: "{\"url\":\"https://example.com\",\"title\":\"Example\",\"links\":[{\"text\":\"More information\",\"url\":\"https://iana.org/domains/example\"}],\"logs\":[\"INFO start\",\"WARNING large output\",\"ERROR demo line\"]}"
+  },
   code_execute: { code: "print('Bonjour Maltai')\nprint(2 + 2)" },
   web_search: { query: "actualité intelligence artificielle France" },
   web_fetch: { url: "https://example.com" },

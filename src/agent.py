@@ -18,7 +18,7 @@ from typing import AsyncIterator
 
 from core import database as db
 from core import plans
-from src import llm, mcp, tools
+from src import context_compress, llm, mcp, tools
 from src.prompts import SYSTEM_PROMPT
 
 MAX_STEPS = 8
@@ -112,10 +112,11 @@ async def run_agent(
             else:
                 result = await tools.execute_tool(name, args, ctx)
             yield ("tool_result", {"name": name, "result": result[:800]})
+            agent_result = context_compress.compress_for_agent(name, result)
             convo.append({
                 "role": "tool",
                 "tool_call_id": tc.get("id") or name,
-                "content": result,
+                "content": agent_result,
             })
 
     yield ("agent_error", {"message": f"Limite de {MAX_STEPS} etapes atteinte"})

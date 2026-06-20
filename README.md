@@ -19,6 +19,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 - **Connecteurs** : bot Telegram natif + API externe à clé
 - **Browser automation** : navigateur texte + Playwright/Chromium headless
 - **Billing** : plans Basic/Premium/Admin, crédits, suivi tokens et coûts
+- **Context compression** : compression automatique des grosses sorties d'outils avant retour au LLM
 
 ## Fonctionnalités
 
@@ -39,6 +40,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `calculator` | Arithmétique (eval AST sécurisé) | tous |
 | `get_datetime` | Date/heure courante du serveur | tous |
 | `list/read/write_file` | Fichiers du workspace (sandbox par user) | tous |
+| `context_compress` | Compresse texte, JSON, logs ou fichier workspace pour économiser le contexte | tous |
 | `web_search` | Recherche DuckDuckGo (sans clé API) | tous |
 | `web_fetch` | Lecture d'une page web + SSRF protection | tous |
 | `web_scrape` | Scraping HTML structuré : metadata, titres, liens, images, tables, JSON-LD, champs par sélecteurs | tous |
@@ -111,6 +113,22 @@ Exemple :
 ```
 
 Extensions possibles : `.json` pour données brutes, `.csv` pour tableur, `.md` pour rapport Markdown, `.txt` pour texte simple, `.html` pour rapport ouvrable dans un navigateur.
+
+### Compression de contexte
+Inspiré de Headroom, Maltai compresse automatiquement les grosses sorties d'outils avant de les renvoyer au modèle :
+- détection automatique JSON, logs, code ou texte ;
+- conservation du début, de la fin et des lignes importantes (`error`, `warning`, `url`, `title`, `fields`, etc.) ;
+- réduction configurable via `MALTAI_CONTEXT_COMPRESSION`, `MALTAI_CONTEXT_COMPRESS_MIN_CHARS` et `MALTAI_CONTEXT_COMPRESS_MAX_CHARS` ;
+- outil direct `context_compress` pour compresser manuellement un texte ou un fichier du workspace.
+
+Exemple :
+```json
+{
+  "text": "{\"title\":\"Page\",\"items\":[1,2,3]}",
+  "mode": "auto",
+  "max_chars": 1200
+}
+```
 
 ### Deep Research
 Enchaîne : plan de requêtes → recherches web → lecture des meilleures pages → rapport markdown structuré avec sources. Accessible via le panneau **Deep Research** dans la sidebar ou en mode 🛠 Agent.

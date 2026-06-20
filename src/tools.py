@@ -32,6 +32,7 @@ import httpx
 
 from core.config import BASE_DIR, DATA_DIR, settings
 from core import plans
+from src import context_compress
 
 WORKSPACE = DATA_DIR / "workspace"
 WORKSPACE.mkdir(exist_ok=True)
@@ -138,6 +139,34 @@ async def tool_write_file(args: dict, ctx: dict) -> str:
         return f"Ecrit : {p.relative_to(_user_workspace(ctx))} ({len(content)} caracteres)"
     except OSError as e:
         return f"Erreur ecriture : {e}"
+
+
+async def tool_context_compress(args: dict, ctx: dict) -> str:
+    """Compresse un gros texte/JSON/log avant de le donner au modele."""
+    text = str(args.get("text", "") or "")
+    path = str(args.get("path", "") or "").strip()
+    if path:
+        try:
+            p = _safe_path(path, ctx)
+        except ValueError as e:
+            return str(e)
+        if not p.is_file():
+            return "Fichier introuvable"
+        try:
+            text = p.read_text(errors="replace")
+        except OSError as e:
+            return f"Erreur lecture : {e}"
+
+    if not text:
+        return "Texte vide. Fournis `text` ou `path`."
+
+    mode = str(args.get("mode", "auto") or "auto")
+    try:
+        max_chars = int(args.get("max_chars") or context_compress.DEFAULT_MAX_CHARS)
+    except (TypeError, ValueError):
+        max_chars = context_compress.DEFAULT_MAX_CHARS
+    result = context_compress.compress_text(text, mode=mode, max_chars=max_chars)
+    return context_compress.format_compressed(result)
 
 
 # --- Web ---------------------------------------------------------------------
@@ -1941,6 +1970,22 @@ TOOLS: dict[str, dict] = {
                     "content": {"type": "string"},
                 },
                 "required": ["path", "content"],
+            },
+        },
+    },
+    "context_compress": {
+        "run": tool_context_compress,
+        "spec": {
+            "name": "context_compress",
+            "description": "Compresse un gros texte, JSON, log ou fichier workspace pour reduire les tokens avant analyse.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "Texte brut optionnel a compresser"},
+                    "path": {"type": "string", "description": "Fichier du workspace a compresser si text est vide"},
+                    "mode": {"type": "string", "description": "auto, json, log, text ou code"},
+                    "max_chars": {"type": "integer", "description": "Taille cible approximative, defaut 3500"},
+                },
             },
         },
     },
