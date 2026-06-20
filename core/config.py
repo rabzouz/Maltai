@@ -38,7 +38,8 @@ class Settings:
     # Auth / sessions
     AUTH_ENABLED = _bool("AUTH_ENABLED", True)
     LOCALHOST_BYPASS = _bool("LOCALHOST_BYPASS", False)
-    SECURE_COOKIES = _bool("SECURE_COOKIES", True)   # True en prod (HTTPS)
+    SECURE_COOKIES = _bool("SECURE_COOKIES", False)  # Mettre true en prod HTTPS
+    REGISTRATION_ENABLED = _bool("MALTAI_REGISTRATION_ENABLED", True)
     SESSION_SECRET = os.getenv("SESSION_SECRET", "")  # genere au setup si vide
     # Avertissement si secret non configure en production
     @classmethod

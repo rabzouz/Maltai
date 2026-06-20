@@ -1,6 +1,8 @@
 """Routes d'authentification."""
 from __future__ import annotations
 
+import sqlite3
+
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
@@ -14,6 +16,12 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class LoginIn(BaseModel):
     username: str
     password: str
+
+
+class RegisterIn(BaseModel):
+    username: str
+    password: str
+    password_confirm: str = ""
 
 
 class ChangePasswordIn(BaseModel):
@@ -58,6 +66,27 @@ def login(body: LoginIn, response: Response):
     user = auth.get_user_by_username(body.username.strip())
     if not user or not auth.verify_password(body.password, user["password_hash"]):
         raise HTTPException(401, "Identifiants invalides")
+    _set_cookie(response, auth.create_token(user["id"]))
+    return _public_user(user)
+
+
+@router.post("/register")
+def register(body: RegisterIn, response: Response):
+    if not settings.REGISTRATION_ENABLED:
+        raise HTTPException(403, "Inscription desactivee")
+    username = body.username.strip()
+    if len(username) < 3:
+        raise HTTPException(400, "Nom utilisateur : 3 caracteres minimum")
+    if not username.replace("_", "").replace("-", "").isalnum():
+        raise HTTPException(400, "Nom utilisateur : lettres, chiffres, tiret ou underscore")
+    if len(body.password) < 8:
+        raise HTTPException(400, "Mot de passe : 8 caracteres minimum")
+    if body.password_confirm and body.password_confirm != body.password:
+        raise HTTPException(400, "Les mots de passe ne correspondent pas")
+    try:
+        user = auth.create_user(username, body.password, is_admin=False, plan="basic")
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "Ce nom utilisateur existe deja") from None
     _set_cookie(response, auth.create_token(user["id"]))
     return _public_user(user)
 

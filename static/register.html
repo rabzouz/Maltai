@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#14161a" />
   <link rel="icon" type="image/png" href="/static/favicon.png" />
-  <title>MaltaiAI — Connexion</title>
+  <title>MaltaiAI - Inscription</title>
   <link rel="stylesheet" href="/static/style.css" />
   <style>
-    .login-wrap { display:flex; align-items:center; justify-content:center; height:100vh; }
+    .login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px 0; }
     .login-box {
       background: var(--panel); border:1px solid var(--border); border-radius:16px;
-      padding: 34px 32px; width: 360px; max-width: 90vw;
+      padding: 34px 32px; width: 380px; max-width: 90vw;
       display:flex; flex-direction:column; gap:12px;
     }
     .login-box h1 { margin:0 0 4px; font-size:26px; text-align:center; }
-    .login-box .logo { display:block; text-align:center; font-size:38px; color:var(--accent); }
+    .login-box p { margin: 0 0 8px; color: var(--muted); text-align: center; font-size: 13px; line-height: 1.45; }
     .login-box input {
       background: var(--panel-2); color: var(--text); border:1px solid var(--border);
       border-radius:9px; padding:12px 14px; font-size:15px;
@@ -29,33 +29,36 @@
 </head>
 <body>
   <div class="login-wrap">
-    <form class="login-box" id="login-form">
+    <form class="login-box" id="register-form">
       <img src="/static/logo-emblem.png" alt="Maltai" style="width:84px;height:84px;border-radius:20px;display:block;margin:0 auto 4px;" />
-      <h1>Maltai<span style="color:#2bd4f0">AI</span></h1>
+      <h1>Créer un compte</h1>
+      <p>Le compte créé démarre en plan Basic. Un administrateur peut ensuite activer Premium.</p>
       <input id="username" placeholder="Utilisateur" autocomplete="username" autofocus />
-      <input id="password" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+      <input id="password" type="password" placeholder="Mot de passe" autocomplete="new-password" />
+      <input id="password-confirm" type="password" placeholder="Confirmer le mot de passe" autocomplete="new-password" />
       <div class="login-error" id="error"></div>
-      <button class="btn-primary" type="submit">Se connecter</button>
-      <div class="login-link">Nouveau sur Maltai ? <a href="/register">Créer un compte</a></div>
+      <button class="btn-primary" type="submit">S'inscrire</button>
+      <div class="login-link">Déjà un compte ? <a href="/login">Se connecter</a></div>
     </form>
   </div>
   <script>
-    document.getElementById("login-form").addEventListener("submit", async (e) => {
+    document.getElementById("register-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const err = document.getElementById("error");
       err.textContent = "";
-      const r = await fetch("/api/auth/login", {
+      const r = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: document.getElementById("username").value,
           password: document.getElementById("password").value,
+          password_confirm: document.getElementById("password-confirm").value,
         }),
       });
       if (r.ok) { location.href = "/app"; }
       else {
         const d = await r.json().catch(() => ({}));
-        err.textContent = d.detail || "Erreur de connexion";
+        err.textContent = d.detail || "Inscription impossible";
       }
     });
   </script>

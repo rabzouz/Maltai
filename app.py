@@ -24,9 +24,9 @@ STATIC_DIR = BASE_DIR / "static"
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
 # Chemins accessibles sans authentification.
-OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/health",
+OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/auth/register", "/api/health",
                  "/api/telegram/webhook/", "/api/external/chat")
-OPEN_EXACT = {"/", "/login", "/favicon.ico"}
+OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico"}
 
 
 @app.on_event("startup")
@@ -115,6 +115,11 @@ def favicon_route():
 @app.get("/login")
 def login_page():
     return FileResponse(str(STATIC_DIR / "login.html"))
+
+
+@app.get("/register")
+def register_page():
+    return FileResponse(str(STATIC_DIR / "register.html"))
 
 
 @app.get("/")

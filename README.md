@@ -176,6 +176,8 @@ python app.py
 
 Ouvre http://localhost:7000 — connecte-toi avec `admin` et le mot de passe temporaire affiché dans le terminal.
 
+Pour tester comme nouvel utilisateur, ouvre `http://localhost:7000/register` ou clique sur **Créer un compte** depuis la page de connexion. Les nouveaux comptes démarrent en plan `Basic`; un admin peut ensuite les passer en `Premium`.
+
 ### Avec Ollama (local)
 
 ```bash
