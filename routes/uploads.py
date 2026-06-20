@@ -18,6 +18,7 @@ from core import database as db
 from src.tools import WORKSPACE
 
 router = APIRouter(prefix="/api", tags=["uploads"])
+download_router = APIRouter(tags=["workspace_downloads"])
 
 UPLOAD_DIR = DATA_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -104,8 +105,23 @@ def workspace_list(request: Request):
 
 @router.get("/workspace/download")
 def workspace_download(path: str, request: Request):
+    return _workspace_file_response(path, request)
+
+
+def _workspace_file_response(path: str, request: Request):
     root = _workspace_root_for_request(request).resolve()
     target = (root / path).resolve()
     if not str(target).startswith(str(root)) or not target.is_file():
+        raise HTTPException(404, "Fichier introuvable")
+    return FileResponse(str(target), filename=target.name)
+
+
+@download_router.get("/exports/{path:path}")
+def export_download(path: str, request: Request):
+    safe_path = path.strip().lstrip("/\\")
+    root = _workspace_root_for_request(request).resolve()
+    exports_root = (root / "exports").resolve()
+    target = (exports_root / safe_path).resolve()
+    if not str(target).startswith(str(exports_root)) or not target.is_file():
         raise HTTPException(404, "Fichier introuvable")
     return FileResponse(str(target), filename=target.name)

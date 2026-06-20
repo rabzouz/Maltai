@@ -87,6 +87,7 @@ app.include_router(uploads.router)
 app.include_router(tools.router)
 app.include_router(notes.router)
 app.include_router(tool_run.router)
+app.include_router(uploads.download_router)
 
 
 @app.get("/api/health")

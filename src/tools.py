@@ -25,7 +25,7 @@ import sys
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 from typing import Any, Awaitable, Callable
 
 import httpx
@@ -632,9 +632,20 @@ async def tool_web_scrape(args: dict, ctx: dict) -> str:
         result["fields"] = extracted
 
     saved_path = _save_scrape_export(result, args, ctx)
+    if saved_path:
+        result["export"] = {
+            "path": saved_path,
+            "download_url": f"/api/workspace/download?path={quote(saved_path)}",
+            "short_url": f"/{saved_path}",
+        }
     payload = json.dumps(result, ensure_ascii=False, indent=2)
     if saved_path:
-        return _truncate(f"Fichier exporte : {saved_path}\n\n{payload}")
+        return _truncate(
+            f"Fichier exporte : {saved_path}\n"
+            f"Lien telechargement : /api/workspace/download?path={quote(saved_path)}\n"
+            f"Lien court : /{saved_path}\n\n"
+            f"{payload}"
+        )
     return _truncate(payload)
 
 
