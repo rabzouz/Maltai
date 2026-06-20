@@ -835,8 +835,13 @@ async function loadToolsPanel(sel) {
       state.toolMeta = {};
       renderDirectToolRunner([]);
       const result = $("#direct-tool-result");
-      if (result) result.textContent = d.upgrade_message || "Plan premium requis.";
-      list.innerHTML = `<p class="hint">${esc(d.upgrade_message || "Plan premium requis.")}</p>`;
+      const message = d.upgrade_message || "Plan premium requis.";
+      if (result) result.textContent = message;
+      list.innerHTML = `<div class="upgrade-card">
+        <strong>Outils Agent réservés au Premium</strong>
+        <p>${esc(message)}</p>
+        <a class="btn-primary" href="/billing">Voir les offres</a>
+      </div>`;
       return;
     }
     state.toolMeta = {};

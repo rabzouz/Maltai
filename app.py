@@ -15,7 +15,7 @@ from core.config import settings
 from core import auth as core_auth
 from core import database as db
 from routes import auth as auth_routes
-from routes import chat, external, mcp, memory, notes, ollama, providers, sessions, telegram, terminal, tools, uploads
+from routes import billing, chat, external, mcp, memory, notes, ollama, providers, sessions, telegram, terminal, tools, uploads
 from routes import tool_run
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -88,6 +88,7 @@ app.include_router(tools.router)
 app.include_router(notes.router)
 app.include_router(tool_run.router)
 app.include_router(uploads.download_router)
+app.include_router(billing.router)
 
 
 @app.get("/api/health")
@@ -130,6 +131,16 @@ def site_page():
 @app.get("/app")
 def app_page():
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+@app.get("/billing")
+def billing_page():
+    return FileResponse(str(STATIC_DIR / "billing.html"))
+
+
+@app.get("/billing/success")
+def billing_success_page():
+    return FileResponse(str(STATIC_DIR / "billing.html"))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#14161a" />
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <title>MaltaiAI - Plans</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { min-height: 100vh; background: var(--bg); color: var(--text); }
+    .billing-page { width: min(980px, calc(100vw - 32px)); margin: 0 auto; padding: 34px 0 46px; }
+    .billing-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:28px; }
+    .brand { display:flex; align-items:center; gap:12px; color:var(--text); text-decoration:none; font-weight:900; font-size:20px; }
+    .brand img { width:44px; height:44px; border-radius:12px; }
+    .billing-hero { margin-bottom:24px; }
+    .billing-hero h1 { margin:0 0 8px; font-size: clamp(30px, 6vw, 54px); letter-spacing:0; }
+    .billing-hero p { margin:0; color:var(--muted); max-width:680px; line-height:1.55; }
+    .plans-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+    .plan-card {
+      border:1px solid var(--border); border-radius:8px; background:var(--panel);
+      padding:18px; display:flex; flex-direction:column; gap:14px; min-height:260px;
+    }
+    .plan-card.featured { border-color: color-mix(in srgb, var(--accent) 62%, var(--border)); }
+    .plan-card h2 { margin:0; font-size:19px; }
+    .plan-card .price { font-size:26px; font-weight:900; color:var(--text); }
+    .plan-card p { margin:0; color:var(--muted); line-height:1.45; font-size:14px; }
+    .plan-card ul { margin:0; padding-left:18px; color:var(--muted); font-size:13px; line-height:1.65; }
+    .plan-card button { margin-top:auto; }
+    .billing-status { margin: 18px 0; min-height: 22px; color: var(--muted); font-size: 14px; }
+    .billing-status.error { color:#ff8585; }
+    .billing-status.ok { color:var(--accent); }
+    .billing-note { margin-top:18px; color:var(--muted); font-size:12px; line-height:1.5; }
+    .ghost-link {
+      border:1px solid var(--border); border-radius:7px; color:var(--muted); text-decoration:none;
+      padding:8px 12px; font-size:13px;
+    }
+    .ghost-link:hover { color:var(--accent); border-color:var(--accent-2); }
+    @media (max-width: 840px) {
+      .plans-grid { grid-template-columns: 1fr; }
+      .billing-top { align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="billing-page">
+    <header class="billing-top">
+      <a class="brand" href="/app">
+        <img src="/static/logo-emblem.png" alt="Maltai" />
+        <span>Maltai<span style="color:#2bd4f0">AI</span></span>
+      </a>
+      <a class="ghost-link" href="/app">Retour app</a>
+    </header>
+
+    <section class="billing-hero">
+      <h1>Choisis ton plan.</h1>
+      <p>Basic permet de discuter. Premium débloque les outils Agent : scraping web, fichiers, browser, code sandbox, recherche et automatisation.</p>
+    </section>
+
+    <div id="billing-status" class="billing-status">Chargement des offres…</div>
+    <section id="plans-grid" class="plans-grid"></section>
+
+    <p class="billing-note">
+      Paiement sécurisé via Stripe Checkout. Les prix Stripe réels se configurent côté serveur avec des Price IDs.
+      En production, ajoute aussi un webhook Stripe pour automatiser les renouvellements et annulations d'abonnement.
+    </p>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("billing-status");
+    const grid = document.getElementById("plans-grid");
+    const params = new URLSearchParams(location.search);
+
+    function setStatus(text, kind = "") {
+      statusEl.textContent = text || "";
+      statusEl.className = `billing-status ${kind}`.trim();
+    }
+
+    function features(id) {
+      if (id.startsWith("premium")) {
+        return ["Outils Agent actifs", "Scraping et browser", "Fichiers et code sandbox", "Crédits suivis"];
+      }
+      return ["Recharge immédiate", "Usage outils Premium", "Historique crédits", "Sans abonnement"];
+    }
+
+    async function confirmPayment() {
+      const sessionId = params.get("session_id");
+      if (!sessionId) return false;
+      setStatus("Validation du paiement…");
+      const r = await fetch("/api/billing/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || `Erreur ${r.status}`);
+      setStatus(d.already_processed ? "Paiement déjà validé." : "Paiement validé. Ton compte est mis à jour.", "ok");
+      setTimeout(() => { location.href = "/app"; }, 1400);
+      return true;
+    }
+
+    async function startCheckout(offer) {
+      setStatus("Ouverture de Stripe Checkout…");
+      const r = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || `Erreur ${r.status}`);
+      if (!d.url) throw new Error("Stripe n'a pas renvoyé d'URL Checkout");
+      location.href = d.url;
+    }
+
+    async function loadPlans() {
+      try {
+        if (await confirmPayment()) return;
+      } catch (e) {
+        setStatus(e.message, "error");
+      }
+      if (params.get("cancel")) setStatus("Paiement annulé. Tu peux choisir une autre offre.");
+      const r = await fetch("/api/billing/plans");
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || `Erreur ${r.status}`);
+      grid.innerHTML = "";
+      d.offers.forEach((offer) => {
+        const card = document.createElement("article");
+        card.className = `plan-card ${offer.id === "premium_monthly" ? "featured" : ""}`;
+        const disabled = !d.stripe_configured || !offer.configured;
+        card.innerHTML = `
+          <h2>${offer.name}</h2>
+          <div class="price">${offer.price}</div>
+          <p>${offer.description}</p>
+          <ul>${features(offer.id).map((f) => `<li>${f}</li>`).join("")}</ul>
+          <button class="btn-primary" ${disabled ? "disabled" : ""}>${disabled ? "Bientôt" : "Acheter"}</button>
+        `;
+        card.querySelector("button").onclick = () => startCheckout(offer.id).catch((e) => setStatus(e.message, "error"));
+        grid.appendChild(card);
+      });
+      if (!d.stripe_configured) {
+        setStatus("Stripe n'est pas encore configuré sur ce serveur. Ajoute STRIPE_SECRET_KEY et les Price IDs.", "error");
+      } else if (!statusEl.textContent || statusEl.textContent === "Chargement des offres…") {
+        setStatus("Choisis une offre pour ouvrir Stripe Checkout.");
+      }
+    }
+
+    loadPlans().catch((e) => setStatus(e.message, "error"));
+  </script>
+</body>
+</html>

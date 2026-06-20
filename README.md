@@ -163,6 +163,19 @@ Le panneau **Brain** permet :
 Chaque réponse affiche un footer d'usage :
 `provider · modèle · Chat/Agent · tokens in/out · crédits · solde`.
 
+### Paiement Stripe
+La page `/billing` affiche les offres Premium et packs de crédits. Les boutons ouvrent Stripe Checkout si les variables sont configurées :
+
+```env
+APP_PUBLIC_URL=https://maltai.fr
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PREMIUM_MONTHLY_PRICE_ID=price_...
+STRIPE_PREMIUM_YEARLY_PRICE_ID=price_...
+STRIPE_CREDITS_100K_PRICE_ID=price_...
+```
+
+Les nouveaux comptes restent `Basic` jusqu'à achat Premium ou changement manuel par un admin. En production, ajoute un webhook Stripe pour automatiser renouvellements, annulations et échecs de paiement.
+
 ## Démarrage rapide
 
 ```bash

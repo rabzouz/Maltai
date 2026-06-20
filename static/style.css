@@ -412,6 +412,38 @@ select {
   color: #e8b765;
 }
 .subscription-admin.hidden { display: none; }
+.subscription-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin: 4px 0 12px;
+}
+.billing-link {
+  text-decoration: none;
+  color: var(--accent);
+  font-weight: 800;
+}
+.upgrade-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 14px;
+  color: var(--muted);
+}
+.upgrade-card strong {
+  color: var(--text);
+}
+.upgrade-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.upgrade-card .btn-primary {
+  width: fit-content;
+  text-decoration: none;
+}
 .plan-select {
   width: 130px;
   min-width: 110px;

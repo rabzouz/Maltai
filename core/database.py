@@ -146,6 +146,17 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
 );
 CREATE INDEX IF NOT EXISTS idx_credit_ledger_user ON credit_ledger(user_id, created_at);
 
+CREATE TABLE IF NOT EXISTS billing_events (
+    id          TEXT PRIMARY KEY,
+    session_id  TEXT UNIQUE NOT NULL,
+    user_id     TEXT NOT NULL,
+    offer       TEXT NOT NULL,
+    plan        TEXT NOT NULL DEFAULT '',
+    credits     INTEGER NOT NULL DEFAULT 0,
+    created_at  REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_billing_events_user ON billing_events(user_id, created_at);
+
 -- FTS5 : recherche plein texte sur les messages
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
@@ -352,6 +363,31 @@ def list_credit_ledger(user_id: str, limit: int = 20) -> list[dict[str, Any]]:
             (user_id, max(1, min(int(limit), 100))),
         ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_billing_event(session_id: str) -> dict[str, Any] | None:
+    conn = connect()
+    try:
+        row = conn.execute("SELECT * FROM billing_events WHERE session_id=?", (session_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def record_billing_event(session_id: str, user_id: str, offer: str, plan: str = "", credits: int = 0) -> bool:
+    conn = connect()
+    try:
+        conn.execute(
+            "INSERT INTO billing_events (id, session_id, user_id, offer, plan, credits, created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (new_id(), session_id, user_id, offer, plan, int(credits), now()),
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
     finally:
         conn.close()
 

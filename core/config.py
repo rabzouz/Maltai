@@ -80,6 +80,13 @@ class Settings:
     # Limites d'upload (octets)
     CHAT_UPLOAD_MAX_BYTES = int(os.getenv("MALTAI_CHAT_UPLOAD_MAX_BYTES", str(10 * 1024 * 1024)))
 
+    # Stripe Checkout (optionnel)
+    APP_PUBLIC_URL = os.getenv("APP_PUBLIC_URL", "")
+    STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+    STRIPE_PREMIUM_MONTHLY_PRICE_ID = os.getenv("STRIPE_PREMIUM_MONTHLY_PRICE_ID", "")
+    STRIPE_PREMIUM_YEARLY_PRICE_ID = os.getenv("STRIPE_PREMIUM_YEARLY_PRICE_ID", "")
+    STRIPE_CREDITS_100K_PRICE_ID = os.getenv("STRIPE_CREDITS_100K_PRICE_ID", "")
+
     # Envoi d'emails (outil email_send de l'agent). Non configure = outil desactive.
     SMTP_HOST = os.getenv("SMTP_HOST", "")
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
