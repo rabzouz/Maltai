@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from core import billing, database as db
 from core import plans
-from src import agent, llm, memory
+from src import agent, llm, memory, premium_provider
 from src.prompts import SYSTEM_PROMPT
 from src.tools import WORKSPACE
 
@@ -95,14 +95,13 @@ def _sse(event: str, data: dict) -> str:
 
 @router.post("")
 async def chat(body: ChatIn, request: Request):
-    provider = db.get_provider(body.provider_id)
-    if not provider:
-        raise HTTPException(404, "Provider introuvable")
-
     user = getattr(request.state, "user", None)
     user_id = user["id"] if user else None
     is_admin = bool(user and user.get("is_admin"))
     plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
+    provider = premium_provider.resolve(body.provider_id, plan, is_admin) or db.get_provider(body.provider_id)
+    if not provider:
+        raise HTTPException(404, "Provider introuvable")
     if body.agent and not plans.can_use_tools(plan, is_admin):
         raise HTTPException(403, "Plan premium requis pour utiliser les outils de l'agent")
     if not billing.can_start_request(user):

@@ -86,6 +86,15 @@ class Settings:
     STRIPE_PREMIUM_MONTHLY_PRICE_ID = os.getenv("STRIPE_PREMIUM_MONTHLY_PRICE_ID", "")
     STRIPE_PREMIUM_YEARLY_PRICE_ID = os.getenv("STRIPE_PREMIUM_YEARLY_PRICE_ID", "")
     STRIPE_CREDITS_100K_PRICE_ID = os.getenv("STRIPE_CREDITS_100K_PRICE_ID", "")
+    PREMIUM_MONTHLY_CREDITS = int(os.getenv("MALTAI_PREMIUM_MONTHLY_CREDITS", "100000"))
+    PREMIUM_YEARLY_CREDITS = int(os.getenv("MALTAI_PREMIUM_YEARLY_CREDITS", "1200000"))
+
+    # Provider OpenAI reserve aux comptes Premium/Admin. La cle reste serveur.
+    PREMIUM_OPENAI_NAME = os.getenv("PREMIUM_OPENAI_NAME", "Maltai Premium OpenAI")
+    PREMIUM_OPENAI_BASE_URL = os.getenv("PREMIUM_OPENAI_BASE_URL", "https://api.openai.com/v1")
+    PREMIUM_OPENAI_API_KEY = os.getenv("PREMIUM_OPENAI_API_KEY", "")
+    PREMIUM_OPENAI_MODEL = os.getenv("PREMIUM_OPENAI_MODEL", "gpt-4o-mini")
+    PREMIUM_OPENAI_EMBED_MODEL = os.getenv("PREMIUM_OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
     # Envoi d'emails (outil email_send de l'agent). Non configure = outil desactive.
     SMTP_HOST = os.getenv("SMTP_HOST", "")

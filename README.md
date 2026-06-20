@@ -172,9 +172,21 @@ STRIPE_SECRET_KEY=sk_live_...
 STRIPE_PREMIUM_MONTHLY_PRICE_ID=price_...
 STRIPE_PREMIUM_YEARLY_PRICE_ID=price_...
 STRIPE_CREDITS_100K_PRICE_ID=price_...
+MALTAI_PREMIUM_MONTHLY_CREDITS=100000
+MALTAI_PREMIUM_YEARLY_CREDITS=1200000
 ```
 
 Les nouveaux comptes restent `Basic` jusqu'à achat Premium ou changement manuel par un admin. En production, ajoute un webhook Stripe pour automatiser renouvellements, annulations et échecs de paiement.
+
+Pour fournir un modèle OpenAI inclus au plan Premium sans exposer ta clé aux utilisateurs :
+
+```env
+PREMIUM_OPENAI_API_KEY=sk-...
+PREMIUM_OPENAI_MODEL=gpt-4o-mini
+PREMIUM_OPENAI_EMBED_MODEL=text-embedding-3-small
+```
+
+Quand la clé est configurée, le provider **Maltai Premium OpenAI** apparaît seulement pour les comptes `Premium` et `Admin`.
 
 ## Démarrage rapide
 

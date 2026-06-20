@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from core import billing
 from core import database as db
 from core import plans
+from src import premium_provider
 from src.tools import execute_tool, TOOLS
 
 router = APIRouter(prefix="/api/tool", tags=["tool_run"])
@@ -40,7 +41,7 @@ async def run_tool(request: Request, body: ToolRunIn):
     # Build ctx identique à celui de la boucle agent
     provider_row = None
     if body.provider:
-        provider_row = db.get_provider(body.provider)
+        provider_row = premium_provider.resolve(body.provider, plan, is_admin) or db.get_provider(body.provider)
     if not provider_row:
         # fallback : premier provider disponible
         providers = db.list_providers()

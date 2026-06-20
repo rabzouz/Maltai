@@ -1,11 +1,12 @@
 """Routes de gestion des providers LLM."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from core import database as db
-from src import llm
+from core import plans
+from src import llm, premium_provider
 
 router = APIRouter(prefix="/api/providers", tags=["providers"])
 
@@ -19,9 +20,14 @@ class ProviderIn(BaseModel):
 
 
 @router.get("")
-def get_providers():
+def get_providers(request: Request):
+    user = getattr(request.state, "user", None)
+    is_admin = bool(user and user.get("is_admin"))
+    plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
     # On masque la cle API dans la reponse.
     out = []
+    if premium_provider.allowed(plan, is_admin):
+        out.append(premium_provider.public_provider())
     for p in db.list_providers():
         out.append({
             "id": p["id"], "name": p["name"], "base_url": p["base_url"],
@@ -51,8 +57,11 @@ def remove_provider(pid: str):
 
 
 @router.get("/{pid}/models")
-async def provider_models(pid: str):
-    p = db.get_provider(pid)
+async def provider_models(pid: str, request: Request):
+    user = getattr(request.state, "user", None)
+    is_admin = bool(user and user.get("is_admin"))
+    plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
+    p = premium_provider.resolve(pid, plan, is_admin) or db.get_provider(pid)
     if not p:
         raise HTTPException(404, "Provider introuvable")
     try:

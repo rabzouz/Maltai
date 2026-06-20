@@ -207,7 +207,7 @@ async function loadProviders() {
   state.providers.forEach((p) => {
     const o = document.createElement("option");
     o.value = p.id;
-    o.textContent = p.name;
+    o.textContent = p.premium_managed ? `${p.name} · Premium` : p.name;
     sel.appendChild(o);
   });
   if (state.providers.length) {
@@ -264,14 +264,20 @@ function renderProviderRows() {
     const row = document.createElement("div");
     row.className = "provider-row";
     const memTag = p.embed_model ? ` · 🧠 ${esc(p.embed_model)}` : " · 🧠 off";
+    const premiumTag = p.premium_managed ? " · Premium géré" : "";
     row.innerHTML = `<div><strong>${esc(p.name)}</strong>
-      <div class="meta">${esc(p.base_url)} · ${esc(p.model || "—")}${memTag}</div></div>`;
+      <div class="meta">${esc(p.base_url)} · ${esc(p.model || "—")}${memTag}${premiumTag}</div></div>`;
     const del = document.createElement("button");
     del.className = "icon-btn"; del.textContent = "🗑";
-    del.onclick = async () => {
-      await fetch(`/api/providers/${p.id}`, { method: "DELETE" });
-      await loadProviders();
-    };
+    if (p.premium_managed) {
+      del.disabled = true;
+      del.title = "Provider Premium configure par l'administrateur";
+    } else {
+      del.onclick = async () => {
+        await fetch(`/api/providers/${p.id}`, { method: "DELETE" });
+        await loadProviders();
+      };
+    }
     row.appendChild(del);
     box.appendChild(row);
   });

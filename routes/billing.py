@@ -24,7 +24,7 @@ OFFERS = {
         "description": "Outils agent, scraping, browser, fichiers, code sandbox et crédits inclus.",
         "mode": "subscription",
         "plan": "premium",
-        "credits": 0,
+        "credits": settings.PREMIUM_MONTHLY_CREDITS,
         "price_setting": "STRIPE_PREMIUM_MONTHLY_PRICE_ID",
     },
     "premium_yearly": {
@@ -33,7 +33,7 @@ OFFERS = {
         "description": "Premium pendant un an avec tarif réduit.",
         "mode": "subscription",
         "plan": "premium",
-        "credits": 0,
+        "credits": settings.PREMIUM_YEARLY_CREDITS,
         "price_setting": "STRIPE_PREMIUM_YEARLY_PRICE_ID",
     },
     "credits_100k": {
@@ -167,6 +167,9 @@ async def confirm(body: dict, request: Request):
     if plan:
         db.set_user_plan(user["id"], plan)
     if credits:
-        db.add_user_credits(user["id"], credits, reason=f"stripe:{offer_key}")
+        if plan:
+            db.set_user_credits(user["id"], credits, reason=f"stripe:{offer_key}")
+        else:
+            db.add_user_credits(user["id"], credits, reason=f"stripe:{offer_key}")
     db.record_billing_event(session_id, user["id"], offer_key, plan=plan, credits=credits)
     return {"ok": True, "plan": plan, "credits": credits}
