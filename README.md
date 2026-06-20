@@ -184,9 +184,14 @@ Pour fournir un modèle OpenAI inclus au plan Premium sans exposer ta clé aux u
 PREMIUM_OPENAI_API_KEY=sk-...
 PREMIUM_OPENAI_MODEL=gpt-4o-mini
 PREMIUM_OPENAI_EMBED_MODEL=text-embedding-3-small
+MALTAI_MANAGED_OPENAI_MONTHLY_USER_TOKEN_LIMIT=100000
+MALTAI_MANAGED_OPENAI_MONTHLY_GLOBAL_TOKEN_LIMIT=1000000
+MALTAI_MANAGED_OPENAI_MAX_INPUT_TOKENS=12000
+MALTAI_MANAGED_OPENAI_MAX_OUTPUT_TOKENS=800
 ```
 
 Quand la clé est configurée, le provider **Maltai Premium OpenAI** apparaît seulement pour les comptes `Premium` et `Admin`.
+Maltai bloque les grosses requêtes, plafonne la sortie `max_tokens`, suit les tokens mensuels par utilisateur et bloque le provider si le quota global mensuel est atteint. Configure aussi un budget mensuel côté OpenAI Project pour une limite financière dure.
 
 ## Démarrage rapide
 

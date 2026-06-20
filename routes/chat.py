@@ -143,6 +143,18 @@ async def chat(body: ChatIn, request: Request):
         ctx = memory.format_context(recalled)
         messages = [{"role": "system", "content": ctx}, *messages]
     input_tokens = billing.estimate_messages_tokens(messages)
+    managed_limits: dict = {}
+    max_output_tokens = None
+    if premium_provider.is_managed_provider(provider):
+        try:
+            managed_limits = premium_provider.check_limits(
+                user_id or "anonymous",
+                input_tokens,
+                None if is_admin else int(user.get("credit_balance") or 0),
+            )
+        except ValueError as e:
+            raise HTTPException(402, str(e)) from None
+        max_output_tokens = int(managed_limits["max_output_tokens"])
 
     async def finalize(answer: str) -> dict:
         if answer:
@@ -151,7 +163,16 @@ async def chat(body: ChatIn, request: Request):
         await memory.remember(provider, user_id, body.session_id, "user", body.content)
         await memory.remember(provider, user_id, body.session_id, "assistant", answer)
         usage = billing.charge_chat(
-            user, body.session_id, body.model, input_tokens, billing.estimate_text_tokens(answer)
+            user,
+            body.session_id,
+            body.model,
+            input_tokens,
+            billing.estimate_text_tokens(answer),
+            meta={
+                "provider_id": body.provider_id,
+                "provider": provider.get("name") or provider.get("base_url"),
+                **managed_limits,
+            },
         )
         usage["model"] = body.model
         usage["provider"] = provider.get("name") or provider.get("base_url")
@@ -165,7 +186,7 @@ async def chat(body: ChatIn, request: Request):
         try:
             async for piece in llm.stream_chat(
                 provider["base_url"], provider["api_key"], body.model,
-                messages, body.temperature,
+                messages, body.temperature, max_tokens=max_output_tokens,
             ):
                 full.append(piece)
                 yield _sse("delta", {"content": piece})
@@ -183,6 +204,7 @@ async def chat(body: ChatIn, request: Request):
         async for ev, data in agent.run_agent(
             provider, body.model, messages, is_admin, body.temperature,
             user_id=user_id, enabled_tools=body.enabled_tools, plan=plan,
+            max_tokens=max_output_tokens,
         ):
             if ev == "delta":
                 full.append(data["content"])

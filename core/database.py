@@ -355,6 +355,29 @@ def spend_user_credits(
         conn.close()
 
 
+def record_usage_event(
+    user_id: str,
+    input_tokens: int = 0,
+    output_tokens: int = 0,
+    reason: str = "usage",
+    meta: dict[str, Any] | None = None,
+) -> None:
+    conn = connect()
+    try:
+        conn.execute(
+            "INSERT INTO credit_ledger "
+            "(id, user_id, delta, balance_after, input_tokens, output_tokens, reason, meta, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                new_id(), user_id, 0, 0, int(input_tokens), int(output_tokens),
+                reason, json.dumps(meta or {}, ensure_ascii=False), now(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def list_credit_ledger(user_id: str, limit: int = 20) -> list[dict[str, Any]]:
     conn = connect()
     try:
@@ -363,6 +386,34 @@ def list_credit_ledger(user_id: str, limit: int = 20) -> list[dict[str, Any]]:
             (user_id, max(1, min(int(limit), 100))),
         ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def managed_openai_monthly_tokens(user_id: str | None = None, since_ts: float | None = None) -> int:
+    """Somme les tokens estimes consommes par le provider OpenAI gere Maltai."""
+    conn = connect()
+    try:
+        query = "SELECT user_id, input_tokens, output_tokens, meta FROM credit_ledger"
+        params: list[Any] = []
+        where = []
+        if user_id:
+            where.append("user_id=?")
+            params.append(user_id)
+        if since_ts is not None:
+            where.append("created_at>=?")
+            params.append(float(since_ts))
+        if where:
+            query += " WHERE " + " AND ".join(where)
+        total = 0
+        for row in conn.execute(query, params).fetchall():
+            try:
+                meta = json.loads(row["meta"] or "{}")
+            except json.JSONDecodeError:
+                meta = {}
+            if meta.get("managed_openai"):
+                total += int(row["input_tokens"] or 0) + int(row["output_tokens"] or 0)
+        return total
     finally:
         conn.close()
 

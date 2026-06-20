@@ -1502,6 +1502,7 @@ async def tool_deep_research(args: dict, ctx: dict) -> str:
             return await _llm.complete(
                 provider["base_url"], provider["api_key"], model,
                 [{"role": "user", "content": prompt}],
+                max_tokens=ctx.get("max_tokens"),
             )
         except _llm.LLMError as e:
             raise RuntimeError(str(e))

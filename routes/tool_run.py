@@ -54,23 +54,40 @@ async def run_tool(request: Request, body: ToolRunIn):
         "provider": provider_row,
         "model":    body.model or (provider_row.get("default_model") if provider_row else None),
     }
+    managed_openai = premium_provider.is_managed_provider(provider_row)
+    managed_limits: dict = {}
+    if managed_openai:
+        try:
+            managed_limits = premium_provider.check_limits(
+                user["id"],
+                billing.estimate_text_tokens(str(body.args or {})),
+                None if is_admin else int(user.get("credit_balance") or 0),
+            )
+            ctx["max_tokens"] = int(managed_limits["max_output_tokens"])
+        except ValueError as e:
+            raise HTTPException(402, str(e)) from None
 
     result = await execute_tool(body.tool, body.args, ctx)
+    args_tokens = billing.estimate_text_tokens(str(body.args or {}))
+    result_tokens = billing.estimate_text_tokens(result)
     usage = {
         "credits_spent": 0,
         "balance": None,
         "cost": cost,
     }
     if cost and not is_admin:
-        args_tokens = billing.estimate_text_tokens(str(body.args or {}))
-        result_tokens = billing.estimate_text_tokens(result)
         spent, balance = db.spend_user_credits(
             user["id"],
             cost,
             input_tokens=args_tokens,
             output_tokens=result_tokens,
             reason=f"tool:{body.tool}",
-            meta={"tool": body.tool, "model": ctx.get("model")},
+            meta={
+                "tool": body.tool,
+                "model": ctx.get("model"),
+                "provider_id": body.provider,
+                **managed_limits,
+            },
         )
         usage = {
             "credits_spent": spent,
@@ -79,6 +96,14 @@ async def run_tool(request: Request, body: ToolRunIn):
             "input_tokens": args_tokens,
             "output_tokens": result_tokens,
         }
+    elif managed_openai:
+        db.record_usage_event(
+            user["id"],
+            input_tokens=args_tokens,
+            output_tokens=result_tokens,
+            reason=f"tool:{body.tool}:admin",
+            meta={"tool": body.tool, "model": ctx.get("model"), "provider_id": body.provider, **managed_limits},
+        )
     return {"result": result, "usage": usage}
 
 

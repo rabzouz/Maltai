@@ -38,6 +38,7 @@ async def run_agent(
     user_id: str | None = None,
     enabled_tools: list[str] | None = None,
     plan: str = "premium",
+    max_tokens: int | None = None,
 ) -> AsyncIterator[tuple[str, dict]]:
     ctx = {"is_admin": is_admin, "provider": provider, "user_id": user_id, "model": model, "plan": plan}
     specs = tools.openai_tool_specs(is_admin, plan)
@@ -68,6 +69,7 @@ async def run_agent(
             async for ev, data in llm.stream_chat_events(
                 provider["base_url"], provider["api_key"], model,
                 convo, tools=specs, temperature=temperature,
+                max_tokens=max_tokens,
             ):
                 if ev == "text":
                     text_parts.append(data)

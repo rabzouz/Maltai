@@ -58,8 +58,18 @@ def charge_chat(
     model: str,
     input_tokens: int,
     output_tokens: int,
+    meta: dict | None = None,
 ) -> dict:
+    meta = meta or {}
     if not user or user.get("is_admin"):
+        if user and meta.get("managed_openai"):
+            db.record_usage_event(
+                user["id"],
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                reason="chat:admin",
+                meta={"session_id": session_id, "model": model, **meta},
+            )
         return {
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
@@ -75,7 +85,7 @@ def charge_chat(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         reason="chat",
-        meta={"session_id": session_id, "model": model},
+        meta={"session_id": session_id, "model": model, **meta},
     )
     return {
         "input_tokens": input_tokens,

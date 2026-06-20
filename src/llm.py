@@ -47,6 +47,7 @@ async def stream_chat(
     model: str,
     messages: list[dict],
     temperature: float = 0.7,
+    max_tokens: int | None = None,
 ) -> AsyncIterator[str]:
     """Yield les morceaux de texte au fur et a mesure (SSE OpenAI)."""
     url = _normalize_base(base_url) + "/chat/completions"
@@ -59,6 +60,8 @@ async def stream_chat(
         "temperature": temperature,
         "stream": True,
     }
+    if max_tokens:
+        payload["max_tokens"] = int(max_tokens)
 
     try:
         async with httpx.AsyncClient(timeout=None) as client:
@@ -81,6 +84,7 @@ async def stream_chat_events(
     messages: list[dict],
     tools: list[dict] | None = None,
     temperature: float = 0.7,
+    max_tokens: int | None = None,
 ) -> AsyncIterator[tuple[str, object]]:
     """Stream avec support du function calling OpenAI.
 
@@ -99,6 +103,8 @@ async def stream_chat_events(
         "temperature": temperature,
         "stream": True,
     }
+    if max_tokens:
+        payload["max_tokens"] = int(max_tokens)
     if tools:
         payload["tools"] = tools
 
@@ -196,10 +202,10 @@ async def embed(base_url: str, api_key: str, model: str, texts: list[str]) -> li
 
 async def complete(
     base_url: str, api_key: str, model: str,
-    messages: list[dict], temperature: float = 0.3,
+    messages: list[dict], temperature: float = 0.3, max_tokens: int | None = None,
 ) -> str:
     """Completion non-streamee (joint le stream) — pour les outils internes."""
     parts: list[str] = []
-    async for piece in stream_chat(base_url, api_key, model, messages, temperature):
+    async for piece in stream_chat(base_url, api_key, model, messages, temperature, max_tokens=max_tokens):
         parts.append(piece)
     return "".join(parts)
