@@ -92,7 +92,8 @@ def set_plan(user_id: str, body: PlanIn, request: Request):
     plan = normalize_plan(body.plan, False)
     if plan == "admin":
         raise HTTPException(400, "Le plan admin est reserve aux comptes administrateurs")
-    db.set_user_plan(user_id, plan)
+    if not db.set_user_plan(user_id, plan):
+        raise HTTPException(400, "Impossible de changer le plan : utilisateur introuvable ou administrateur")
     return {"ok": True, "plan": plan}
 
 

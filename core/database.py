@@ -251,11 +251,12 @@ def list_users() -> list[dict[str, Any]]:
         conn.close()
 
 
-def set_user_plan(user_id: str, plan: str) -> None:
+def set_user_plan(user_id: str, plan: str) -> bool:
     conn = connect()
     try:
-        conn.execute("UPDATE users SET plan=? WHERE id=? AND is_admin=0", (plan, user_id))
+        cur = conn.execute("UPDATE users SET plan=? WHERE id=? AND is_admin=0", (plan, user_id))
         conn.commit()
+        return cur.rowcount > 0
     finally:
         conn.close()
 

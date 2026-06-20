@@ -118,8 +118,10 @@ async function loadSubscriptionUsers() {
       actions.className = "credit-actions";
       const sel = document.createElement("select");
       sel.className = "plan-select";
+      const planOptions = u.is_admin ? ["admin"] : ["basic", "premium"];
       sel.disabled = !!u.is_admin;
-      ["basic", "premium"].forEach((p) => {
+      if (u.is_admin) sel.title = "Compte administrateur : accès complet, usage non facturé.";
+      planOptions.forEach((p) => {
         const opt = document.createElement("option");
         opt.value = p;
         opt.textContent = planLabel(p);
@@ -127,11 +129,19 @@ async function loadSubscriptionUsers() {
         sel.appendChild(opt);
       });
       sel.onchange = async () => {
-        await fetch(`/api/auth/users/${u.id}/plan`, {
+        const previous = effective;
+        const r = await fetch(`/api/auth/users/${u.id}/plan`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan: sel.value }),
         });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          alert(d.detail || `Erreur ${r.status}`);
+          sel.value = previous;
+          return;
+        }
+        if (state.user?.id === u.id) await loadMe();
         await loadSubscriptionUsers();
       };
       actions.appendChild(sel);
@@ -149,11 +159,16 @@ async function loadSubscriptionUsers() {
         add.onclick = async () => {
           const credits = parseInt(amount.value || "0", 10);
           if (!credits) return;
-          await fetch(`/api/auth/users/${u.id}/credits`, {
+          const r = await fetch(`/api/auth/users/${u.id}/credits`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mode: "add", credits }),
           });
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({}));
+            alert(d.detail || `Erreur ${r.status}`);
+            return;
+          }
           await loadSubscriptionUsers();
         };
         const set = document.createElement("button");
@@ -162,11 +177,16 @@ async function loadSubscriptionUsers() {
         set.title = "Fixer le solde";
         set.onclick = async () => {
           const credits = parseInt(amount.value || "0", 10);
-          await fetch(`/api/auth/users/${u.id}/credits`, {
+          const r = await fetch(`/api/auth/users/${u.id}/credits`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mode: "set", credits }),
           });
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({}));
+            alert(d.detail || `Erreur ${r.status}`);
+            return;
+          }
           await loadSubscriptionUsers();
         };
         actions.append(amount, add, set);
