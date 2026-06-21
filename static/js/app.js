@@ -65,6 +65,8 @@ function updateSubscriptionUI() {
   }
   const adminBox = $("#subscription-admin");
   if (adminBox) adminBox.classList.toggle("hidden", !state.user?.is_admin);
+  const providerForm = $("#provider-form");
+  if (providerForm) providerForm.classList.toggle("hidden", !state.user?.is_admin);
   const topbarAdmin = $("#topbar-admin");
   if (topbarAdmin) topbarAdmin.classList.toggle("hidden", !state.user?.is_admin);
 }
@@ -214,6 +216,13 @@ async function loadProviders() {
     state.providerId = state.providers[0].id;
     sel.value = state.providerId;
     await loadModels(state.providerId);
+  } else {
+    state.providerId = null;
+    state.model = null;
+    const modelSel = $("#model-select");
+    if (modelSel) modelSel.innerHTML = "";
+    const lbl = $("#composer-model-name");
+    if (lbl) lbl.textContent = "modèle";
   }
   renderProviderRows();
 }

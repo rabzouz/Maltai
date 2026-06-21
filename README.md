@@ -163,6 +163,12 @@ Le panneau **Brain** permet :
 Chaque réponse affiche un footer d'usage :
 `provider · modèle · Chat/Agent · tokens in/out · crédits · solde`.
 
+Les clés API serveur sont protégées :
+- seuls les admins peuvent ajouter/supprimer des providers globaux ;
+- un compte `Basic` ne voit que les providers locaux/sans clé payante ;
+- le provider **Maltai Premium OpenAI** apparaît seulement pour `Premium` et `Admin` ;
+- aucune clé OpenAI/Stripe n'est envoyée au navigateur.
+
 ### Paiement Stripe
 La page `/billing` affiche les offres Premium et packs de crédits. Les boutons ouvrent Stripe Checkout si les variables sont configurées :
 
