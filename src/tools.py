@@ -25,7 +25,7 @@ import sys
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, urlparse
 from typing import Any, Awaitable, Callable
 
 import httpx
@@ -561,14 +561,14 @@ async def tool_web_scrape(args: dict, ctx: dict) -> str:
     if not isinstance(include, dict):
         include = {}
     try:
-        async with httpx.AsyncClient(
-            timeout=25,
-            follow_redirects=True,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; MaltaiScraper/1.0)"},
-        ) as client:
-            r = await client.get(url)
+        r = await _safe_fetch(
+            "GET", url, ctx, timeout=25,
+            user_agent="Mozilla/5.0 (compatible; MaltaiScraper/1.0)",
+        )
         if r.status_code >= 400:
             return f"Erreur HTTP {r.status_code} sur {url}"
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur reseau : {e}"
 
@@ -652,9 +652,13 @@ async def tool_web_scrape(args: dict, ctx: dict) -> str:
 async def _browser_fetch(url: str, ctx: dict | None) -> tuple[str, str, str]:
     target = _check_browser_url_allowed(url, ctx)
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
-            r = await client.get(target, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
-            r.raise_for_status()
+        r = await _safe_fetch(
+            "GET", target, ctx, timeout=25,
+            user_agent="Mozilla/5.0 (Maltai Browser)",
+        )
+        r.raise_for_status()
+    except PermissionError as e:
+        raise ValueError(f"Refuse : {e}") from e
     except httpx.HTTPError as e:
         raise ValueError(f"Erreur browser : {e}") from e
     return str(r.url), r.headers.get("content-type", ""), r.text
@@ -920,12 +924,15 @@ async def tool_browser_submit(args: dict, ctx: dict) -> str:
     if not ctx.get("is_admin") and _is_private_host(host):
         return "Refuse : hote prive/interne (reserve aux administrateurs)"
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
-            if method == "GET":
-                r = await client.get(action, params=payload, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
-            else:
-                r = await client.post(action, data=payload, headers={"User-Agent": "Mozilla/5.0 (Maltai Browser)"})
-            r.raise_for_status()
+        if method == "GET":
+            r = await _safe_fetch("GET", action, ctx, timeout=25, params=payload,
+                                  user_agent="Mozilla/5.0 (Maltai Browser)")
+        else:
+            r = await _safe_fetch("POST", action, ctx, timeout=25, data=payload,
+                                  user_agent="Mozilla/5.0 (Maltai Browser)")
+        r.raise_for_status()
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur submit : {e}"
     ctype = r.headers.get("content-type", "")
@@ -952,9 +959,10 @@ async def tool_web_fetch(args: dict, ctx: dict) -> str:
     if not url.startswith(("http://", "https://")):
         return "URL invalide (http/https requis)"
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            r = await client.get(url, headers={"User-Agent": "Maltai/0.2"})
-            r.raise_for_status()
+        r = await _safe_fetch("GET", url, ctx, timeout=20, user_agent="Maltai/0.2")
+        r.raise_for_status()
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur fetch : {e}"
     ctype = r.headers.get("content-type", "")
@@ -1178,6 +1186,57 @@ def _is_private_host(host: str) -> bool:
     return False
 
 
+MAX_REDIRECTS = 5
+
+
+def _host_of(url: str) -> str:
+    try:
+        return (urlparse(url).hostname or "").strip()
+    except ValueError:
+        return ""
+
+
+async def _safe_fetch(
+    method: str,
+    url: str,
+    ctx: dict | None = None,
+    *,
+    timeout: float = 25,
+    headers: dict | None = None,
+    params: dict | None = None,
+    content=None,
+    data=None,
+    user_agent: str = "Mozilla/5.0 (compatible; Maltai/1.0)",
+):
+    """Requete HTTP qui suit les redirections MANUELLEMENT en revalidant l'hote
+    a chaque saut. Pour les comptes non-admin, tout saut (y compris l'URL
+    initiale) vers une IP privee/interne est refuse -> protege contre le SSRF
+    par redirection. Leve PermissionError si bloque."""
+    is_admin = bool((ctx or {}).get("is_admin"))
+    hdrs = {"User-Agent": user_agent}
+    if headers:
+        hdrs.update(headers)
+    current = url
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
+        for _ in range(MAX_REDIRECTS + 1):
+            if not is_admin and _is_private_host(_host_of(current)):
+                raise PermissionError("hote prive/interne refuse (SSRF)")
+            resp = await client.request(
+                method, current, headers=hdrs,
+                params=params, content=content, data=data,
+            )
+            if resp.is_redirect and resp.headers.get("location"):
+                current = urljoin(current, resp.headers["location"])
+                # On ne rejoue ni le corps ni les parametres vers la cible suivante.
+                params = None
+                content = None
+                data = None
+                method = "GET"
+                continue
+            return resp
+    raise PermissionError("trop de redirections")
+
+
 async def tool_http_request(args: dict, ctx: dict) -> str:
     url = str(args.get("url", ""))
     method = str(args.get("method", "GET")).upper()
@@ -1193,11 +1252,12 @@ async def tool_http_request(args: dict, ctx: dict) -> str:
         headers = {}
     body = args.get("body")
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
-            r = await client.request(
-                method, url, headers=headers,
-                content=json.dumps(body) if isinstance(body, (dict, list)) else body,
-            )
+        r = await _safe_fetch(
+            method, url, ctx, timeout=25, headers=headers,
+            content=json.dumps(body) if isinstance(body, (dict, list)) else body,
+        )
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur HTTP : {e}"
     ctype = r.headers.get("content-type", "")
@@ -1385,10 +1445,11 @@ async def tool_rss_fetch(args: dict, ctx: dict) -> str:
         return "URL invalide"
     max_items = min(int(args.get("max_items", 8) or 8), 20)
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            r = await client.get(url, headers={"User-Agent": "Maltai/1.1"})
-            r.raise_for_status()
+        r = await _safe_fetch("GET", url, ctx, timeout=20, user_agent="Maltai/1.1")
+        r.raise_for_status()
         root = ET.fromstring(r.content)
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur flux : {e}"
     except ET.ParseError as e:
@@ -1892,25 +1953,17 @@ async def tool_page_summary(args: dict, ctx: dict) -> str:
     url = str(args.get("url", "")).strip()
     if not url or not url.startswith(("http://", "https://")):
         return "Erreur : URL invalide ou manquante."
-    # SSRF protection : bloquer IPs privees / localhost
-    try:
-        from urllib.parse import urlparse
-        host = urlparse(url).hostname or ""
-        if _is_private_host(host):
-            return "Refuse : l'acces aux adresses privees/locales est interdit."
-    except Exception:
-        return "Erreur : impossible de resoudre l'URL."
     question = str(args.get("question", "")).strip()
     try:
-        async with httpx.AsyncClient(
-            timeout=20,
-            follow_redirects=True,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; MaltaiBot/1.0)"},
-        ) as client:
-            r = await client.get(url)
+        r = await _safe_fetch(
+            "GET", url, ctx, timeout=20,
+            user_agent="Mozilla/5.0 (compatible; MaltaiBot/1.0)",
+        )
         if r.status_code != 200:
             return f"Erreur HTTP {r.status_code} sur {url}"
         raw = r.text
+    except PermissionError as e:
+        return f"Refuse : {e}"
     except httpx.HTTPError as e:
         return f"Erreur reseau : {e}"
 
