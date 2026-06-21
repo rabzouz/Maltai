@@ -164,6 +164,14 @@ async def confirm(body: dict, request: Request):
 
     plan = offer["plan"]
     credits = int(offer["credits"])
+    # Garde atomique anti double-credit : on enregistre l'evenement (UNIQUE
+    # session_id) AVANT d'accorder plan/credits. En cas d'appels concurrents,
+    # le second echoue ici et ne recredite pas.
+    if not db.record_billing_event(
+        session_id, user["id"], offer_key, plan=plan, credits=credits
+    ):
+        return {"ok": True, "already_processed": True,
+                "event": db.get_billing_event(session_id)}
     if plan:
         db.set_user_plan(user["id"], plan)
     if credits:
@@ -171,5 +179,4 @@ async def confirm(body: dict, request: Request):
             db.set_user_credits(user["id"], credits, reason=f"stripe:{offer_key}")
         else:
             db.add_user_credits(user["id"], credits, reason=f"stripe:{offer_key}")
-    db.record_billing_event(session_id, user["id"], offer_key, plan=plan, credits=credits)
     return {"ok": True, "plan": plan, "credits": credits}

@@ -102,7 +102,7 @@ async def external_chat(body: ChatIn, request: Request):
     bind_key = f"external_session:{body.session_key}"
     session_id = db.kv_get(bind_key)
     if not session_id or not any(s["id"] == session_id for s in db.list_sessions()):
-        session = db.create_session(body.provider_id, body.model)
+        session = db.create_session(None, body.provider_id, body.model)
         session_id = session["id"]
         db.rename_session(session_id, f"API {body.session_key}"[:60])
         db.kv_set(bind_key, session_id)

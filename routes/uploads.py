@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -111,7 +112,7 @@ def workspace_download(path: str, request: Request):
 def _workspace_file_response(path: str, request: Request):
     root = _workspace_root_for_request(request).resolve()
     target = (root / path).resolve()
-    if not str(target).startswith(str(root)) or not target.is_file():
+    if not str(target).startswith(str(root) + os.sep) or not target.is_file():
         raise HTTPException(404, "Fichier introuvable")
     return FileResponse(str(target), filename=target.name)
 
@@ -122,6 +123,6 @@ def export_download(path: str, request: Request):
     root = _workspace_root_for_request(request).resolve()
     exports_root = (root / "exports").resolve()
     target = (exports_root / safe_path).resolve()
-    if not str(target).startswith(str(exports_root)) or not target.is_file():
+    if not str(target).startswith(str(exports_root) + os.sep) or not target.is_file():
         raise HTTPException(404, "Fichier introuvable")
     return FileResponse(str(target), filename=target.name)

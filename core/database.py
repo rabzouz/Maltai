@@ -192,6 +192,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     memory_cols = {r["name"] for r in conn.execute("PRAGMA table_info(memories)")}
     if "pinned" not in memory_cols:
         conn.execute("ALTER TABLE memories ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
+    session_cols = {r["name"] for r in conn.execute("PRAGMA table_info(sessions)")}
+    if "user_id" not in session_cols:
+        conn.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
 
 
 def new_id() -> str:
@@ -200,6 +203,20 @@ def new_id() -> str:
 
 def now() -> float:
     return time.time()
+
+
+def _fts_delete_rowids(conn: sqlite3.Connection, rowids) -> None:
+    """Supprime les lignes FTS correspondantes (best-effort)."""
+    rowids = list(rowids)
+    if not rowids:
+        return
+    qmarks = ",".join("?" * len(rowids))
+    try:
+        conn.execute(
+            f"DELETE FROM messages_fts WHERE rowid IN ({qmarks})", tuple(rowids)
+        )
+    except Exception:
+        pass
 
 
 # --- Providers -----------------------------------------------------------
@@ -445,29 +462,66 @@ def record_billing_event(session_id: str, user_id: str, offer: str, plan: str = 
 
 # --- Sessions ------------------------------------------------------------
 
-def list_sessions() -> list[dict[str, Any]]:
+_ALL_SESSIONS = object()
+
+
+def list_sessions(user_id=_ALL_SESSIONS) -> list[dict[str, Any]]:
+    """Sans argument : toutes les sessions (usage interne).
+    user_id=None : sessions non rattachees (mode local/sans auth).
+    user_id="..." : uniquement les sessions de cet utilisateur."""
     conn = connect()
     try:
-        rows = conn.execute("SELECT * FROM sessions ORDER BY updated_at DESC").fetchall()
+        if user_id is _ALL_SESSIONS:
+            rows = conn.execute(
+                "SELECT * FROM sessions ORDER BY updated_at DESC"
+            ).fetchall()
+        elif user_id is None:
+            rows = conn.execute(
+                "SELECT * FROM sessions WHERE user_id IS NULL ORDER BY updated_at DESC"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM sessions WHERE user_id=? ORDER BY updated_at DESC",
+                (user_id,),
+            ).fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()
 
 
-def create_session(provider_id: str | None, model: str | None) -> dict[str, Any]:
+def session_accessible(sid: str, user_id: str | None) -> bool:
+    """Vrai si la session existe ET appartient a l'utilisateur (ou est non
+    rattachee quand user_id est None : mode local mono-utilisateur)."""
+    conn = connect()
+    try:
+        if user_id is None:
+            row = conn.execute(
+                "SELECT 1 FROM sessions WHERE id=? AND user_id IS NULL", (sid,)
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT 1 FROM sessions WHERE id=? AND user_id=?", (sid, user_id)
+            ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
+def create_session(user_id: str | None, provider_id: str | None, model: str | None) -> dict[str, Any]:
     sid = new_id()
     ts = now()
     conn = connect()
     try:
         conn.execute(
-            "INSERT INTO sessions (id, title, provider_id, model, created_at, updated_at) "
-            "VALUES (?,?,?,?,?,?)",
-            (sid, "Nouvelle discussion", provider_id, model, ts, ts),
+            "INSERT INTO sessions (id, user_id, title, provider_id, model, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (sid, user_id, "Nouvelle discussion", provider_id, model, ts, ts),
         )
         conn.commit()
     finally:
         conn.close()
-    return {"id": sid, "title": "Nouvelle discussion", "provider_id": provider_id, "model": model}
+    return {"id": sid, "user_id": user_id, "title": "Nouvelle discussion",
+            "provider_id": provider_id, "model": model}
 
 
 def rename_session(sid: str, title: str) -> None:
@@ -491,7 +545,14 @@ def touch_session(sid: str) -> None:
 def delete_session(sid: str) -> None:
     conn = connect()
     try:
+        rowids = [
+            r["rowid"]
+            for r in conn.execute(
+                "SELECT rowid FROM messages WHERE session_id=?", (sid,)
+            ).fetchall()
+        ]
         conn.execute("DELETE FROM sessions WHERE id=?", (sid,))
+        _fts_delete_rowids(conn, rowids)
         conn.commit()
     finally:
         conn.close()
@@ -847,10 +908,18 @@ def truncate_from(session_id: str, message_id: str) -> int:
         ).fetchone()
         if not row:
             return 0
+        dead = [
+            r2["rowid"]
+            for r2 in conn.execute(
+                "SELECT rowid FROM messages WHERE session_id=? AND rowid>=?",
+                (session_id, row["rowid"]),
+            ).fetchall()
+        ]
         cur = conn.execute(
             "DELETE FROM messages WHERE session_id=? AND rowid>=?",
             (session_id, row["rowid"]),
         )
+        _fts_delete_rowids(conn, dead)
         conn.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now(), session_id))
         conn.commit()
         return cur.rowcount
@@ -887,6 +956,7 @@ def pop_last_exchange(session_id: str) -> str | None:
             f"DELETE FROM messages WHERE session_id=? AND rowid IN ({qmarks})",
             (session_id, *to_delete),
         )
+        _fts_delete_rowids(conn, to_delete)
         conn.commit()
         return user_content
     finally:
@@ -986,7 +1056,7 @@ def fts_search(query, user_id, limit=10):
                 "FROM messages_fts "
                 "JOIN messages m ON messages_fts.rowid = m.rowid "
                 "JOIN sessions s ON m.session_id = s.id "
-                "WHERE messages_fts MATCH ? "
+                "WHERE messages_fts MATCH ? AND s.user_id IS NULL "
                 "ORDER BY rank LIMIT ?",
                 (query, limit),
             ).fetchall()

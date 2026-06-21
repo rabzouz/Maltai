@@ -99,6 +99,8 @@ async def chat(body: ChatIn, request: Request):
     user_id = user["id"] if user else None
     is_admin = bool(user and user.get("is_admin"))
     plan = plans.normalize_plan(user.get("plan") if user else None, is_admin)
+    if not db.session_accessible(body.session_id, user_id):
+        raise HTTPException(404, "Session introuvable")
     provider = provider_access.resolve_provider(body.provider_id, plan, is_admin)
     if not provider:
         raise HTTPException(403, "Provider indisponible pour ce plan")

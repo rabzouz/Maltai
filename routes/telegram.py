@@ -4,9 +4,18 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from core.config import settings
 from src import connector, telegram
 
 router = APIRouter(prefix="/api/telegram", tags=["telegram"])
+
+
+def _require_admin(request: Request) -> None:
+    if not settings.AUTH_ENABLED:
+        return
+    user = getattr(request.state, "user", None)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(403, "Reserve aux administrateurs")
 
 
 class TelegramConfigIn(BaseModel):
@@ -18,7 +27,8 @@ class TelegramConfigIn(BaseModel):
 
 
 @router.get("/config")
-def get_config():
+def get_config(request: Request):
+    _require_admin(request)
     cfg = telegram.get_config()
     return {
         "has_token": bool(cfg.get("token")),
@@ -29,7 +39,8 @@ def get_config():
 
 
 @router.post("/config")
-async def set_config(body: TelegramConfigIn):
+async def set_config(body: TelegramConfigIn, request: Request):
+    _require_admin(request)
     cfg = telegram.get_config()
     if body.token.strip():
         cfg["token"] = body.token.strip()

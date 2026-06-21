@@ -113,7 +113,7 @@ async def handle_update(update: dict) -> None:
     # Session dediee a ce chat Telegram (continuite de la conversation).
     session_id = db.telegram_get_session(chat_id)
     if not session_id or not any(s["id"] == session_id for s in db.list_sessions()):
-        session = db.create_session(None, None)
+        session = db.create_session(None, None, None)
         session_id = session["id"]
         db.rename_session(session_id, f"Telegram {chat_id}")
         db.telegram_bind_session(chat_id, session_id)
