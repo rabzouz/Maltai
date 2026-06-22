@@ -141,6 +141,170 @@ async def tool_write_file(args: dict, ctx: dict) -> str:
         return f"Erreur ecriture : {e}"
 
 
+async def tool_pdf_read(args: dict, ctx: dict) -> str:
+    """Extrait le texte et les metadonnees d'un PDF du workspace utilisateur."""
+    try:
+        p = _safe_path(str(args.get("path", "")), ctx)
+    except ValueError as e:
+        return str(e)
+    if not p.is_file():
+        return "PDF introuvable"
+    if p.suffix.lower() != ".pdf":
+        return "Le fichier doit avoir l'extension .pdf"
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return "Dependance manquante : installe `pypdf`."
+
+    try:
+        reader = PdfReader(str(p))
+        if reader.is_encrypted:
+            try:
+                reader.decrypt(str(args.get("password", "") or ""))
+            except Exception:
+                return "PDF chiffre : mot de passe requis ou invalide"
+        page_count = len(reader.pages)
+        start_page = max(1, int(args.get("start_page") or 1))
+        end_page = min(page_count, int(args.get("end_page") or page_count))
+        max_chars = max(1000, min(50000, int(args.get("max_chars") or 12000)))
+        if start_page > end_page:
+            return f"Plage invalide : le PDF contient {page_count} page(s)"
+
+        chunks = []
+        for idx in range(start_page - 1, end_page):
+            text = reader.pages[idx].extract_text() or ""
+            chunks.append(f"--- Page {idx + 1} ---\n{text.strip()}")
+        body = "\n\n".join(chunks).strip()
+        meta = reader.metadata or {}
+        info = {
+            "path": str(p.relative_to(_user_workspace(ctx))).replace("\\", "/"),
+            "pages": page_count,
+            "extracted_pages": [start_page, end_page],
+            "title": str(getattr(meta, "title", "") or ""),
+            "author": str(getattr(meta, "author", "") or ""),
+        }
+        payload = json.dumps(info, ensure_ascii=False, indent=2)
+        if len(body) > max_chars:
+            body = body[:max_chars] + f"\n…[tronque, limite {max_chars} caracteres]"
+        return _truncate(f"{payload}\n\nTexte extrait :\n{body or '(aucun texte extractible)'}")
+    except Exception as e:
+        return f"Erreur lecture PDF : {e}"
+
+
+def _pdf_target_path(path: str, ctx: dict | None) -> Path:
+    rel = (path or "").strip() or "exports/document.pdf"
+    if not rel.lower().endswith(".pdf"):
+        rel += ".pdf"
+    return _safe_path(rel, ctx)
+
+
+def _pdf_paragraph(text: str) -> str:
+    return html.escape(text).replace("\n", "<br/>")
+
+
+async def tool_pdf_create(args: dict, ctx: dict) -> str:
+    """Cree un PDF simple depuis du texte ou un fichier texte du workspace."""
+    title = str(args.get("title", "") or "").strip()
+    content = str(args.get("content", "") or "")
+    source_path = str(args.get("source_path", "") or "").strip()
+    if source_path and not content:
+        try:
+            source = _safe_path(source_path, ctx)
+        except ValueError as e:
+            return str(e)
+        if not source.is_file():
+            return "Fichier source introuvable"
+        try:
+            content = source.read_text(errors="replace")
+        except OSError as e:
+            return f"Erreur lecture source : {e}"
+    if not content.strip():
+        return "Contenu vide. Fournis `content` ou `source_path`."
+
+    try:
+        target = _pdf_target_path(str(args.get("path", "") or ""), ctx)
+    except ValueError as e:
+        return str(e)
+
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, letter
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import mm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    except ImportError:
+        return "Dependance manquante : installe `reportlab`."
+
+    page_size_name = str(args.get("page_size", "A4") or "A4").strip().lower()
+    page_size = letter if page_size_name in {"letter", "us-letter"} else A4
+    author = str(args.get("author", "MaltaiAI") or "MaltaiAI")
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    styles = getSampleStyleSheet()
+    normal = ParagraphStyle(
+        "MaltaiBody",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=10.5,
+        leading=15,
+        textColor=colors.HexColor("#1f2933"),
+        spaceAfter=7,
+    )
+    h1 = ParagraphStyle("MaltaiH1", parent=styles["Heading1"], fontSize=20, leading=24, spaceAfter=12)
+    h2 = ParagraphStyle("MaltaiH2", parent=styles["Heading2"], fontSize=15, leading=19, spaceBefore=8, spaceAfter=8)
+    bullet = ParagraphStyle("MaltaiBullet", parent=normal, leftIndent=12, firstLineIndent=-8)
+
+    story = []
+    if title:
+        story.append(Paragraph(_pdf_paragraph(title), styles["Title"]))
+        story.append(Spacer(1, 8))
+
+    for raw_line in content[:120000].splitlines():
+        line = raw_line.rstrip()
+        if not line.strip():
+            story.append(Spacer(1, 6))
+            continue
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            story.append(Paragraph(_pdf_paragraph(stripped[2:].strip()), h1))
+        elif stripped.startswith("## "):
+            story.append(Paragraph(_pdf_paragraph(stripped[3:].strip()), h2))
+        elif stripped.startswith(("- ", "* ")):
+            story.append(Paragraph("- " + _pdf_paragraph(stripped[2:].strip()), bullet))
+        else:
+            story.append(Paragraph(_pdf_paragraph(stripped), normal))
+
+    doc = SimpleDocTemplate(
+        str(target),
+        pagesize=page_size,
+        rightMargin=18 * mm,
+        leftMargin=18 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+        title=title or target.name,
+        author=author,
+    )
+
+    def footer(canvas, doc_obj):
+        canvas.setTitle(title or target.name)
+        canvas.setAuthor(author)
+        canvas.setFont("Helvetica", 8)
+        canvas.setFillColor(colors.HexColor("#7b8794"))
+        canvas.drawRightString(page_size[0] - 18 * mm, 10 * mm, f"Page {doc_obj.page}")
+
+    try:
+        doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    except Exception as e:
+        return f"Erreur creation PDF : {e}"
+
+    rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+    return (
+        f"PDF cree : {rel}\n"
+        f"Taille : {target.stat().st_size} octets\n"
+        f"Lien telechargement : /api/workspace/download?path={quote(rel)}"
+    )
+
+
 async def tool_context_compress(args: dict, ctx: dict) -> str:
     """Compresse un gros texte/JSON/log avant de le donner au modele."""
     text = str(args.get("text", "") or "")
@@ -2035,6 +2199,42 @@ TOOLS: dict[str, dict] = {
                     "content": {"type": "string"},
                 },
                 "required": ["path", "content"],
+            },
+        },
+    },
+    "pdf_read": {
+        "run": tool_pdf_read,
+        "spec": {
+            "name": "pdf_read",
+            "description": "Lit un PDF du workspace et extrait son texte, ses metadonnees et le nombre de pages.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin du PDF dans le workspace"},
+                    "start_page": {"type": "integer", "description": "Page de debut, 1 par defaut"},
+                    "end_page": {"type": "integer", "description": "Page de fin optionnelle"},
+                    "max_chars": {"type": "integer", "description": "Limite de texte retourne, defaut 12000"},
+                    "password": {"type": "string", "description": "Mot de passe si le PDF est chiffre"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    "pdf_create": {
+        "run": tool_pdf_create,
+        "spec": {
+            "name": "pdf_create",
+            "description": "Cree un PDF telechargeable dans le workspace depuis du texte ou un fichier texte/Markdown simple.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin du PDF a creer, ex: exports/rapport.pdf"},
+                    "title": {"type": "string", "description": "Titre affiche en haut du PDF"},
+                    "content": {"type": "string", "description": "Texte ou Markdown simple (#, ##, listes)"},
+                    "source_path": {"type": "string", "description": "Fichier texte source du workspace si content est vide"},
+                    "author": {"type": "string", "description": "Auteur du PDF"},
+                    "page_size": {"type": "string", "description": "A4 ou letter"},
+                },
             },
         },
     },

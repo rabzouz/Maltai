@@ -40,6 +40,7 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `calculator` | Arithmétique (eval AST sécurisé) | tous |
 | `get_datetime` | Date/heure courante du serveur | tous |
 | `list/read/write_file` | Fichiers du workspace (sandbox par user) | tous |
+| `pdf_read/pdf_create` | Lire un PDF du workspace et créer un PDF téléchargeable depuis texte/Markdown simple | tous |
 | `context_compress` | Compresse texte, JSON, logs ou fichier workspace pour économiser le contexte | tous |
 | `web_search` | Recherche DuckDuckGo (sans clé API) | tous |
 | `web_fetch` | Lecture d'une page web + SSRF protection | tous |

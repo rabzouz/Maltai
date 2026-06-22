@@ -18,6 +18,8 @@ TOOL_CREDIT_COSTS = {
     "list_files": 3,
     "read_file": 8,
     "write_file": 15,
+    "pdf_read": 15,
+    "pdf_create": 35,
     "context_compress": 8,
     "patch_file": 20,
     "code_execute": 40,

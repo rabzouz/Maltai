@@ -712,6 +712,14 @@ const DIRECT_TOOL_EXAMPLES = {
   read_file: { path: "video_ltx2_3_i2v.json" },
   list_files: { path: "." },
   write_file: { path: "notes/exemple.txt", content: "Bonjour depuis Maltai." },
+  pdf_read: { path: "exports/rapport-demo.pdf", max_chars: 8000 },
+  pdf_create: {
+    path: "exports/rapport-demo.pdf",
+    title: "Rapport Maltai",
+    content: "# Rapport Maltai\n\nCe PDF a ete cree depuis l'outil pdf_create.\n\n## Points cles\n- Lecture PDF avec pdf_read\n- Creation PDF telechargeable\n- Workspace isole par utilisateur",
+    author: "MaltaiAI",
+    page_size: "A4"
+  },
   context_compress: {
     mode: "auto",
     max_chars: 1200,
