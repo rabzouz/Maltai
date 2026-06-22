@@ -4,27 +4,68 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0d14" />
-  <meta name="description" content="MaltaiAI est un workspace IA auto-heberge pour discuter avec OpenAI, Ollama ou OpenRouter, utiliser des outils agent, gerer des fichiers, naviguer sur le web et garder une memoire." />
-  <meta property="og:title" content="MaltaiAI - Workspace IA auto-heberge" />
-  <meta property="og:description" content="Chat IA, agents, outils, Ollama, browser automation, terminal admin, memoire et credits dans une interface web mobile." />
+  <meta name="robots" content="index, follow" />
+  <meta name="description" content="MaltaiAI est un workspace IA open source et auto-hébergé : chat multi-providers (OpenAI, Ollama, OpenRouter), agents outillés, navigation web, gestion de fichiers, mémoire vectorielle et console d'administration. Déployable en Docker ou Coolify." />
+  <meta name="author" content="MaltaiAI" />
+  <link rel="canonical" href="https://maltai.fr/" />
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="MaltaiAI" />
+  <meta property="og:title" content="MaltaiAI — Workspace IA open source et auto-hébergé" />
+  <meta property="og:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits — dans une seule interface web responsive." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="/static/logo-full.png" />
+  <meta property="og:url" content="https://maltai.fr/" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:image" content="https://maltai.fr/static/logo-full.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MaltaiAI — Workspace IA open source et auto-hébergé" />
+  <meta name="twitter:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits." />
+  <meta name="twitter:image" content="https://maltai.fr/static/logo-full.png" />
+
   <link rel="icon" type="image/png" href="/static/favicon.png" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
-  <title>MaltaiAI - Workspace IA auto-heberge</title>
+  <link rel="manifest" href="/static/manifest.json" />
+  <title>MaltaiAI — Workspace IA open source et auto-hébergé</title>
   <link rel="stylesheet" href="/static/site.css" />
+
+  <!-- Données structurées : application -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MaltaiAI",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Docker, Linux, macOS, Windows",
+    "description": "Workspace IA open source et auto-hébergé : chat multi-providers, agents outillés, Ollama local, navigation web, fichiers, mémoire vectorielle et console d'administration.",
+    "url": "https://maltai.fr/",
+    "image": "https://maltai.fr/static/logo-full.png",
+    "softwareVersion": "1.1.0",
+    "license": "https://github.com/rabzouz/Maltai/blob/main/LICENSE",
+    "codeRepository": "https://github.com/rabzouz/Maltai",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    }
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+
   <header class="site-topbar">
     <a class="site-brand" href="/" aria-label="Accueil MaltaiAI">
-      <img src="/static/logo-emblem.png" alt="" />
+      <img src="/static/logo-emblem.png" alt="" width="34" height="34" />
       <span>Maltai<span>AI</span></span>
     </a>
-    <nav class="site-nav" aria-label="Navigation">
-      <a href="#experience">Experience</a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="#experience">Expérience</a>
       <a href="#outils">Outils</a>
-      <a href="#securite">Securite</a>
+      <a href="#securite">Sécurité</a>
       <a href="#plans">Plans</a>
+      <a href="#faq">FAQ</a>
       <a href="#installer">Installer</a>
     </nav>
     <div class="site-actions">
@@ -33,67 +74,67 @@
     </div>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero">
       <div class="hero-backdrop" aria-hidden="true">
         <img src="/static/logo-full.png" alt="" />
       </div>
-      <div class="hero-content">
-        <p class="eyebrow">Open source · auto-heberge · mobile</p>
+      <div class="hero-content reveal">
+        <p class="eyebrow">Open source · auto-hébergé · mobile</p>
         <h1>MaltaiAI</h1>
         <p class="hero-copy">
-          Le workspace IA pour centraliser tes providers, lancer des agents outilles,
-          gerer Ollama, explorer le web, manipuler des fichiers et garder le controle sur ton instance.
+          Le workspace IA pour centraliser tes providers, lancer des agents outillés,
+          gérer Ollama, explorer le web, manipuler des fichiers et garder le contrôle sur ton instance.
         </p>
         <div class="hero-actions">
           <a class="primary-link large" href="/app">Lancer Maltai</a>
           <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">GitHub</a>
         </div>
-        <div class="hero-chips" aria-label="Points forts">
-          <span>OpenAI compatible</span>
-          <span>Ollama local</span>
-          <span>Browser tools</span>
-          <span>Console admin</span>
-        </div>
+        <ul class="hero-chips" aria-label="Points forts">
+          <li>OpenAI compatible</li>
+          <li>Ollama local</li>
+          <li>Browser tools</li>
+          <li>Console admin</li>
+        </ul>
       </div>
-      <div class="hero-preview" aria-label="Apercu de Maltai">
+      <div class="hero-preview" aria-label="Aperçu de l'interface Maltai" role="img">
         <div class="preview-top">
           <span>MaltaiAI</span>
-          <span>Agent · Admin · credits</span>
+          <span>Agent · Admin · crédits</span>
         </div>
         <div class="preview-sidebar">
           <span>Chat</span><span>Brain</span><span>Tools</span><span>Terminal</span><span>Models</span>
         </div>
         <div class="preview-main">
-          <div class="preview-row user">Analyse cette page et extrait les points importants.</div>
+          <div class="preview-row user">Analyse cette page et extrais les points importants.</div>
           <div class="preview-tool">browser_open · snapshot · screenshot · note_save</div>
-          <div class="preview-row ai">Synthese prete, liens detectes et note enregistree dans le workspace.</div>
-          <div class="preview-footer">OpenAI · Ollama · Agent · memoire active</div>
+          <div class="preview-row ai">Synthèse prête, liens détectés et note enregistrée dans le workspace.</div>
+          <div class="preview-footer">OpenAI · Ollama · Agent · mémoire active</div>
         </div>
       </div>
     </section>
 
-    <section class="metrics" aria-label="Capacites">
+    <section class="metrics reveal" aria-label="Capacités">
       <div><strong>Multi-provider</strong><span>OpenAI, Ollama, OpenRouter et APIs compatibles</span></div>
       <div><strong>Outils agent</strong><span>web, fichiers, code sandbox, browser et terminal admin</span></div>
-      <div><strong>Mobile first</strong><span>interface adaptee Android, iPhone, tablette et desktop</span></div>
-      <div><strong>Deploiement libre</strong><span>Docker, Coolify, Linux, macOS et Windows</span></div>
+      <div><strong>Mobile first</strong><span>interface adaptée Android, iPhone, tablette et desktop</span></div>
+      <div><strong>Déploiement libre</strong><span>Docker, Coolify, Linux, macOS et Windows</span></div>
     </section>
 
-    <section id="experience" class="section split experience">
+    <section id="experience" class="section split experience reveal">
       <div class="section-head">
-        <p class="eyebrow">Experience</p>
-        <h2>Une interface IA faite pour travailler, pas seulement tester un modele.</h2>
-        <p>Maltai regroupe chat, outils, fichiers, memoire, modeles et administration dans une seule interface lisible.</p>
+        <p class="eyebrow">Expérience</p>
+        <h2>Une interface IA faite pour travailler, pas seulement tester un modèle.</h2>
+        <p>Maltai regroupe chat, outils, fichiers, mémoire, modèles et administration dans une seule interface lisible.</p>
       </div>
       <div class="workflow-list">
         <div><span>01</span><strong>Choisis ton provider</strong><p>OpenAI, OpenRouter, Ollama local ou tout endpoint compatible OpenAI.</p></div>
-        <div><span>02</span><strong>Active l'agent</strong><p>Laisse Maltai utiliser les outils autorises selon le plan et le role utilisateur.</p></div>
-        <div><span>03</span><strong>Controle l'instance</strong><p>Admin console, process, Git read-only, credits, Brain et modeles Ollama.</p></div>
+        <div><span>02</span><strong>Active l'agent</strong><p>Laisse Maltai utiliser les outils autorisés selon le plan et le rôle utilisateur.</p></div>
+        <div><span>03</span><strong>Contrôle l'instance</strong><p>Admin console, process, Git read-only, crédits, Brain et modèles Ollama.</p></div>
       </div>
     </section>
 
-    <section id="outils" class="section">
+    <section id="outils" class="section reveal">
       <div class="section-head">
         <p class="eyebrow">Outils natifs</p>
         <h2>Un agent qui sait agir dans ton workspace.</h2>
@@ -105,7 +146,7 @@
         </article>
         <article>
           <h3>Fichiers</h3>
-          <p>Lecture, ecriture, patch et telechargement dans un workspace isole par utilisateur.</p>
+          <p>Lecture, écriture, patch et téléchargement dans un workspace isolé par utilisateur.</p>
         </article>
         <article>
           <h3>Terminal admin</h3>
@@ -113,62 +154,96 @@
         </article>
         <article>
           <h3>Brain</h3>
-          <p>Memoire vectorielle, recherche, souvenirs epingles et nettoyage controle.</p>
+          <p>Mémoire vectorielle, recherche, souvenirs épinglés et nettoyage contrôlé.</p>
         </article>
         <article>
           <h3>Ollama</h3>
-          <p>Liste, telechargement avec progression et suppression des modeles locaux.</p>
+          <p>Liste, téléchargement avec progression et suppression des modèles locaux.</p>
         </article>
         <article>
-          <h3>Credits</h3>
+          <h3>Crédits</h3>
           <p>Plans Basic, Premium, Admin, suivi tokens et balance pour cadrer l'usage des outils.</p>
         </article>
       </div>
     </section>
 
-    <section class="section usecases">
+    <section class="section usecases reveal">
       <div class="section-head">
         <p class="eyebrow">Cas d'usage</p>
-        <h2>Pour administrer, chercher, coder et automatiser depuis le meme endroit.</h2>
+        <h2>Pour administrer, chercher, coder et automatiser depuis le même endroit.</h2>
       </div>
       <div class="usecase-grid">
-        <div><strong>Recherche web</strong><span>Lire des pages, extraire les liens, capturer une page et produire une synthese.</span></div>
-        <div><strong>IA locale</strong><span>Installer des modeles Ollama depuis l'interface et basculer entre plusieurs providers.</span></div>
-        <div><strong>Workspace</strong><span>Lire, creer ou patcher des fichiers dans un espace isole par utilisateur.</span></div>
-        <div><strong>Administration</strong><span>Surveiller la version, les process, les logs, les credits et les acces.</span></div>
+        <div><strong>Recherche web</strong><span>Lire des pages, extraire les liens, capturer une page et produire une synthèse.</span></div>
+        <div><strong>IA locale</strong><span>Installer des modèles Ollama depuis l'interface et basculer entre plusieurs providers.</span></div>
+        <div><strong>Workspace</strong><span>Lire, créer ou patcher des fichiers dans un espace isolé par utilisateur.</span></div>
+        <div><strong>Administration</strong><span>Surveiller la version, les process, les logs, les crédits et les accès.</span></div>
       </div>
     </section>
 
-    <section id="securite" class="section security">
+    <section id="securite" class="section security reveal">
       <div class="section-head">
-        <p class="eyebrow">Securite</p>
-        <h2>Des garde-fous pour ouvrir les outils sans perdre le controle.</h2>
+        <p class="eyebrow">Sécurité</p>
+        <h2>Des garde-fous pour ouvrir les outils sans perdre le contrôle.</h2>
       </div>
       <div class="security-grid">
-        <div><strong>Roles</strong><p>Basic, Premium et Admin separent le chat, les outils agent et les commandes sensibles.</p></div>
-        <div><strong>Sandbox</strong><p>Workspace isole par utilisateur, code Python limite et protections SSRF sur les URLs internes.</p></div>
-        <div><strong>Admin only</strong><p>Terminal, Python admin, process et Git read-only restent reserves aux administrateurs.</p></div>
+        <div><strong>Rôles</strong><p>Basic, Premium et Admin séparent le chat, les outils agent et les commandes sensibles.</p></div>
+        <div><strong>Isolation</strong><p>Sessions et workspace isolés par utilisateur : chaque compte ne voit que ses propres données.</p></div>
+        <div><strong>Anti-SSRF</strong><p>Les outils web bloquent les adresses internes, y compris au fil des redirections.</p></div>
+        <div><strong>Admin only</strong><p>Terminal, Python admin, process et Git read-only restent réservés aux administrateurs.</p></div>
       </div>
     </section>
 
-    <section id="plans" class="section split">
+    <section id="plans" class="section split reveal">
       <div class="section-head">
-        <p class="eyebrow">Acces</p>
+        <p class="eyebrow">Accès</p>
         <h2>Des permissions claires pour chaque utilisateur.</h2>
         <p>Basic pour discuter, Premium pour les outils agent, Admin pour administrer l'instance.</p>
       </div>
       <div class="plan-list">
-        <div><strong>Basic</strong><span>Chat principal et providers configures.</span></div>
+        <div><strong>Basic</strong><span>Chat principal et providers configurés.</span></div>
         <div><strong>Premium</strong><span>Outils agent, recherche, fichiers, browser, code sandbox.</span></div>
-        <div><strong>Admin</strong><span>Console, terminal, process, Git read-only et usage non facture.</span></div>
+        <div><strong>Admin</strong><span>Console, terminal, process, Git read-only et usage non facturé.</span></div>
       </div>
     </section>
 
-    <section id="installer" class="section install">
+    <section id="faq" class="section faq reveal">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Questions fréquentes.</h2>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>Qu'est-ce que MaltaiAI ?</summary>
+          <p>MaltaiAI est un workspace IA open source que tu héberges toi-même. Il réunit le chat multi-providers, des agents capables d'utiliser des outils (web, fichiers, code, terminal), une mémoire vectorielle et une console d'administration, dans une seule interface web responsive.</p>
+        </details>
+        <details>
+          <summary>Quels modèles et providers sont supportés ?</summary>
+          <p>Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local. Tu peux configurer plusieurs providers et basculer de l'un à l'autre selon le besoin.</p>
+        </details>
+        <details>
+          <summary>Est-ce vraiment auto-hébergé ? Où vont mes données ?</summary>
+          <p>Oui. Maltai tourne sur ton serveur (Docker, Coolify, Linux, macOS ou Windows) et stocke ses données localement. Tu gardes le contrôle de tes conversations, de tes clés API et de tes fichiers.</p>
+        </details>
+        <details>
+          <summary>Combien ça coûte ?</summary>
+          <p>Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que tu choisis de brancher (OpenAI, OpenRouter…). Avec Ollama en local, tu peux fonctionner sans coût d'API.</p>
+        </details>
+        <details>
+          <summary>Comment l'installer ?</summary>
+          <p>Clone le dépôt GitHub et lance l'application avec Python, ou déploie l'image Docker. Le projet est prêt pour un déploiement en un clic via Coolify. Les commandes sont détaillées dans la section Installer ci-dessous.</p>
+        </details>
+        <details>
+          <summary>Est-ce sécurisé pour plusieurs utilisateurs ?</summary>
+          <p>Oui. Les sessions et le workspace sont isolés par utilisateur, les rôles séparent le chat des commandes sensibles, et les outils web bloquent les adresses internes (protection anti-SSRF, même au fil des redirections).</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="installer" class="section install reveal">
       <div>
         <p class="eyebrow">Installer</p>
-        <h2>Telecharger et deployer Maltai.</h2>
-        <p>Le projet est disponible sur GitHub. Tu peux télécharger la version stable, l'installer avec Git, Docker ou le deployer sur Coolify.</p>
+        <h2>Télécharger et déployer Maltai.</h2>
+        <p>Le projet est disponible sur GitHub. Tu peux télécharger la version stable, l'installer avec Git, Docker ou le déployer sur Coolify.</p>
         <div class="release-card">
           <span>Version stable</span>
           <strong>Maltai v1.1.0</strong>
@@ -186,14 +261,14 @@ pip install -r requirements.txt
 python app.py</code></pre>
       <div class="install-links">
         <a class="primary-link large" href="https://github.com/rabzouz/Maltai/archive/refs/tags/v1.1.0.zip" rel="noopener" target="_blank">Télécharger Maltai</a>
-        <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">Voir le depot GitHub</a>
+        <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">Voir le dépôt GitHub</a>
       </div>
     </section>
 
-    <section class="final-cta">
+    <section class="final-cta reveal">
       <div>
-        <p class="eyebrow">Pret a tester</p>
-        <h2>Ouvre Maltai et connecte tes modeles.</h2>
+        <p class="eyebrow">Prêt à tester</p>
+        <h2>Ouvre Maltai et connecte tes modèles.</h2>
       </div>
       <div class="site-actions">
         <a class="primary-link large" href="/app">Ouvrir l'app</a>
@@ -204,8 +279,45 @@ python app.py</code></pre>
 
   <footer class="site-footer">
     <span>MaltaiAI</span>
-    <span>Workspace IA auto-heberge</span>
-    <a href="/login">Connexion</a>
+    <span>Workspace IA open source et auto-hébergé</span>
+    <nav class="footer-links" aria-label="Liens de pied de page">
+      <a href="/login">Connexion</a>
+      <a href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">GitHub</a>
+    </nav>
   </footer>
+
+  <!-- Données structurées : FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Qu'est-ce que MaltaiAI ?","acceptedAnswer":{"@type":"Answer","text":"MaltaiAI est un workspace IA open source que vous hébergez vous-même : chat multi-providers, agents outillés, mémoire vectorielle et console d'administration dans une seule interface web."}},
+      {"@type":"Question","name":"Quels modèles et providers sont supportés ?","acceptedAnswer":{"@type":"Answer","text":"Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local, avec bascule entre plusieurs providers."}},
+      {"@type":"Question","name":"Est-ce vraiment auto-hébergé ?","acceptedAnswer":{"@type":"Answer","text":"Oui, Maltai tourne sur votre serveur (Docker, Coolify, Linux, macOS, Windows) et stocke ses données localement."}},
+      {"@type":"Question","name":"Combien ça coûte ?","acceptedAnswer":{"@type":"Answer","text":"Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que vous branchez ; avec Ollama en local, aucun coût d'API."}},
+      {"@type":"Question","name":"Comment l'installer ?","acceptedAnswer":{"@type":"Answer","text":"Clonez le dépôt GitHub et lancez l'application avec Python, ou déployez l'image Docker. Le projet est prêt pour Coolify."}},
+      {"@type":"Question","name":"Est-ce sécurisé pour plusieurs utilisateurs ?","acceptedAnswer":{"@type":"Answer","text":"Oui : sessions et workspace isolés par utilisateur, rôles séparant les commandes sensibles, et protection anti-SSRF des outils web même au fil des redirections."}}
+    ]
+  }
+  </script>
+
+  <script>
+    // Révélation au défilement (progressif, désactivé si reduced-motion).
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

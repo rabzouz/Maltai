@@ -26,7 +26,7 @@ app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 # Chemins accessibles sans authentification.
 OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/auth/register", "/api/health",
                  "/api/telegram/webhook/", "/api/external/chat")
-OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico"}
+OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico", "/robots.txt", "/sitemap.xml"}
 
 
 @app.on_event("startup")
@@ -111,6 +111,16 @@ async def no_cache_static(request: Request, call_next):
 @app.get("/favicon.ico")
 def favicon_route():
     return FileResponse(str(STATIC_DIR / "favicon.png"))
+
+
+@app.get("/robots.txt")
+def robots_route():
+    return FileResponse(str(STATIC_DIR / "robots.txt"), media_type="text/plain")
+
+
+@app.get("/sitemap.xml")
+def sitemap_route():
+    return FileResponse(str(STATIC_DIR / "sitemap.xml"), media_type="application/xml")
 
 
 @app.get("/login")

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /$
+Allow: /static/
+Disallow: /app
+Disallow: /login
+Disallow: /register
+Disallow: /billing
+Disallow: /api/
+
+Sitemap: https://maltai.fr/sitemap.xml

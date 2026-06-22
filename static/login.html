@@ -3,59 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#14161a" />
+  <meta name="theme-color" content="#0b0d14" />
+  <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/png" href="/static/favicon.png" />
   <title>MaltaiAI — Connexion</title>
   <link rel="stylesheet" href="/static/style.css" />
   <style>
-    .login-wrap { display:flex; align-items:center; justify-content:center; height:100vh; }
-    .login-box {
-      background: var(--panel); border:1px solid var(--border); border-radius:16px;
-      padding: 34px 32px; width: 360px; max-width: 90vw;
-      display:flex; flex-direction:column; gap:12px;
+    .auth-wrap {
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; padding:24px 16px;
+      background:
+        radial-gradient(1100px 520px at 50% -10%, rgba(0,212,196,0.12), transparent 70%),
+        var(--bg);
     }
-    .login-box h1 { margin:0 0 4px; font-size:26px; text-align:center; }
-    .login-box .logo { display:block; text-align:center; font-size:38px; color:var(--accent); }
-    .login-box input {
+    .auth-box {
+      background: var(--panel); border:1px solid var(--border); border-radius:18px;
+      padding: 34px 30px; width: 372px; max-width: 100%;
+      display:flex; flex-direction:column; gap:14px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    }
+    .auth-box h1 { margin:2px 0 2px; font-size:26px; text-align:center; }
+    .auth-box h1 span { color: var(--accent); }
+    .auth-logo { width:78px; height:78px; border-radius:20px; display:block; margin:0 auto; }
+    .auth-sub { margin:0 0 4px; color:var(--muted); text-align:center; font-size:13px; line-height:1.5; }
+    .field { position:relative; display:flex; flex-direction:column; gap:6px; }
+    .field label { font-size:12.5px; font-weight:700; color:var(--muted); }
+    .auth-box input {
       background: var(--panel-2); color: var(--text); border:1px solid var(--border);
-      border-radius:9px; padding:12px 14px; font-size:15px;
+      border-radius:10px; padding:12px 14px; font-size:15px; width:100%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .login-box input:focus { outline:none; border-color: var(--accent-2); }
-    .login-error { color:#ff8585; font-size:13px; min-height:18px; text-align:center; }
-    .login-link { color: var(--muted); font-size: 13px; text-align: center; }
-    .login-link a { color: var(--accent); font-weight: 800; text-decoration: none; }
-    .login-link a:hover { text-decoration: underline; }
+    .auth-box input:focus {
+      outline:none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .pw-field { position:relative; }
+    .pw-toggle {
+      position:absolute; right:8px; bottom:6px; height:30px; padding:0 10px;
+      background:none; border:none; color:var(--muted); font-size:12.5px;
+      font-weight:700; cursor:pointer; border-radius:6px;
+    }
+    .pw-toggle:hover { color:var(--text); background:rgba(255,255,255,0.06); }
+    .auth-error { color:#ff8585; font-size:13px; min-height:18px; text-align:center; }
+    button.btn-primary { border-radius:10px; padding:12px; font-size:15px; }
+    .auth-link { color: var(--muted); font-size: 13px; text-align: center; }
+    .auth-link a { color: var(--accent); font-weight: 800; text-decoration: none; }
+    .auth-link a:hover { text-decoration: underline; }
+    .auth-back { text-align:center; }
+    .auth-back a { color: var(--muted); font-size:12.5px; text-decoration:none; }
+    .auth-back a:hover { color: var(--text); }
+    a:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   </style>
 </head>
 <body>
-  <div class="login-wrap">
-    <form class="login-box" id="login-form">
-      <img src="/static/logo-emblem.png" alt="Maltai" style="width:84px;height:84px;border-radius:20px;display:block;margin:0 auto 4px;" />
-      <h1>Maltai<span style="color:#2bd4f0">AI</span></h1>
-      <input id="username" placeholder="Utilisateur" autocomplete="username" autofocus />
-      <input id="password" type="password" placeholder="Mot de passe" autocomplete="current-password" />
-      <div class="login-error" id="error"></div>
+  <main class="auth-wrap">
+    <form class="auth-box" id="login-form" novalidate>
+      <img class="auth-logo" src="/static/logo-emblem.png" alt="MaltaiAI" width="78" height="78" />
+      <h1>Maltai<span>AI</span></h1>
+      <p class="auth-sub">Connecte-toi à ton workspace IA.</p>
+
+      <div class="field">
+        <label for="username">Utilisateur</label>
+        <input id="username" name="username" placeholder="Ton identifiant" autocomplete="username" autofocus required />
+      </div>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <div class="pw-field">
+          <input id="password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+          <button class="pw-toggle" type="button" id="toggle-pw" aria-label="Afficher le mot de passe">Afficher</button>
+        </div>
+      </div>
+
+      <div class="auth-error" id="error" role="alert" aria-live="polite"></div>
       <button class="btn-primary" type="submit">Se connecter</button>
-      <div class="login-link">Nouveau sur Maltai ? <a href="/register">Créer un compte</a></div>
+      <div class="auth-link">Nouveau sur Maltai ? <a href="/register">Créer un compte</a></div>
+      <div class="auth-back"><a href="/">← Retour au site</a></div>
     </form>
-  </div>
+  </main>
+
   <script>
+    const pw = document.getElementById("password");
+    const toggle = document.getElementById("toggle-pw");
+    toggle.addEventListener("click", () => {
+      const show = pw.type === "password";
+      pw.type = show ? "text" : "password";
+      toggle.textContent = show ? "Masquer" : "Afficher";
+      toggle.setAttribute("aria-label", show ? "Masquer le mot de passe" : "Afficher le mot de passe");
+    });
+
     document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const err = document.getElementById("error");
+      const btn = e.target.querySelector("button[type=submit]");
       err.textContent = "";
-      const r = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: document.getElementById("username").value,
-          password: document.getElementById("password").value,
-        }),
-      });
-      if (r.ok) { location.href = "/app"; }
-      else {
+      btn.disabled = true; btn.textContent = "Connexion…";
+      try {
+        const r = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: pw.value,
+          }),
+        });
+        if (r.ok) { location.href = "/app"; return; }
         const d = await r.json().catch(() => ({}));
         err.textContent = d.detail || "Erreur de connexion";
+      } catch {
+        err.textContent = "Réseau indisponible. Réessaie.";
+      } finally {
+        btn.disabled = false; btn.textContent = "Se connecter";
       }
     });
   </script>

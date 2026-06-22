@@ -187,11 +187,13 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 0;
+  list-style: none;
   margin-top: 20px;
   max-width: 760px;
 }
 
-.hero-chips span {
+.hero-chips li {
   min-height: 32px;
   display: inline-flex;
   align-items: center;
@@ -647,4 +649,170 @@ h3 {
   .final-cta .site-actions {
     align-items: stretch;
   }
+}
+
+/* =====================================================================
+   AMÉLIORATIONS — accessibilité, focus, animations, FAQ, polish
+   (ajouté sans modifier les règles existantes ci-dessus)
+   ===================================================================== */
+
+/* Lien d'évitement clavier */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -56px;
+  z-index: 60;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--teal);
+  color: #061112;
+  font-weight: 800;
+  font-size: 14px;
+  transition: top 0.18s ease;
+}
+.skip-link:focus { top: 12px; outline: none; }
+
+/* Focus visible cohérent au clavier (manquait totalement) */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+.primary-link:focus-visible,
+.ghost-link:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.site-nav a {
+  padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.site-nav a:hover { border-bottom-color: color-mix(in srgb, var(--teal) 60%, transparent); }
+
+/* Boutons : transition douce + halo au survol */
+.primary-link, .ghost-link {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+.primary-link:hover {
+  box-shadow: 0 16px 40px rgba(0, 212, 196, 0.28);
+}
+.ghost-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Titre hero en dégradé (avec repli couleur pleine) */
+h1 {
+  background: linear-gradient(120deg, #ffffff 0%, #bfeee9 46%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  h1 { color: var(--text); }
+}
+
+/* Cartes : légère élévation au survol */
+.metrics div,
+.feature-grid article,
+.usecase-grid div,
+.security-grid div,
+.workflow-list div,
+.plan-list div {
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.feature-grid article:hover,
+.usecase-grid div:hover,
+.security-grid div:hover,
+.workflow-list div:hover,
+.plan-list div:hover,
+.metrics div:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+  background: color-mix(in srgb, var(--panel) 92%, var(--teal) 8%);
+}
+
+/* Chips hero en liste sémantique */
+.hero-chips { list-style: none; margin-block: 20px 0; padding: 0; }
+.hero-chips li {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #dce8ee;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+/* FAQ — accordéon natif accessible */
+.faq-list { display: grid; gap: 10px; }
+.faq-list details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  padding: 0 18px;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.faq-list details[open] {
+  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+  background: color-mix(in srgb, var(--panel) 90%, var(--teal) 6%);
+}
+.faq-list summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 0;
+  font-size: 17px;
+  font-weight: 750;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after {
+  content: "+";
+  color: var(--teal);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.faq-list details[open] summary::after { transform: rotate(45deg); }
+.faq-list details p {
+  margin: 0;
+  padding: 0 0 18px;
+  color: var(--muted);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+/* Footer : liens groupés */
+.footer-links { display: inline-flex; gap: 16px; }
+.footer-links a { color: var(--teal); font-weight: 800; }
+
+/* Révélation au défilement */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* Respect des préférences de mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+  .primary-link:hover, .ghost-link:hover,
+  .feature-grid article:hover, .usecase-grid div:hover,
+  .security-grid div:hover, .workflow-list div:hover,
+  .plan-list div:hover, .metrics div:hover { transform: none; }
 }
