@@ -41,10 +41,14 @@ Workspace IA auto-hébergé, open-source et hackable. Inspiré d'Odysseus — in
 | `get_datetime` | Date/heure courante du serveur | tous |
 | `list/read/write_file` | Fichiers du workspace (sandbox par user) | tous |
 | `pdf_read/pdf_create` | Lire un PDF du workspace et créer un PDF téléchargeable depuis texte/Markdown simple | tous |
+| `docx_read/docx_create` | Lire et créer des documents Word `.docx` | tous |
+| `xlsx_read/xlsx_create` | Lire et créer des tableaux Excel `.xlsx` | tous |
+| `zip_create/zip_extract` | Archiver ou extraire des fichiers ZIP du workspace | tous |
 | `context_compress` | Compresse texte, JSON, logs ou fichier workspace pour économiser le contexte | tous |
 | `web_search` | Recherche DuckDuckGo (sans clé API) | tous |
 | `web_fetch` | Lecture d'une page web + SSRF protection | tous |
 | `web_scrape` | Scraping HTML structuré : metadata, titres, liens, images, tables, JSON-LD, champs par sélecteurs | tous |
+| `web_crawl` / `seo_audit` | Crawl de site et audit SEO rapide (title, H1, meta, images alt, canonical) | tous |
 | `browser_navigate/snapshot/links` | Navigateur texte : ouvrir une page, extraire texte/liens/formulaires | tous |
 | `browser_form_list/submit` | Liste et soumission HTTP de formulaires simples | tous |
 | `browser_open/click/type/screenshot` | Automatisation Chromium via Playwright + captures PNG | tous |

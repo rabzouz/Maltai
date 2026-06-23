@@ -720,6 +720,21 @@ const DIRECT_TOOL_EXAMPLES = {
     author: "MaltaiAI",
     page_size: "A4"
   },
+  docx_read: { path: "exports/rapport-demo.docx", max_chars: 8000 },
+  docx_create: {
+    path: "exports/rapport-demo.docx",
+    title: "Rapport Word Maltai",
+    content: "# Rapport Word Maltai\n\nDocument cree avec docx_create.\n\n## Points cles\n- Lecture DOCX\n- Creation DOCX\n- Export telechargeable",
+    author: "MaltaiAI"
+  },
+  xlsx_read: { path: "exports/tableau-demo.xlsx", max_rows: 20, max_cols: 10 },
+  xlsx_create: {
+    path: "exports/tableau-demo.xlsx",
+    sheet: "Demo",
+    rows: [["Nom", "Prix", "Stock"], ["Jet ski", 120, 3], ["Bouee", 20, 8]]
+  },
+  zip_create: { path: "exports/demo.zip", files: ["exports/rapport-demo.docx", "exports/tableau-demo.xlsx"], max_files: 50 },
+  zip_extract: { path: "exports/demo.zip", dest: "imports/demo", overwrite: true },
   context_compress: {
     mode: "auto",
     max_chars: 1200,
@@ -739,6 +754,8 @@ const DIRECT_TOOL_EXAMPLES = {
     format: "json",
     limit: 10
   },
+  web_crawl: { url: "https://example.com", max_pages: 3, max_depth: 1, save_as: "crawl-example.json" },
+  seo_audit: { url: "https://example.com", save_as: "seo-example.json" },
   browser_navigate: { url: "https://example.com" },
   browser_snapshot: { url: "https://maltai.fr" },
   browser_links: {},

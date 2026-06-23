@@ -22,6 +22,7 @@ import os
 import re
 import socket
 import sys
+import zipfile
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
@@ -303,6 +304,288 @@ async def tool_pdf_create(args: dict, ctx: dict) -> str:
         f"Taille : {target.stat().st_size} octets\n"
         f"Lien telechargement : /api/workspace/download?path={quote(rel)}"
     )
+
+
+async def tool_docx_read(args: dict, ctx: dict) -> str:
+    try:
+        p = _safe_path(str(args.get("path", "")), ctx)
+    except ValueError as e:
+        return str(e)
+    if not p.is_file() or p.suffix.lower() != ".docx":
+        return "Fichier DOCX introuvable"
+    try:
+        from docx import Document
+    except ImportError:
+        return "Dependance manquante : installe `python-docx`."
+    max_chars = max(1000, min(50000, int(args.get("max_chars") or 12000)))
+    try:
+        doc = Document(str(p))
+        parts = []
+        props = doc.core_properties
+        meta = {
+            "path": str(p.relative_to(_user_workspace(ctx))).replace("\\", "/"),
+            "title": props.title or "",
+            "author": props.author or "",
+            "paragraphs": len(doc.paragraphs),
+            "tables": len(doc.tables),
+        }
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if text:
+                parts.append(text)
+        for ti, table in enumerate(doc.tables, start=1):
+            parts.append(f"\n--- Tableau {ti} ---")
+            for row in table.rows[:80]:
+                parts.append(" | ".join(cell.text.strip().replace("\n", " ") for cell in row.cells))
+        body = "\n".join(parts).strip()
+        if len(body) > max_chars:
+            body = body[:max_chars] + f"\n…[tronque, limite {max_chars} caracteres]"
+        return _truncate(json.dumps(meta, ensure_ascii=False, indent=2) + "\n\nTexte extrait :\n" + (body or "(vide)"))
+    except Exception as e:
+        return f"Erreur lecture DOCX : {e}"
+
+
+def _office_target_path(path: str, suffix: str, default_name: str, ctx: dict | None) -> Path:
+    rel = (path or "").strip() or f"exports/{default_name}{suffix}"
+    if not rel.lower().endswith(suffix):
+        rel += suffix
+    return _safe_path(rel, ctx)
+
+
+async def tool_docx_create(args: dict, ctx: dict) -> str:
+    title = str(args.get("title", "") or "").strip()
+    content = str(args.get("content", "") or "")
+    source_path = str(args.get("source_path", "") or "").strip()
+    if source_path and not content:
+        try:
+            source = _safe_path(source_path, ctx)
+        except ValueError as e:
+            return str(e)
+        if not source.is_file():
+            return "Fichier source introuvable"
+        try:
+            content = source.read_text(errors="replace")
+        except OSError as e:
+            return f"Erreur lecture source : {e}"
+    if not content.strip() and not title:
+        return "Contenu vide. Fournis `content`, `source_path` ou `title`."
+    try:
+        from docx import Document
+    except ImportError:
+        return "Dependance manquante : installe `python-docx`."
+    try:
+        target = _office_target_path(str(args.get("path", "") or ""), ".docx", "document", ctx)
+    except ValueError as e:
+        return str(e)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    doc = Document()
+    if title:
+        doc.add_heading(title, level=0)
+        doc.core_properties.title = title
+    doc.core_properties.author = str(args.get("author", "MaltaiAI") or "MaltaiAI")
+    for raw_line in content[:160000].splitlines():
+        line = raw_line.rstrip()
+        if not line.strip():
+            doc.add_paragraph("")
+            continue
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            doc.add_heading(stripped[2:].strip(), level=1)
+        elif stripped.startswith("## "):
+            doc.add_heading(stripped[3:].strip(), level=2)
+        elif stripped.startswith(("- ", "* ")):
+            doc.add_paragraph(stripped[2:].strip(), style="List Bullet")
+        else:
+            doc.add_paragraph(stripped)
+    try:
+        doc.save(str(target))
+    except Exception as e:
+        return f"Erreur creation DOCX : {e}"
+    rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+    return f"DOCX cree : {rel}\nTaille : {target.stat().st_size} octets\nLien telechargement : /api/workspace/download?path={quote(rel)}"
+
+
+async def tool_xlsx_read(args: dict, ctx: dict) -> str:
+    try:
+        p = _safe_path(str(args.get("path", "")), ctx)
+    except ValueError as e:
+        return str(e)
+    if not p.is_file() or p.suffix.lower() not in {".xlsx", ".xlsm"}:
+        return "Fichier XLSX introuvable"
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        return "Dependance manquante : installe `openpyxl`."
+    max_rows = max(1, min(500, int(args.get("max_rows") or 80)))
+    max_cols = max(1, min(80, int(args.get("max_cols") or 20)))
+    sheet_name = str(args.get("sheet", "") or "").strip()
+    wb = None
+    try:
+        wb = load_workbook(str(p), read_only=True, data_only=True)
+        ws = wb[sheet_name] if sheet_name else wb[wb.sheetnames[0]]
+        rows = []
+        for row in ws.iter_rows(max_row=max_rows, max_col=max_cols, values_only=True):
+            rows.append(["" if v is None else v for v in row])
+        meta = {
+            "path": str(p.relative_to(_user_workspace(ctx))).replace("\\", "/"),
+            "sheets": wb.sheetnames,
+            "sheet": ws.title,
+            "rows_returned": len(rows),
+            "max_row": ws.max_row,
+            "max_column": ws.max_column,
+        }
+        return _truncate(json.dumps({"meta": meta, "rows": rows}, ensure_ascii=False, indent=2, default=str))
+    except KeyError:
+        return f"Feuille introuvable : {sheet_name}"
+    except Exception as e:
+        return f"Erreur lecture XLSX : {e}"
+    finally:
+        if wb is not None:
+            try:
+                wb.close()
+            except Exception:
+                pass
+
+
+def _rows_from_args(args: dict) -> list[list[Any]]:
+    rows = args.get("rows")
+    if isinstance(rows, list):
+        return [r if isinstance(r, list) else [r] for r in rows]
+    csv_text = str(args.get("csv", "") or "")
+    if csv_text.strip():
+        return list(csv.reader(io.StringIO(csv_text)))
+    headers = args.get("headers")
+    data = args.get("data")
+    out = []
+    if isinstance(headers, list):
+        out.append(headers)
+    if isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict):
+                keys = headers if isinstance(headers, list) and headers else list(item.keys())
+                if not out and keys:
+                    out.append(keys)
+                out.append([item.get(k, "") for k in keys])
+            elif isinstance(item, list):
+                out.append(item)
+            else:
+                out.append([item])
+    return out
+
+
+async def tool_xlsx_create(args: dict, ctx: dict) -> str:
+    rows = _rows_from_args(args)
+    if not rows:
+        return "Donnees vides. Fournis `rows`, `csv` ou `data`."
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        return "Dependance manquante : installe `openpyxl`."
+    try:
+        target = _office_target_path(str(args.get("path", "") or ""), ".xlsx", "tableau", ctx)
+    except ValueError as e:
+        return str(e)
+    sheet = str(args.get("sheet", "Données") or "Données")[:31]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet
+    for row in rows[:5000]:
+        ws.append(row[:200])
+    if bool(args.get("header", True)) and ws.max_row >= 1:
+        for cell in ws[1]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor="1F2933")
+    for col in range(1, min(ws.max_column, 30) + 1):
+        width = max(10, min(42, max(len(str(ws.cell(row=r, column=col).value or "")) for r in range(1, min(ws.max_row, 60) + 1)) + 2))
+        ws.column_dimensions[get_column_letter(col)].width = width
+    try:
+        wb.save(str(target))
+    except Exception as e:
+        return f"Erreur creation XLSX : {e}"
+    rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+    return f"XLSX cree : {rel}\nLignes : {len(rows)}\nLien telechargement : /api/workspace/download?path={quote(rel)}"
+
+
+def _is_hidden_path(path: Path) -> bool:
+    return any(part.startswith(".") for part in path.parts)
+
+
+async def tool_zip_create(args: dict, ctx: dict) -> str:
+    try:
+        target = _office_target_path(str(args.get("path", "") or ""), ".zip", "archive", ctx)
+    except ValueError as e:
+        return str(e)
+    ws = _user_workspace(ctx).resolve()
+    items = args.get("files")
+    if not isinstance(items, list) or not items:
+        folder = str(args.get("folder", ".") or ".")
+        try:
+            root = _safe_path(folder, ctx)
+        except ValueError as e:
+            return str(e)
+        if not root.exists():
+            return "Dossier/fichier introuvable"
+        files = [p for p in ([root] if root.is_file() else root.rglob("*")) if p.is_file()]
+    else:
+        files = []
+        for rel in items:
+            try:
+                p = _safe_path(str(rel), ctx)
+            except ValueError as e:
+                return str(e)
+            if p.is_file():
+                files.append(p)
+            elif p.is_dir():
+                files.extend(x for x in p.rglob("*") if x.is_file())
+    include_hidden = bool(args.get("include_hidden", False))
+    files = [p for p in files if p.resolve() != target.resolve() and (include_hidden or not _is_hidden_path(p.relative_to(ws)))]
+    max_files = max(1, min(1000, int(args.get("max_files") or 500)))
+    files = files[:max_files]
+    if not files:
+        return "Aucun fichier a zipper"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for p in files:
+                zf.write(p, p.relative_to(ws).as_posix())
+    except Exception as e:
+        return f"Erreur creation ZIP : {e}"
+    rel = str(target.relative_to(ws)).replace("\\", "/")
+    return f"ZIP cree : {rel}\nFichiers : {len(files)}\nTaille : {target.stat().st_size} octets\nLien telechargement : /api/workspace/download?path={quote(rel)}"
+
+
+async def tool_zip_extract(args: dict, ctx: dict) -> str:
+    try:
+        archive = _safe_path(str(args.get("path", "")), ctx)
+        dest = _safe_path(str(args.get("dest", "extracted") or "extracted"), ctx)
+    except ValueError as e:
+        return str(e)
+    if not archive.is_file() or archive.suffix.lower() != ".zip":
+        return "Archive ZIP introuvable"
+    overwrite = bool(args.get("overwrite", False))
+    max_files = max(1, min(1000, int(args.get("max_files") or 500)))
+    dest.mkdir(parents=True, exist_ok=True)
+    try:
+        with zipfile.ZipFile(archive, "r") as zf:
+            infos = [i for i in zf.infolist() if not i.is_dir()][:max_files]
+            written = 0
+            for info in infos:
+                target = (dest / info.filename).resolve()
+                if not str(target).startswith(str(dest.resolve())):
+                    return "Archive refusee : chemin dangereux"
+                if target.exists() and not overwrite:
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(info) as src, target.open("wb") as out:
+                    out.write(src.read())
+                written += 1
+    except Exception as e:
+        return f"Erreur extraction ZIP : {e}"
+    rel = str(dest.relative_to(_user_workspace(ctx))).replace("\\", "/")
+    return f"ZIP extrait dans : {rel}\nFichiers extraits : {written}"
 
 
 async def tool_context_compress(args: dict, ctx: dict) -> str:
@@ -2147,6 +2430,157 @@ async def tool_page_summary(args: dict, ctx: dict) -> str:
         return f"Page : {url}\nQuestion : {question}\n\nContenu :\n{excerpt}"
     return f"Page : {url}\n\nContenu extrait :\n{excerpt}"
 
+
+def _same_site(url: str, base_host: str) -> bool:
+    try:
+        host = urlparse(url).hostname or ""
+    except ValueError:
+        return False
+    return host.lower() == base_host.lower()
+
+
+async def tool_web_crawl(args: dict, ctx: dict) -> str:
+    """Explore quelques pages d'un meme site et extrait titres/liens/resumes."""
+    start_url = str(args.get("url", "")).strip()
+    if not start_url.startswith(("http://", "https://")):
+        return "URL invalide"
+    try:
+        base_host = urlparse(start_url).hostname or ""
+    except ValueError:
+        return "URL invalide"
+    max_pages = max(1, min(40, int(args.get("max_pages") or 10)))
+    max_depth = max(0, min(3, int(args.get("max_depth") or 1)))
+    include_text = bool(args.get("include_text", False))
+    save_as = str(args.get("save_as", "") or "").strip()
+
+    seen: set[str] = set()
+    queue: list[tuple[str, int]] = [(start_url, 0)]
+    pages = []
+    try:
+        while queue and len(pages) < max_pages:
+            current, depth = queue.pop(0)
+            current = current.split("#")[0]
+            if current in seen:
+                continue
+            seen.add(current)
+            r = await _safe_fetch("GET", current, ctx, timeout=20, user_agent="Mozilla/5.0 (compatible; MaltaiCrawler/1.0)")
+            ctype = r.headers.get("content-type", "")
+            if r.status_code >= 400 or "html" not in ctype:
+                pages.append({"url": str(r.url), "status": r.status_code, "content_type": ctype})
+                continue
+            raw = r.text
+            text = _strip_html(raw)
+            links = []
+            for link in _html_links(raw, str(r.url), limit=120):
+                href = link.get("url", "").split("#")[0]
+                if href.startswith(("http://", "https://")) and _same_site(href, base_host):
+                    links.append(href)
+            pages.append({
+                "url": str(r.url),
+                "status": r.status_code,
+                "title": _html_title(raw),
+                "h1": re.findall(r"<h1[^>]*>(.*?)</h1>", raw, re.I | re.S)[:3],
+                "links_found": len(set(links)),
+                **({"text": text[:2500]} if include_text else {"excerpt": text[:500]}),
+            })
+            if depth < max_depth:
+                for href in links:
+                    if href not in seen and all(href != q[0] for q in queue):
+                        queue.append((href, depth + 1))
+        result = {"start_url": start_url, "pages_crawled": len(pages), "pages": pages}
+        if save_as:
+            target = _safe_path(save_as if save_as.lower().endswith(".json") else save_as + ".json", ctx)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+            rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+            result["export"] = {"path": rel, "download_url": f"/api/workspace/download?path={quote(rel)}"}
+        return _truncate(json.dumps(result, ensure_ascii=False, indent=2))
+    except PermissionError as e:
+        return f"Refuse : {e}"
+    except httpx.HTTPError as e:
+        return f"Erreur crawl : {e}"
+
+
+async def tool_seo_audit(args: dict, ctx: dict) -> str:
+    """Audit SEO technique rapide d'une page HTML."""
+    url = str(args.get("url", "")).strip()
+    if not url.startswith(("http://", "https://")):
+        return "URL invalide"
+    try:
+        r = await _safe_fetch("GET", url, ctx, timeout=20, user_agent="Mozilla/5.0 (compatible; MaltaiSEO/1.0)")
+        if r.status_code >= 400:
+            return f"Erreur HTTP {r.status_code} sur {url}"
+        raw = r.text
+    except PermissionError as e:
+        return f"Refuse : {e}"
+    except httpx.HTTPError as e:
+        return f"Erreur SEO : {e}"
+
+    title = _html_title(raw)
+    meta_desc = ""
+    m = re.search(r'<meta[^>]+name=["\']description["\'][^>]*content=["\']([^"\']*)', raw, re.I)
+    if not m:
+        m = re.search(r'<meta[^>]+content=["\']([^"\']*)["\'][^>]+name=["\']description["\']', raw, re.I)
+    if m:
+        meta_desc = html.unescape(m.group(1).strip())
+    h1s = [_strip_html(x) for x in re.findall(r"<h1[^>]*>(.*?)</h1>", raw, re.I | re.S)]
+    h2s = [_strip_html(x) for x in re.findall(r"<h2[^>]*>(.*?)</h2>", raw, re.I | re.S)]
+    imgs = re.findall(r"<img\b[^>]*>", raw, re.I)
+    imgs_missing_alt = [tag[:180] for tag in imgs if not re.search(r"\salt\s*=", tag, re.I)]
+    links = _html_links(raw, str(r.url), limit=300)
+    canonical = ""
+    cm = re.search(r'<link[^>]+rel=["\']canonical["\'][^>]*href=["\']([^"\']+)', raw, re.I)
+    if cm:
+        canonical = urljoin(str(r.url), cm.group(1))
+    viewport = bool(re.search(r'<meta[^>]+name=["\']viewport["\']', raw, re.I))
+    robots_noindex = bool(re.search(r'<meta[^>]+name=["\']robots["\'][^>]+content=["\'][^"\']*noindex', raw, re.I))
+    issues = []
+    if not title:
+        issues.append("title manquant")
+    elif len(title) < 20 or len(title) > 65:
+        issues.append(f"title longueur a verifier ({len(title)} caracteres)")
+    if not meta_desc:
+        issues.append("meta description manquante")
+    elif len(meta_desc) < 70 or len(meta_desc) > 170:
+        issues.append(f"meta description longueur a verifier ({len(meta_desc)} caracteres)")
+    if len(h1s) != 1:
+        issues.append(f"H1 attendu: 1, trouve: {len(h1s)}")
+    if imgs_missing_alt:
+        issues.append(f"{len(imgs_missing_alt)} image(s) sans alt")
+    if not canonical:
+        issues.append("canonical manquant")
+    if not viewport:
+        issues.append("viewport mobile manquant")
+    if robots_noindex:
+        issues.append("page en noindex")
+
+    result = {
+        "url": str(r.url),
+        "status": r.status_code,
+        "title": title,
+        "title_length": len(title),
+        "description": meta_desc,
+        "description_length": len(meta_desc),
+        "canonical": canonical,
+        "h1": h1s,
+        "h2_count": len(h2s),
+        "images": len(imgs),
+        "images_missing_alt": len(imgs_missing_alt),
+        "links_count": len(links),
+        "viewport": viewport,
+        "robots_noindex": robots_noindex,
+        "issues": issues,
+        "score": max(0, 100 - len(issues) * 12),
+    }
+    save_as = str(args.get("save_as", "") or "").strip()
+    if save_as:
+        target = _safe_path(save_as if save_as.lower().endswith(".json") else save_as + ".json", ctx)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+        result["export"] = {"path": rel, "download_url": f"/api/workspace/download?path={quote(rel)}"}
+    return _truncate(json.dumps(result, ensure_ascii=False, indent=2))
+
 # --- Registre ----------------------------------------------------------------
 
 Tool = dict[str, Any]
@@ -2235,6 +2669,108 @@ TOOLS: dict[str, dict] = {
                     "author": {"type": "string", "description": "Auteur du PDF"},
                     "page_size": {"type": "string", "description": "A4 ou letter"},
                 },
+            },
+        },
+    },
+    "docx_read": {
+        "run": tool_docx_read,
+        "spec": {
+            "name": "docx_read",
+            "description": "Lit un document Word DOCX du workspace : paragraphes, tableaux et metadonnees.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin du .docx dans le workspace"},
+                    "max_chars": {"type": "integer", "description": "Limite de texte retourne, defaut 12000"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    "docx_create": {
+        "run": tool_docx_create,
+        "spec": {
+            "name": "docx_create",
+            "description": "Cree un document Word DOCX depuis du texte ou Markdown simple (#, ##, listes).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin du .docx a creer, ex: exports/rapport.docx"},
+                    "title": {"type": "string"},
+                    "content": {"type": "string"},
+                    "source_path": {"type": "string", "description": "Fichier texte source si content est vide"},
+                    "author": {"type": "string"},
+                },
+            },
+        },
+    },
+    "xlsx_read": {
+        "run": tool_xlsx_read,
+        "spec": {
+            "name": "xlsx_read",
+            "description": "Lit un fichier Excel XLSX du workspace et retourne les lignes d'une feuille.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "sheet": {"type": "string", "description": "Nom de feuille optionnel"},
+                    "max_rows": {"type": "integer", "description": "Defaut 80, max 500"},
+                    "max_cols": {"type": "integer", "description": "Defaut 20, max 80"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    "xlsx_create": {
+        "run": tool_xlsx_create,
+        "spec": {
+            "name": "xlsx_create",
+            "description": "Cree un fichier Excel XLSX depuis rows, csv ou une liste d'objets JSON.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Chemin du .xlsx a creer, ex: exports/data.xlsx"},
+                    "sheet": {"type": "string"},
+                    "rows": {"type": "array", "description": "Liste de lignes, ex: [[\"Nom\",\"Prix\"],[\"A\",10]]"},
+                    "csv": {"type": "string", "description": "CSV brut optionnel"},
+                    "headers": {"type": "array", "description": "Colonnes pour data"},
+                    "data": {"type": "array", "description": "Liste d'objets JSON ou lignes"},
+                    "header": {"type": "boolean", "description": "Styliser la premiere ligne, defaut true"},
+                },
+            },
+        },
+    },
+    "zip_create": {
+        "run": tool_zip_create,
+        "spec": {
+            "name": "zip_create",
+            "description": "Cree une archive ZIP d'un dossier ou d'une liste de fichiers du workspace.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Archive a creer, ex: exports/workspace.zip"},
+                    "folder": {"type": "string", "description": "Dossier a zipper si files est vide"},
+                    "files": {"type": "array", "description": "Liste de fichiers/dossiers a inclure"},
+                    "include_hidden": {"type": "boolean"},
+                    "max_files": {"type": "integer"},
+                },
+            },
+        },
+    },
+    "zip_extract": {
+        "run": tool_zip_extract,
+        "spec": {
+            "name": "zip_extract",
+            "description": "Extrait une archive ZIP dans un dossier du workspace, avec protection anti path traversal.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Archive ZIP du workspace"},
+                    "dest": {"type": "string", "description": "Dossier destination, defaut extracted"},
+                    "overwrite": {"type": "boolean"},
+                    "max_files": {"type": "integer"},
+                },
+                "required": ["path"],
             },
         },
     },
@@ -2419,6 +2955,39 @@ TOOLS: dict[str, dict] = {
                     "save_as": {"type": "string", "description": "Nom du fichier a creer dans exports/ (ex: arf-reparation.json, data.csv, rapport.md, page.txt, rapport.html)"},
                     "format": {"type": "string", "description": "Format d'export: json, csv, md, txt ou html"},
                     "limit": {"type": "integer", "description": "Nombre maximum d'elements par liste, max 100"},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    "web_crawl": {
+        "run": tool_web_crawl,
+        "spec": {
+            "name": "web_crawl",
+            "description": "Explore plusieurs pages d'un meme site et retourne titres, extraits et liens trouves.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL de depart"},
+                    "max_pages": {"type": "integer", "description": "Defaut 10, max 40"},
+                    "max_depth": {"type": "integer", "description": "Defaut 1, max 3"},
+                    "include_text": {"type": "boolean"},
+                    "save_as": {"type": "string", "description": "Exporter le resultat JSON dans le workspace"},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    "seo_audit": {
+        "run": tool_seo_audit,
+        "spec": {
+            "name": "seo_audit",
+            "description": "Audit SEO rapide d'une page : title, description, H1, canonical, images alt, viewport, liens et score.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string"},
+                    "save_as": {"type": "string", "description": "Exporter l'audit JSON dans le workspace"},
                 },
                 "required": ["url"],
             },
