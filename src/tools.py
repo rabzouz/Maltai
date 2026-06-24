@@ -299,10 +299,12 @@ async def tool_pdf_create(args: dict, ctx: dict) -> str:
         return f"Erreur creation PDF : {e}"
 
     rel = str(target.relative_to(_user_workspace(ctx))).replace("\\", "/")
+    download_url = f"/api/workspace/download?path={quote(rel)}"
     return (
         f"PDF cree : {rel}\n"
         f"Taille : {target.stat().st_size} octets\n"
-        f"Lien telechargement : /api/workspace/download?path={quote(rel)}"
+        f"Lien telechargement : {download_url}\n"
+        f"[Telecharger le PDF]({download_url})"
     )
 
 

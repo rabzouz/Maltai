@@ -779,6 +779,15 @@ function renderMarkdown(el, text) {
     };
     pre.appendChild(btn);
   });
+  renderWorkspaceDownloadsNear(el, text);
+}
+
+function renderWorkspaceDownloadsNear(el, text) {
+  const links = workspaceDownloadLinks(text);
+  el.parentElement?.querySelector(".tool-downloads.from-message")?.remove();
+  if (!links) return;
+  links.classList.add("from-message");
+  el.after(links);
 }
 
 // --- Drawer mobile -------------------------------------------------------
@@ -1135,10 +1144,27 @@ function addToolCard(name, argsPreview) {
 
 function workspaceDownloadLinks(text) {
   const paths = new Set();
-  const re = /(?:Screenshot sauvegarde\s*:\s*)?((?:browser_screenshots|notes|exports|files)\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|html|pdf|zip))/gi;
+  const raw = text || "";
+  const pathRe = /(?:Screenshot sauvegarde\s*:\s*)?((?:browser_screenshots|notes|exports|files)\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|html|pdf|docx|xlsx|zip))/gi;
+  const apiRe = /(?:https?:\/\/[^/\s"'<>]+)?\/api\/workspace\/download\?path=([^\s"'<>)]*)/gi;
+  const exportRe = /(?:https?:\/\/[^/\s"'<>]+)?\/exports\/([^\s"'<>]+\.(?:png|jpg|jpeg|webp|gif|txt|md|json|csv|html|pdf|docx|xlsx|zip))/gi;
   let m;
-  while ((m = re.exec(text || ""))) {
+  while ((m = pathRe.exec(raw))) {
     paths.add(m[1].replace(/[).,;:]+$/, ""));
+  }
+  while ((m = apiRe.exec(raw))) {
+    try {
+      paths.add(decodeURIComponent(m[1]).replace(/[).,;:]+$/, ""));
+    } catch {
+      paths.add(m[1].replace(/[).,;:]+$/, ""));
+    }
+  }
+  while ((m = exportRe.exec(raw))) {
+    try {
+      paths.add(`exports/${decodeURIComponent(m[1])}`.replace(/[).,;:]+$/, ""));
+    } catch {
+      paths.add(`exports/${m[1]}`.replace(/[).,;:]+$/, ""));
+    }
   }
   if (!paths.size) return null;
   const wrap = document.createElement("div");
