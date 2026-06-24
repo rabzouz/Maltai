@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=process-console-1" />
+  <link rel="stylesheet" href="/static/style.css?v=pricing-modal-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -393,6 +393,28 @@
     <div id="panel-window-body" class="panel-window-body"></div>
   </div>
 
+  <div id="pricing-modal" class="modal hidden" aria-labelledby="pricing-title" role="dialog" aria-modal="true">
+    <div class="modal-box pricing-modal-box">
+      <div class="modal-head">
+        <h2 id="pricing-title">Choisis ton plan</h2>
+        <button id="pricing-close" class="icon-btn" title="Fermer">✕</button>
+      </div>
+      <p class="hint pricing-intro">
+        Basic permet de discuter. Premium débloque les outils Agent, scraping web, browser, fichiers,
+        PDF, code sandbox et crédits suivis.
+      </p>
+      <div id="pricing-cards" class="pricing-cards">
+        <div class="pricing-card skeleton"></div>
+        <div class="pricing-card skeleton"></div>
+        <div class="pricing-card skeleton"></div>
+      </div>
+      <div class="pricing-actions">
+        <button id="pricing-later" class="btn-ghost">Plus tard</button>
+        <a class="btn-primary" href="/billing">Voir les offres</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal réglages providers -->
   <div id="settings-modal" class="modal hidden">
     <div class="modal-box">
@@ -488,6 +510,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=process-console-1"></script>
+  <script src="/static/js/app.js?v=pricing-modal-1"></script>
 </body>
 </html>

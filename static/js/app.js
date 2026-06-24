@@ -201,6 +201,105 @@ async function loadSubscriptionUsers() {
   }
 }
 
+// --- Pricing -------------------------------------------------------------
+const PRICING_DISMISS_PREFIX = "maltai_pricing_dismissed_";
+
+function pricingDismissKey() {
+  return `${PRICING_DISMISS_PREFIX}${state.user?.id || "anonymous"}`;
+}
+
+function closePricingModal(remember = true) {
+  const modal = $("#pricing-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  if (remember && state.user?.id) localStorage.setItem(pricingDismissKey(), "1");
+}
+
+function defaultPricingOffers() {
+  return [
+    {
+      id: "premium_monthly",
+      name: "Premium mensuel",
+      price: "9,99 EUR / mois",
+      description: "Outils Agent, scraping web, browser, fichiers, PDF, code sandbox et crédits inclus.",
+      mode: "subscription",
+      credits: 100000,
+      configured: true,
+    },
+    {
+      id: "premium_yearly",
+      name: "Premium annuel",
+      price: "99 EUR / an",
+      description: "Premium pendant un an avec tarif réduit et crédits annuels inclus.",
+      mode: "subscription",
+      credits: 1200000,
+      configured: true,
+    },
+    {
+      id: "credits_100k",
+      name: "Pack 100 000 crédits",
+      price: "5 EUR",
+      description: "Recharge ponctuelle de crédits pour exécuter plus d'outils et d'agents.",
+      mode: "payment",
+      credits: 100000,
+      configured: true,
+    },
+  ];
+}
+
+function renderPricingCards(offers) {
+  const box = $("#pricing-cards");
+  if (!box) return;
+  const items = (offers && offers.length ? offers : defaultPricingOffers()).slice(0, 3);
+  box.innerHTML = "";
+  items.forEach((offer) => {
+    const card = document.createElement("article");
+    card.className = `pricing-card ${offer.id === "premium_monthly" ? "featured" : ""}`;
+    const credits = Number(offer.credits || 0);
+    const creditLabel = credits
+      ? `${credits.toLocaleString("fr-FR")} crédits`
+      : "Crédits suivis";
+    const billingLabel = offer.mode === "subscription" ? "Abonnement" : "Achat ponctuel";
+    card.innerHTML = `
+      <div class="pricing-card-top">
+        <span>${esc(billingLabel)}</span>
+        ${offer.id === "premium_monthly" ? "<strong>Recommandé</strong>" : ""}
+      </div>
+      <h3>${esc(offer.name)}</h3>
+      <div class="pricing-price">${esc(offer.price)}</div>
+      <p>${esc(offer.description)}</p>
+      <ul>
+        <li>Outils Agent actifs</li>
+        <li>Scraping, browser et fichiers</li>
+        <li>${esc(creditLabel)}</li>
+      </ul>
+      <a class="btn-primary pricing-card-btn" href="/billing">Choisir</a>
+    `;
+    if (!offer.configured) {
+      card.querySelector(".pricing-card-btn").classList.add("disabled");
+      card.querySelector(".pricing-card-btn").textContent = "Bientôt";
+      card.querySelector(".pricing-card-btn").removeAttribute("href");
+    }
+    box.appendChild(card);
+  });
+}
+
+async function loadPricingCards() {
+  try {
+    const data = await api("/api/billing/plans");
+    renderPricingCards(data.offers || []);
+  } catch {
+    renderPricingCards(defaultPricingOffers());
+  }
+}
+
+async function maybeShowPricingModal() {
+  if (!state.user || effectivePlan() !== "basic") return;
+  if (localStorage.getItem(pricingDismissKey()) === "1") return;
+  await loadPricingCards();
+  $("#pricing-modal")?.classList.remove("hidden");
+}
+
 // --- Providers -----------------------------------------------------------
 async function loadProviders() {
   state.providers = await api("/api/providers");
@@ -2141,14 +2240,27 @@ function bindEvents() {
   $("#terminal-close").onclick = closeTerminalWindow;
   const panelWindowClose = $("#panel-window-close");
   if (panelWindowClose) panelWindowClose.onclick = closePanelWindow;
+  const pricingClose = $("#pricing-close");
+  if (pricingClose) pricingClose.onclick = () => closePricingModal(true);
+  const pricingLater = $("#pricing-later");
+  if (pricingLater) pricingLater.onclick = () => closePricingModal(true);
+  const pricingModal = $("#pricing-modal");
+  if (pricingModal) {
+    pricingModal.addEventListener("click", (e) => {
+      if (e.target === pricingModal) closePricingModal(true);
+    });
+  }
   // Click hors du modal-box pour fermer
   $("#settings-modal").addEventListener("click", (e) => {
     if (e.target === $("#settings-modal")) $("#settings-modal").classList.add("hidden");
   });
   // Echap pour fermer
   document.addEventListener("keydown", (e) => {
+    const pricingModalOpen = $("#pricing-modal") && !$("#pricing-modal").classList.contains("hidden");
     if (e.key === "Escape" && !$("#settings-modal").classList.contains("hidden")) {
       $("#settings-modal").classList.add("hidden");
+    } else if (e.key === "Escape" && pricingModalOpen) {
+      closePricingModal(true);
     } else if (e.key === "Escape" && !$("#terminal-window").classList.contains("hidden")) {
       closeTerminalWindow();
     } else if (e.key === "Escape" && !$("#panel-window").classList.contains("hidden")) {
@@ -2222,4 +2334,5 @@ if ("serviceWorker" in navigator) {
   await loadCredits();
   await loadProviders();
   await loadSessions();
+  setTimeout(() => { maybeShowPricingModal().catch(() => {}); }, 350);
 })();
