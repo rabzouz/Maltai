@@ -878,6 +878,8 @@ select {
 }
 .tool-downloads .ws-link {
   display:inline-flex;
+  align-items:center;
+  justify-content:center;
   width:fit-content;
   max-width:100%;
   border:1px solid var(--border);
@@ -912,6 +914,14 @@ select {
 @media (max-width:760px) {
   .tools-panel { bottom:84px; }
   .msg-actions { opacity:1; }
+  .tool-downloads .ws-link {
+    width:100%;
+    min-height:44px;
+    padding:10px 12px;
+    white-space:normal;
+    text-align:center;
+    font-size:14px;
+  }
 }
 
 .msg-row.user { flex-direction: column; align-items: flex-end; }

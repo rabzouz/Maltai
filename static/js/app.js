@@ -1176,9 +1176,20 @@ function workspaceDownloadLinks(text) {
   paths.forEach((path) => {
     const a = document.createElement("a");
     a.className = "ws-link";
-    a.href = `/api/workspace/download?path=${encodeURIComponent(path)}`;
+    const href = `/api/workspace/download?path=${encodeURIComponent(path)}`;
+    a.href = href;
     a.download = path.split("/").pop();
-    a.textContent = `Télécharger ${path}`;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = `Ouvrir / télécharger ${path}`;
+    a.onclick = (e) => {
+      // Sur Android/PWA, l'attribut download est souvent ignore. Ouvrir le
+      // fichier dans un nouvel onglet donne au navigateur son viewer PDF natif.
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        e.preventDefault();
+        window.open(new URL(href, location.origin).href, "_blank", "noopener");
+      }
+    };
     wrap.appendChild(a);
   });
   return wrap;
