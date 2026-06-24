@@ -28,7 +28,7 @@
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <link rel="manifest" href="/static/manifest.json" />
   <title>MaltaiAI — Workspace IA open source et auto-hébergé</title>
-  <link rel="stylesheet" href="/static/site.css" />
+  <link rel="stylesheet" href="/static/site.css?v=guide-1" />
 
   <!-- Données structurées : application -->
   <script type="application/ld+json">
@@ -62,6 +62,7 @@
     </a>
     <nav class="site-nav" aria-label="Navigation principale">
       <a href="#experience">Expérience</a>
+      <a href="#comment-ca-marche">Guide</a>
       <a href="#outils">Outils</a>
       <a href="#securite">Sécurité</a>
       <a href="#plans">Plans</a>
@@ -131,6 +132,46 @@
         <div><span>01</span><strong>Choisis ton provider</strong><p>OpenAI, OpenRouter, Ollama local ou tout endpoint compatible OpenAI.</p></div>
         <div><span>02</span><strong>Active l'agent</strong><p>Laisse Maltai utiliser les outils autorisés selon le plan et le rôle utilisateur.</p></div>
         <div><span>03</span><strong>Contrôle l'instance</strong><p>Admin console, process, Git read-only, crédits, Brain et modèles Ollama.</p></div>
+      </div>
+    </section>
+
+    <section id="comment-ca-marche" class="section guide reveal">
+      <div class="section-head">
+        <p class="eyebrow">Comment ça marche</p>
+        <h2>Un parcours simple pour démarrer avec MaltaiAI.</h2>
+        <p>Chaque étape correspond à ce que l'utilisateur voit dans l'application : compte, plan, modèle, chat, outils et fichiers.</p>
+      </div>
+      <div class="guide-grid">
+        <article>
+          <span>01</span>
+          <h3>Créer un compte</h3>
+          <p>Un nouvel utilisateur s'inscrit depuis la page de connexion. Il arrive en plan Basic avec des crédits de départ.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Voir les tarifs</h3>
+          <p>Au premier accès, une fenêtre affiche Premium mensuel, Premium annuel et le pack de crédits. Le paiement passe par Stripe Checkout.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Choisir le modèle</h3>
+          <p>L'utilisateur sélectionne un provider et un modèle : Maltai Premium OpenAI, Ollama local ou un endpoint compatible OpenAI.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Discuter avec l'IA</h3>
+          <p>Le chat fonctionne comme un assistant classique. Les réponses affichent le modèle utilisé, les tokens et les crédits consommés.</p>
+        </article>
+        <article>
+          <span>05</span>
+          <h3>Activer l'Agent</h3>
+          <p>En Premium, le bouton Agent autorise Maltai à utiliser les outils : recherche web, scraping, browser, fichiers, PDF et code sandbox.</p>
+        </article>
+        <article>
+          <span>06</span>
+          <h3>Gérer le workspace</h3>
+          <p>Les fichiers créés ou analysés restent dans le workspace utilisateur. L'admin garde accès à la console, aux process et aux réglages.</p>
+        </article>
       </div>
     </section>
 
