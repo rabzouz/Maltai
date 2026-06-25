@@ -988,6 +988,12 @@ async function loadToolsPanel(sel) {
       list.innerHTML = `<div class="upgrade-card">
         <strong>Outils Agent réservés au Premium</strong>
         <p>${esc(message)}</p>
+        <ul>
+          <li>Connect : providers compatibles OpenAI, Ollama et OpenRouter.</li>
+          <li>Remember : Brain, souvenirs et contexte rappelé.</li>
+          <li>Search : recherche web, scraping, browser et captures.</li>
+          <li>Experiment : fichiers, PDF, code sandbox et exports.</li>
+        </ul>
         <a class="btn-primary" href="/billing">Voir les offres</a>
       </div>`;
       return;

@@ -440,6 +440,13 @@ select {
   font-size: 13px;
   line-height: 1.45;
 }
+.upgrade-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
 .upgrade-card .btn-primary {
   width: fit-content;
   text-decoration: none;
@@ -450,6 +457,44 @@ select {
 .pricing-intro {
   max-width: 720px;
   line-height: 1.55;
+}
+.agent-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+.agent-capability-grid article {
+  min-height: 142px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+.agent-capability-grid span {
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.agent-capability-grid strong {
+  color: var(--text);
+  font-size: 13px;
+}
+.agent-capability-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 .pricing-cards {
   display: grid;
@@ -739,6 +784,12 @@ select {
   }
   .pricing-modal-box {
     width: 100%;
+  }
+  .agent-capability-grid {
+    grid-template-columns: 1fr;
+  }
+  .agent-capability-grid article {
+    min-height: 0;
   }
   .pricing-cards {
     grid-template-columns: 1fr;
