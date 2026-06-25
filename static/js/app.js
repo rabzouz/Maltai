@@ -765,7 +765,11 @@ marked.setOptions({ breaks: true, gfm: true });
 function renderMarkdown(el, text) {
   const raw = marked.parse(richMarkdown(text || ""));
   el.innerHTML = DOMPurify.sanitize(raw, { ADD_ATTR: ["target"] });
-  el.querySelectorAll("a").forEach((a) => { a.target = "_blank"; a.rel = "noopener"; });
+  el.querySelectorAll("a").forEach((a) => {
+    repairLinkHref(a);
+    a.target = "_blank";
+    a.rel = "noopener";
+  });
   el.querySelectorAll("img").forEach((img) => {
     img.loading = "lazy";
     img.referrerPolicy = "no-referrer";
@@ -788,7 +792,7 @@ function renderMarkdown(el, text) {
 }
 
 function richMarkdown(text) {
-  return String(text || "")
+  return normalizeMalformedMarkdownLinks(String(text || ""))
     .split(/(```[\s\S]*?```|`[^`\n]+`)/g)
     .map((chunk) => {
       if (!chunk || chunk.startsWith("`")) return chunk;
@@ -803,6 +807,27 @@ function richMarkdown(text) {
       });
     })
     .join("");
+}
+
+function normalizeMalformedMarkdownLinks(text) {
+  return text
+    // Corrige: [titre]([https://site](https://site))
+    .replace(/\]\(\[?(https?:\/\/[^\]\s)]+)\]?\((https?:\/\/[^)\s\\]+)\\?\)\)/g, "]($2)")
+    // Corrige: [titre]( [https://site](https://site) )
+    .replace(/\]\(\s*\[?(https?:\/\/[^\]\s)]+)\]?\((https?:\/\/[^)\s\\]+)\\?\)\s*\)/g, "]($2)");
+}
+
+function repairLinkHref(a) {
+  const attr = a.getAttribute("href") || "";
+  let decoded = attr;
+  try { decoded = decodeURIComponent(attr); } catch {}
+  decoded = decoded.replace(/\\\)/g, ")").replace(/\\$/g, "");
+  const urls = [...decoded.matchAll(/https?:\/\/[^\[\]\s)\\]+/g)].map((m) =>
+    m[0].replace(/[.,;:!?]+$/, "")
+  );
+  if (!urls.length) return;
+  const fixed = urls[urls.length - 1];
+  if (fixed && fixed !== attr) a.setAttribute("href", fixed);
 }
 
 function renderWorkspaceDownloadsNear(el, text) {
