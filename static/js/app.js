@@ -763,9 +763,14 @@ function addToolLine(html, beforeBubble, asHtml) {
 marked.setOptions({ breaks: true, gfm: true });
 
 function renderMarkdown(el, text) {
-  const raw = marked.parse(text || "");
+  const raw = marked.parse(richMarkdown(text || ""));
   el.innerHTML = DOMPurify.sanitize(raw, { ADD_ATTR: ["target"] });
   el.querySelectorAll("a").forEach((a) => { a.target = "_blank"; a.rel = "noopener"; });
+  el.querySelectorAll("img").forEach((img) => {
+    img.loading = "lazy";
+    img.referrerPolicy = "no-referrer";
+    if (!img.alt) img.alt = "Image";
+  });
   el.querySelectorAll("pre code").forEach((c) => {
     try { hljs.highlightElement(c); } catch {}
   });
@@ -780,6 +785,24 @@ function renderMarkdown(el, text) {
     pre.appendChild(btn);
   });
   renderWorkspaceDownloadsNear(el, text);
+}
+
+function richMarkdown(text) {
+  return String(text || "")
+    .split(/(```[\s\S]*?```|`[^`\n]+`)/g)
+    .map((chunk) => {
+      if (!chunk || chunk.startsWith("`")) return chunk;
+      return chunk.replace(/(^|[\s(])((https?:\/\/[^\s<>()]+))/g, (m, lead, url, offset) => {
+        if (lead === "(" && chunk[offset - 1] === "]") return m;
+        const clean = url.replace(/[.,;:!?]+$/, "");
+        const tail = url.slice(clean.length);
+        if (/\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(clean)) {
+          return `${lead}![Image](${clean})${tail}`;
+        }
+        return `${lead}[${clean}](${clean})${tail}`;
+      });
+    })
+    .join("");
 }
 
 function renderWorkspaceDownloadsNear(el, text) {
@@ -1459,7 +1482,7 @@ function bindEvents() {
         const d = await r.json();
         status.innerHTML = "✓ Rapport prêt";
         result.className = "dr-result";
-        result.innerHTML = markdownToHtml(d.result || d.output || "");
+        renderMarkdown(result, d.result || d.output || "");
       } catch(e) {
         status.innerHTML = "⚠ Erreur : " + e.message;
       } finally {
@@ -1469,20 +1492,6 @@ function bindEvents() {
 
     btn.onclick = runResearch;
     input.onkeydown = (e) => { if (e.key === "Enter") runResearch(); };
-  }
-
-  function markdownToHtml(md) {
-    return md
-      .replace(/^## (.+)/gm, "<h3>$1</h3>")
-      .replace(/^# (.+)/gm, "<h2>$1</h2>")
-      .replace(/^### (.+)/gm, "<h4>$1</h4>")
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      .replace(/^- (.+)/gm, "<li>$1</li>")
-      .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
-      .replace(/\n{2,}/g, "</p><p>")
-      .replace(/^(?!<[h|u|l])/gm, "")
-      .trim();
   }
 
   // --- Notes & Taches --------------------------------------------------------
