@@ -8,8 +8,21 @@
   <title>MaltaiAI - Plans</title>
   <link rel="stylesheet" href="/static/style.css" />
   <style>
-    body { min-height: 100vh; background: var(--bg); color: var(--text); }
-    .billing-page { width: min(980px, calc(100vw - 32px)); margin: 0 auto; padding: 34px 0 46px; }
+    html, body {
+      height: auto;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    body { min-height: 100dvh; background: var(--bg); color: var(--text); }
+    .billing-page {
+      width: min(980px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 34px 0 calc(46px + env(safe-area-inset-bottom));
+    }
     .billing-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:28px; }
     .brand { display:flex; align-items:center; gap:12px; color:var(--text); text-decoration:none; font-weight:900; font-size:20px; }
     .brand img { width:44px; height:44px; border-radius:12px; }
@@ -37,8 +50,17 @@
     }
     .ghost-link:hover { color:var(--accent); border-color:var(--accent-2); }
     @media (max-width: 840px) {
+      body { min-height: 100svh; }
+      .billing-page {
+        width: min(100% - 24px, 520px);
+        padding-top: max(22px, env(safe-area-inset-top));
+        padding-bottom: calc(34px + env(safe-area-inset-bottom));
+      }
       .plans-grid { grid-template-columns: 1fr; }
       .billing-top { align-items:flex-start; }
+      .billing-hero h1 { font-size: 34px; }
+      .plan-card { min-height: auto; }
+      .plan-card button { min-height: 44px; }
     }
   </style>
 </head>
