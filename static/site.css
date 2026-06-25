@@ -318,8 +318,9 @@ h1 {
   padding: 26px 0 12px;
 }
 
-.metrics div, .feature-grid article, .guide-grid article, .plan-list div, .install pre, .release-card,
-.workflow-list div, .usecase-grid div, .security-grid div, .final-cta {
+.metrics div, .feature-grid article, .guide-grid article, .agent-card, .market-card,
+.plan-list div, .install pre, .release-card, .workflow-list div, .usecase-grid div,
+.security-grid div, .final-cta {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--panel) 84%, transparent);
@@ -449,6 +450,64 @@ h2 {
 .guide-grid article:nth-child(4) { border-color: rgba(112, 211, 138, 0.34); }
 .guide-grid article:nth-child(5) { border-color: rgba(0, 212, 196, 0.36); }
 .guide-grid article:nth-child(6) { border-color: rgba(240, 114, 132, 0.34); }
+
+.agent-section {
+  padding-top: 28px;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.agent-card, .market-card {
+  min-height: 224px;
+  padding: 20px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.agent-card span, .market-card span {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--teal) 46%, var(--line));
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: var(--teal);
+  background: rgba(0, 212, 196, 0.08);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agent-card h3, .market-card h3 {
+  margin: 2px 0 0;
+}
+
+.agent-card p, .market-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.agent-card:nth-child(2) { border-color: rgba(66, 184, 255, 0.34); }
+.agent-card:nth-child(3) { border-color: rgba(246, 184, 75, 0.34); }
+.agent-card:nth-child(4) { border-color: rgba(112, 211, 138, 0.34); }
+.agent-card:nth-child(5) { border-color: rgba(0, 212, 196, 0.36); }
+.agent-card:nth-child(6) { border-color: rgba(240, 114, 132, 0.34); }
+
+.market-card {
+  grid-column: 1 / -1;
+  min-height: 0;
+  border-color: rgba(0, 212, 196, 0.42);
+  background:
+    linear-gradient(135deg, rgba(0, 212, 196, 0.1), rgba(66, 184, 255, 0.05)),
+    color-mix(in srgb, var(--panel) 86%, transparent);
+}
 
 .feature-grid article {
   min-height: 180px;
@@ -625,6 +684,9 @@ h3 {
   .guide-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .agent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .usecase-grid, .security-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -680,10 +742,10 @@ h3 {
     max-width: 100%;
     justify-self: stretch;
   }
-  .metrics, .feature-grid, .guide-grid, .usecase-grid, .security-grid {
+  .metrics, .feature-grid, .guide-grid, .agent-grid, .usecase-grid, .security-grid {
     grid-template-columns: 1fr;
   }
-  .metrics div, .feature-grid article, .guide-grid article {
+  .metrics div, .feature-grid article, .guide-grid article, .agent-card {
     min-height: 0;
   }
   .section {
@@ -770,6 +832,8 @@ h1 {
 .metrics div,
 .feature-grid article,
 .guide-grid article,
+.agent-card,
+.market-card,
 .usecase-grid div,
 .security-grid div,
 .workflow-list div,
@@ -778,6 +842,8 @@ h1 {
 }
 .feature-grid article:hover,
 .guide-grid article:hover,
+.agent-card:hover,
+.market-card:hover,
 .usecase-grid div:hover,
 .security-grid div:hover,
 .workflow-list div:hover,
@@ -868,7 +934,7 @@ h1 {
   }
   .reveal { opacity: 1; transform: none; }
   .primary-link:hover, .ghost-link:hover,
-  .feature-grid article:hover, .guide-grid article:hover, .usecase-grid div:hover,
+  .feature-grid article:hover, .guide-grid article:hover, .agent-card:hover, .market-card:hover, .usecase-grid div:hover,
   .security-grid div:hover, .workflow-list div:hover,
   .plan-list div:hover, .metrics div:hover { transform: none; }
 }
