@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=agent-capabilities-1" />
+  <link rel="stylesheet" href="/static/style.css?v=app-panels-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -115,6 +115,16 @@
         <nav id="session-list" class="session-list"></nav>
       </div>
       <div id="subpanel-tools" class="subpanel hidden">
+        <div class="panel-hero tools-hero">
+          <span class="panel-kicker">Agent tools</span>
+          <h3>Exécuter, scraper, naviguer, coder.</h3>
+          <p>Choisis un outil, lance-le directement ou laisse le mode Agent décider pendant la conversation.</p>
+          <div class="panel-stat-grid">
+            <div><strong id="tools-total">—</strong><span>outils disponibles</span></div>
+            <div><strong id="tools-active">—</strong><span>actifs</span></div>
+            <div><strong id="tools-state">—</strong><span>accès</span></div>
+          </div>
+        </div>
         <div class="tool-runner">
           <div class="tool-runner-head">
             <strong>Run Tool</strong>
@@ -142,6 +152,16 @@
         <div id="side-tools-list" class="tools-list"></div>
       </div>
       <div id="subpanel-brain" class="subpanel hidden">
+        <div class="panel-hero brain-hero">
+          <span class="panel-kicker">Memory layer</span>
+          <h3>Brain garde le contexte utile.</h3>
+          <p>Recherche, épingle et nettoie les souvenirs qui aident Maltai à répondre avec continuité.</p>
+          <div class="panel-stat-grid">
+            <div><strong id="brain-total">—</strong><span>souvenirs</span></div>
+            <div><strong id="brain-topk">—</strong><span>rappelés/message</span></div>
+            <div><strong id="brain-state">—</strong><span>état</span></div>
+          </div>
+        </div>
         <div class="subpanel-card">
           <h3>Brain</h3>
           <p id="brain-memory-status" class="hint">chargement…</p>
@@ -164,6 +184,7 @@
         <div class="subpanel-actions">
           <button class="section-mini-btn" id="brain-delete-filtered">Supprimer les résultats</button>
         </div>
+        <p id="brain-result-count" class="panel-inline-status">—</p>
         <div id="brain-memory-list" class="memory-list"></div>
         <div class="tools-sep">Outils actifs</div>
         <div id="brain-tools-preview" class="tools-list"></div>
@@ -202,13 +223,46 @@
       </div>
       <div id="subpanel-research" class="subpanel hidden">
         <div class="dr-panel">
-          <p class="dr-desc">Lance une recherche approfondie multi-étapes sur n'importe quel sujet.</p>
+          <div class="panel-hero research-hero">
+            <span class="panel-kicker">Deep Research</span>
+            <h3>Transformer un sujet en rapport structuré.</h3>
+            <p>Utilise la recherche web, le browser et le scraping pour produire une synthèse exploitable avec sources et actions.</p>
+          </div>
+          <div class="prompt-grid">
+            <button class="prompt-card" data-dr-topic="Analyse les services, tarifs, contacts et opportunités SEO du site https://www.aqua-r-fly.com/">Audit site local</button>
+            <button class="prompt-card" data-dr-topic="Compare les concurrents jet ski à Palavas et extrait tarifs, offres, contacts, avis et mots-clés SEO.">Concurrents</button>
+            <button class="prompt-card" data-dr-topic="Fais un brief marché sur les agents IA auto-hébergés, leurs outils, tarifs et différenciation produit.">Marché IA</button>
+          </div>
           <div class="section-add-row">
             <input id="dr-input" type="text" placeholder="Sujet à rechercher…" />
             <button id="dr-start-btn" class="section-add-btn">→</button>
           </div>
           <div id="dr-status" class="dr-status hidden"></div>
           <div id="dr-result" class="dr-result hidden"></div>
+        </div>
+      </div>
+      <div id="subpanel-skills" class="subpanel hidden">
+        <div class="panel-hero library-hero">
+          <span class="panel-kicker">Librairie</span>
+          <h3>Les capacités prêtes à utiliser.</h3>
+          <p>Une vue claire des familles d'outils disponibles dans Maltai et des exemples à lancer dans le chat.</p>
+        </div>
+        <div class="library-grid">
+          <article><span>Web</span><strong>Recherche & scraping</strong><p>web_search, web_scrape, browser_open, screenshots, formulaires.</p></article>
+          <article><span>Files</span><strong>Workspace fichiers</strong><p>read_file, write_file, PDF, JSON, CSV, exports et téléchargements.</p></article>
+          <article><span>Code</span><strong>Sandbox Python</strong><p>code_execute pour tester, analyser, transformer et automatiser.</p></article>
+          <article><span>Brain</span><strong>Mémoire</strong><p>souvenirs, contexte rappelé, recherche et épinglage.</p></article>
+          <article><span>Models</span><strong>Providers IA</strong><p>OpenAI, Ollama, OpenRouter, vLLM, llama.cpp compatible OpenAI.</p></article>
+          <article><span>Admin</span><strong>Contrôle instance</strong><p>terminal, process, version, santé app et Git read-only.</p></article>
+        </div>
+        <div class="subpanel-card">
+          <h3>Prompts rapides</h3>
+          <div class="prompt-grid compact">
+            <button class="prompt-card" data-library-prompt="Utilise web_scrape sur https://arf-reparation.vercel.app/ et exporte les données en JSON structuré.">Scraper un site</button>
+            <button class="prompt-card" data-library-prompt="Lis le fichier joint et crée un résumé clair avec les points importants.">Lire un fichier</button>
+            <button class="prompt-card" data-library-prompt="Crée un PDF professionnel avec un titre, des sections et une mise en page propre.">Créer un PDF</button>
+            <button class="prompt-card" data-library-prompt="Utilise Brain pour retrouver ce que tu sais sur Aqua-R-Fly puis fais une synthèse.">Utiliser Brain</button>
+          </div>
         </div>
       </div>
 
@@ -532,6 +586,6 @@
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=agent-capabilities-1"></script>
+  <script src="/static/js/app.js?v=app-panels-1"></script>
 </body>
 </html>

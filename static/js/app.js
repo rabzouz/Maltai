@@ -981,6 +981,12 @@ async function loadToolsPanel(sel) {
     if (!d.can_use_tools) {
       state.allTools = [];
       state.toolMeta = {};
+      const toolsTotal = $("#tools-total");
+      const toolsActive = $("#tools-active");
+      const toolsState = $("#tools-state");
+      if (toolsTotal) toolsTotal.textContent = "0";
+      if (toolsActive) toolsActive.textContent = "0";
+      if (toolsState) toolsState.textContent = "Basic";
       renderDirectToolRunner([]);
       const result = $("#direct-tool-result");
       const message = d.upgrade_message || "Plan premium requis.";
@@ -1002,6 +1008,15 @@ async function loadToolsPanel(sel) {
     d.native.forEach((t) => { state.toolMeta[t.name] = t; });
     renderDirectToolRunner(d.native);
     state.allTools = [...d.native.map((t) => t.name), ...d.mcp.map((t) => t.name)];
+    const toolsTotal = $("#tools-total");
+    const toolsActive = $("#tools-active");
+    const toolsState = $("#tools-state");
+    if (toolsTotal) toolsTotal.textContent = String(state.allTools.length);
+    if (toolsActive) {
+      const activeCount = state.allTools.filter((n) => !state.disabledTools.has(n)).length;
+      toolsActive.textContent = String(activeCount);
+    }
+    if (toolsState) toolsState.textContent = effectivePlan() === "admin" ? "Admin" : "Premium";
     list.innerHTML = "";
     const addOpt = (t, badge) => {
       const lbl = document.createElement("label");
@@ -1013,6 +1028,11 @@ async function loadToolsPanel(sel) {
         if (cb.checked) state.disabledTools.delete(t.name);
         else state.disabledTools.add(t.name);
         saveToolPrefs();
+        const toolsActive = $("#tools-active");
+        if (toolsActive) {
+          const activeCount = state.allTools.filter((n) => !state.disabledTools.has(n)).length;
+          toolsActive.textContent = String(activeCount);
+        }
       };
       const info = document.createElement("div");
       const cost = t.credit_cost ? ` · ${Number(t.credit_cost).toLocaleString("fr-FR")} crédits` : "";
@@ -1407,6 +1427,12 @@ function bindEvents() {
     const status = $("#dr-status");
     const result = $("#dr-result");
     if (!btn || !input) return;
+    document.querySelectorAll("[data-dr-topic]").forEach((example) => {
+      example.onclick = () => {
+        input.value = example.dataset.drTopic || "";
+        input.focus();
+      };
+    });
 
     async function runResearch() {
       const topic = input.value.trim();
@@ -1931,6 +1957,7 @@ function bindEvents() {
     panel.classList.remove("hidden");
     body.appendChild(panel);
     if (titleEl) titleEl.textContent = title;
+    win.dataset.panel = id;
     win.classList.remove("hidden");
     cfg.load();
     if (isMobile()) closeSidebar();
@@ -1962,6 +1989,12 @@ function bindEvents() {
     if (status) status.textContent = "chargement...";
     try {
       const m = await fetch("/api/memory").then((r) => r.json());
+      const brainTotal = $("#brain-total");
+      const brainTopk = $("#brain-topk");
+      const brainState = $("#brain-state");
+      if (brainTotal) brainTotal.textContent = m.enabled ? String(m.count || 0) : "0";
+      if (brainTopk) brainTopk.textContent = m.enabled ? String(m.top_k || 0) : "0";
+      if (brainState) brainState.textContent = m.enabled ? "Actif" : "Off";
       if (status) {
         status.textContent = m.enabled
           ? `${m.count} souvenir(s) memorise(s) · top-${m.top_k} rappeles par message.`
@@ -1971,6 +2004,11 @@ function bindEvents() {
         const data = await api(`/api/memory/items?limit=80&q=${encodeURIComponent(query)}&role=${encodeURIComponent(role)}&pinned=${encodeURIComponent(pinnedOnly)}`);
         list.innerHTML = "";
         const items = data.items || [];
+        const resultCount = $("#brain-result-count");
+        if (resultCount) {
+          const filterLabel = query || role || pinnedOnly ? "filtré(s)" : "chargé(s)";
+          resultCount.textContent = `${items.length} souvenir(s) ${filterLabel}`;
+        }
         if (!items.length) {
           list.innerHTML = '<p class="hint">Aucun souvenir.</p>';
         } else {
@@ -2014,6 +2052,19 @@ function bindEvents() {
       if (list) list.innerHTML = '<p class="hint">Impossible de charger les souvenirs.</p>';
     }
     loadToolsPanel("#brain-tools-preview");
+  }
+
+  function initLibraryPanel() {
+    document.querySelectorAll("[data-library-prompt]").forEach((btn) => {
+      btn.onclick = () => {
+        activateNav("chat");
+        const inp = $("#input");
+        if (!inp) return;
+        inp.value = btn.dataset.libraryPrompt || "";
+        inp.focus();
+        autoGrow(inp);
+      };
+    });
   }
 
   function refreshModelsPanel() {
@@ -2075,6 +2126,7 @@ function bindEvents() {
     notes:       { el: "#subpanel-notes",       title: "Notes", load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",       title: "Tâches", load: () => loadNotesPanel("todo") },
     research:    { el: "#subpanel-research",    title: "Deep Research", load: () => initDeepResearch() },
+    skills:      { el: "#subpanel-skills",      title: "Librairie", load: () => initLibraryPanel() },
   };
 
   function activateNav(id) {
@@ -2101,12 +2153,7 @@ function bindEvents() {
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
   $("#nav-research").onclick    = () => activateNav("research");
-  $("#nav-skills").onclick      = () => {
-    activateNav("chat");
-    const inp = $("#input");
-    if (inp) { inp.value = ""; }
-    // Could show skills list — placeholder for now
-  };
+  $("#nav-skills").onclick      = () => activateNav("skills");
   $("#nav-theme").onclick       = () => {
     activateNav("chat");
     openSettingsModal();
