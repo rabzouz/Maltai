@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=voice-chat-1" />
+  <link rel="stylesheet" href="/static/style.css?v=flaticon-icons-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Nouveau Chat -->
-      <button class="sidebar-new-chat" id="new-chat">
+      <button class="sidebar-new-chat" id="new-chat" data-fi="plus">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Nouveau Chat</span>
       </button>
@@ -48,11 +48,11 @@
       <!-- Nav -->
       <div class="nav-label">Chats</div>
       <nav class="sidebar-nav">
-        <button class="nav-item active" id="nav-chat">
+        <button class="nav-item active" id="nav-chat" data-fi="chat">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span>Chat</span>
         </button>
-        <button class="nav-item" id="nav-discussions">
+        <button class="nav-item" id="nav-discussions" data-fi="messages">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" opacity=".5"/></svg>
           <span>Discussions</span>
         </button>
@@ -60,7 +60,7 @@
 
       <div class="nav-label">Email</div>
       <nav class="sidebar-nav">
-        <button class="nav-item" id="nav-email">
+        <button class="nav-item" id="nav-email" data-fi="email">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
           <span>Email</span>
         </button>
@@ -68,7 +68,7 @@
 
       <div class="nav-label">Models</div>
       <nav class="sidebar-nav">
-        <button class="nav-item" id="nav-models">
+        <button class="nav-item" id="nav-models" data-fi="model">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/></svg>
           <span>Models</span>
         </button>
@@ -76,39 +76,39 @@
 
       <div class="nav-label">Tools</div>
       <nav class="sidebar-nav">
-        <button class="nav-item" id="nav-brain">
+        <button class="nav-item" id="nav-brain" data-fi="brain">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3a4 4 0 0 0-4 4v1a4 4 0 0 0 0 8v1a4 4 0 0 0 7 2.65A4 4 0 0 0 19 17v-1a4 4 0 0 0 0-8V7a4 4 0 0 0-7-2.65A3.98 3.98 0 0 0 9 3z"/><path d="M12 4v16"/></svg>
           <span>Brain</span>
         </button>
-        <button class="nav-item" id="nav-tools">
+        <button class="nav-item" id="nav-tools" data-fi="tools">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Tools</span>
         </button>
-        <button class="nav-item" id="nav-terminal">
+        <button class="nav-item" id="nav-terminal" data-fi="terminal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           <span>Terminal</span>
         </button>
-        <button class="nav-item" id="nav-notes">
+        <button class="nav-item" id="nav-notes" data-fi="notes">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v5h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
           <span>Notes</span>
         </button>
-        <button class="nav-item" id="nav-tasks">
+        <button class="nav-item" id="nav-tasks" data-fi="tasks">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
           <span>Tâches</span>
         </button>
-        <button class="nav-item" id="nav-agentops">
+        <button class="nav-item" id="nav-agentops" data-fi="workflow">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6"/><path d="M20 18V6"/><path d="M8 12h8"/><path d="M8 6h8"/><path d="M8 18h8"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/></svg>
           <span>AgentOps</span>
         </button>
-        <button class="nav-item" id="nav-research">
+        <button class="nav-item" id="nav-research" data-fi="research">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6" opacity=".6"/></svg>
           <span>Deep Research</span>
         </button>
-        <button class="nav-item" id="nav-skills">
+        <button class="nav-item" id="nav-skills" data-fi="library">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg>
           <span>Librairie</span>
         </button>
-        <button class="nav-item" id="nav-theme">
+        <button class="nav-item" id="nav-theme" data-fi="theme">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           <span>Thème</span>
         </button>
@@ -317,16 +317,16 @@
 
       <!-- Pied de sidebar -->
       <div class="sidebar-foot">
-        <button class="foot-btn" id="foot-notes" title="Notes">
+        <button class="foot-btn" id="foot-notes" title="Notes" data-fi="notes">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v5h5"/></svg>
         </button>
-        <button class="foot-btn" id="foot-tasks" title="Tâches">
+        <button class="foot-btn" id="foot-tasks" title="Tâches" data-fi="tasks">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
         </button>
-        <button class="foot-btn" id="open-settings" title="Réglages">
+        <button class="foot-btn" id="open-settings" title="Réglages" data-fi="settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <button class="foot-btn foot-danger logout-btn" id="rail-logout" title="Déconnexion">
+        <button class="foot-btn foot-danger logout-btn" id="rail-logout" title="Déconnexion" data-fi="logout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           <span>Déconnecter</span>
         </button>
@@ -379,11 +379,11 @@
             </label>
           </div>
           <div class="composer-toolbelt">
-            <button id="composer-search" class="toolbelt-btn" title="Recherche / Deep Research">Recherche</button>
-            <button id="composer-terminal" class="toolbelt-btn" title="Ouvrir le terminal">Terminal</button>
-            <button id="composer-files" class="toolbelt-btn" title="Ouvrir les fichiers du workspace">Fichiers</button>
-            <button id="composer-tools" class="toolbelt-btn" title="Choisir les outils agent">Tools</button>
-            <button id="composer-models" class="toolbelt-btn" title="Providers et modèles">Models</button>
+            <button id="composer-search" class="toolbelt-btn" title="Recherche / Deep Research" data-fi="research">Recherche</button>
+            <button id="composer-terminal" class="toolbelt-btn" title="Ouvrir le terminal" data-fi="terminal">Terminal</button>
+            <button id="composer-files" class="toolbelt-btn" title="Ouvrir les fichiers du workspace" data-fi="files">Fichiers</button>
+            <button id="composer-tools" class="toolbelt-btn" title="Choisir les outils agent" data-fi="tools">Tools</button>
+            <button id="composer-models" class="toolbelt-btn" title="Providers et modèles" data-fi="model">Models</button>
           </div>
           <!-- Chips fichiers joints -->
           <div id="attach-chips" class="attach-chips"></div>
@@ -402,10 +402,10 @@
           </div>
           <!-- Ligne saisie -->
           <div class="composer-row">
-            <button id="attach-btn" class="icon-btn attach" title="Joindre un fichier">
+            <button id="attach-btn" class="icon-btn attach" title="Joindre un fichier" data-fi="attach">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             </button>
-            <button id="voice-input" class="icon-btn voice-input" title="Dicter avec le micro">
+            <button id="voice-input" class="icon-btn voice-input" title="Dicter avec le micro" data-fi="microphone">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M8 22h8"/></svg>
             </button>
             <textarea id="input" rows="1" placeholder="Écris un message… (Entrée pour envoyer, Maj+Entrée pour une ligne)"></textarea>
@@ -639,10 +639,10 @@
     </div>
   </div>
 
-  <script src="/static/js/compat.js?v=voice-chat-1"></script>
+  <script src="/static/js/compat.js?v=flaticon-icons-1"></script>
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=voice-chat-1"></script>
+  <script src="/static/js/app.js?v=flaticon-icons-1"></script>
 </body>
 </html>

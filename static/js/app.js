@@ -644,6 +644,29 @@ function setStatus(msg) {
   if (bar) { bar.textContent = msg; bar.style.opacity = msg ? "1" : "0"; }
 }
 
+function initFlaticonIcons() {
+  const root = "/static/icons/flaticon/";
+  document.querySelectorAll("[data-fi]").forEach((el) => {
+    if (el.dataset.fiLoaded) return;
+    const name = String(el.dataset.fi || "").trim().toLowerCase();
+    if (!name || !/^[a-z0-9-]+$/.test(name)) return;
+    el.dataset.fiLoaded = "1";
+    const img = new Image();
+    img.alt = "";
+    img.decoding = "async";
+    img.loading = "lazy";
+    img.className = "fi-icon";
+    img.onload = () => {
+      const currentSvg = el.querySelector(":scope > svg");
+      if (currentSvg) currentSvg.replaceWith(img);
+      else el.prepend(img);
+      el.classList.add("has-fi-icon");
+    };
+    img.onerror = () => { el.dataset.fiLoaded = "missing"; };
+    img.src = `${root}${name}.svg`;
+  });
+}
+
 function setVoiceListening(active) {
   state.voice.listening = active;
   const btn = $("#voice-input");
@@ -1604,6 +1627,7 @@ async function refreshMemoryStatus() {
 }
 
 function bindEvents() {
+  initFlaticonIcons();
   $("#new-chat").onclick = newSession;
   $("#send").onclick = () => {
     if (state.streaming && state.abort) { state.abort.abort(); return; }

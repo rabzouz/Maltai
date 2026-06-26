@@ -263,6 +263,28 @@ body {
   font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
 }
 .icon-btn:hover { color: var(--text); background: var(--panel-2); }
+.fi-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.nav-item .fi-icon,
+.sidebar-new-chat .fi-icon,
+.foot-btn .fi-icon {
+  width: 15px;
+  height: 15px;
+}
+.toolbelt-btn .fi-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+}
+.icon-btn .fi-icon {
+  width: 18px;
+  height: 18px;
+}
 
 /* Main */
 /* Main */
