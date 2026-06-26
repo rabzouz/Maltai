@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=agent-response-panel-1" />
+  <link rel="stylesheet" href="/static/style.css?v=agent-pipeline-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -277,12 +277,26 @@
           <div><span>5</span><strong>Export</strong><p>rapport, JSON, fichier</p></div>
         </div>
         <div class="subpanel-card">
+          <h3>Pipeline agentique</h3>
+          <p class="hint">Méthode inspirée des systèmes pipeline : score, rapport, tracker, export et validation humaine avant action.</p>
+          <div class="pipeline-grid">
+            <article><span>A</span><strong>Collecter</strong><p>URL, PDF, image, fiche entreprise ou liste de concurrents.</p></article>
+            <article><span>B</span><strong>Évaluer</strong><p>Score A-F, risques, opportunité, qualité des sources.</p></article>
+            <article><span>C</span><strong>Produire</strong><p>Rapport Markdown, JSON/CSV, PDF, plan d'actions.</p></article>
+            <article><span>D</span><strong>Suivre</strong><p>Tracker avec statut, priorité, prochaine action et date.</p></article>
+          </div>
+        </div>
+        <div class="subpanel-card">
           <h3>Prompts AgentOps</h3>
           <div class="prompt-grid compact">
             <button class="prompt-card" data-agentops-prompt="Construis un workflow agentique pour analyser un site concurrent : étapes, outils Maltai à utiliser, validations humaines, risques et livrables JSON/PDF.">Workflow concurrent</button>
             <button class="prompt-card" data-agentops-prompt="Crée une matrice de gouvernance pour Maltai : rôles Basic/Premium/Admin, outils autorisés, risques, logs, limites tokens et règles de sécurité.">Gouvernance</button>
             <button class="prompt-card" data-agentops-prompt="Fais un plan Data Foundry : comment collecter, nettoyer, structurer et exporter les données d'un site web avec web_scrape, browser et fichiers.">Data Foundry</button>
             <button class="prompt-card" data-agentops-prompt="Définis un tableau de bord AgentOps : métriques tokens, coûts crédits, taux erreur outils, sources, temps de réponse et qualité des exports.">Observabilité</button>
+            <button class="prompt-card" data-agentops-prompt="Lance un pipeline Maltai sur cette URL : collecte les données, note l'opportunité de A à F, crée un rapport structuré, un tableau tracker et les prochaines actions. Demande-moi l'URL si elle manque.">Pipeline URL</button>
+            <button class="prompt-card" data-agentops-prompt="Crée un tracker concurrentiel pour 5 entreprises : nom, URL, offres, prix, avis, forces/faiblesses, score A-F, prochaines actions et export JSON/CSV. Demande-moi les URLs si elles manquent.">Tracker concurrents</button>
+            <button class="prompt-card" data-agentops-prompt="Analyse une offre ou un besoin client comme un pipeline : résumé, fit, risques, score A-F, questions à poser, livrables, email de réponse et plan de suivi.">Pipeline opportunité</button>
+            <button class="prompt-card" data-agentops-prompt="Transforme ce rapport Deep Research en plan d'exécution : priorités, tâches, responsables, fichiers à produire, vérifications et exports PDF/JSON.">Rapport → actions</button>
           </div>
         </div>
       </div>
@@ -657,10 +671,10 @@
     </div>
   </div>
 
-  <script src="/static/js/compat.js?v=agent-response-panel-1"></script>
+  <script src="/static/js/compat.js?v=agent-pipeline-1"></script>
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=agent-response-panel-1"></script>
+  <script src="/static/js/app.js?v=agent-pipeline-1"></script>
 </body>
 </html>

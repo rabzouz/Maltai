@@ -1242,6 +1242,43 @@ select {
   font-size: 11px;
   line-height: 1.3;
 }
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.pipeline-grid article {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--panel-2) 76%, transparent);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+.pipeline-grid article span {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #071112;
+  background: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 900;
+}
+.pipeline-grid article strong {
+  color: var(--text);
+  font-size: 13px;
+}
+.pipeline-grid article p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
 
 /* ---------- Cartes d'appels d'outils ---------- */
 .tool-card {
@@ -2363,7 +2400,8 @@ select {
   .prompt-grid.compact,
   .library-grid,
   .ops-grid,
-  .ops-flow {
+  .ops-flow,
+  .pipeline-grid {
     grid-template-columns: 1fr;
   }
 
