@@ -647,11 +647,21 @@ async function send(contentOverride) {
     alert("Plan premium requis pour utiliser les outils de l'agent.");
     return;
   }
+  if (state.attachments.some((a) => a.uploading)) {
+    setStatus("Upload de la pièce jointe en cours… attends la fin avant d'envoyer.");
+    return;
+  }
   if (!state.currentSession) await newSession();
 
-  const attachedNames = state.attachments.filter((a) => a.id).map((a) => a.filename);
+  const readyAttachments = state.attachments.filter((a) => a.id);
+  const attachedNames = readyAttachments.map((a) => a.filename);
+  const imageAttachments = readyAttachments.filter((a) => a.kind === "image");
+  if (imageAttachments.length && !modelLooksVisionCapable(state.model)) {
+    setStatus("Photo jointe : choisis un modèle vision pour la décrire (gpt-4o-mini, llama3.2-vision, llava…).");
+  }
   input.value = ""; input.style.height = "auto";
-  addMessage("user", content + (attachedNames.length ? `\n📎 ${attachedNames.join(", ")}` : ""));
+  const userBubble = addMessage("user", content + (attachedNames.length ? `\n📎 ${attachedNames.join(", ")}` : ""));
+  renderAttachmentPreview(userBubble, readyAttachments);
   const bubble = addMessage("assistant", "");
   bubble.innerHTML = '<span class="thinking-dots"><span></span><span></span><span></span></span>';
   bubble.classList.add("typing");
@@ -672,7 +682,7 @@ async function send(contentOverride) {
         model: state.model,
         content,
         agent: $("#agent-mode").checked,
-        attachment_ids: state.attachments.filter((a) => a.id).map((a) => a.id),
+        attachment_ids: readyAttachments.map((a) => a.id),
         enabled_tools: $("#agent-mode").checked ? enabledToolsParam() : null,
       }),
     });
@@ -1288,9 +1298,9 @@ function renderChips() {
   box.innerHTML = "";
   state.attachments.forEach((a, i) => {
     const chip = document.createElement("span");
-    chip.className = "chip" + (a.uploading ? " uploading" : "");
+    chip.className = "chip" + (a.uploading ? " uploading" : "") + (a.kind === "image" ? " image-chip" : "");
     const icon = a.kind === "image" ? "🖼" : a.kind === "pdf" ? "📄" : "📝";
-    chip.innerHTML = `${icon} ${esc(a.filename)} `;
+    chip.innerHTML = `${a.previewUrl ? `<img src="${esc(a.previewUrl)}" alt="">` : icon} <span>${esc(a.filename)}</span> `;
     const x = document.createElement("span");
     x.className = "x"; x.textContent = "✕";
     x.onclick = () => { state.attachments.splice(i, 1); renderChips(); };
@@ -1301,7 +1311,13 @@ function renderChips() {
 
 async function uploadFiles(files) {
   for (const f of files) {
-    const placeholder = { filename: f.name, kind: "", uploading: true };
+    const isImage = f.type && f.type.startsWith("image/");
+    const placeholder = {
+      filename: f.name,
+      kind: isImage ? "image" : "",
+      uploading: true,
+      previewUrl: isImage ? URL.createObjectURL(f) : "",
+    };
     state.attachments.push(placeholder); renderChips();
     const form = new FormData();
     form.append("file", f);
@@ -1316,6 +1332,31 @@ async function uploadFiles(files) {
     }
     renderChips();
   }
+}
+
+function renderAttachmentPreview(anchorEl, attachments) {
+  const images = (attachments || []).filter((a) => a.kind === "image" && a.previewUrl);
+  if (!images.length || !anchorEl) return;
+  const wrap = document.createElement("div");
+  wrap.className = "message-attachments";
+  images.forEach((a) => {
+    const item = document.createElement("a");
+    item.className = "message-image-preview";
+    item.href = a.previewUrl;
+    item.target = "_blank";
+    item.rel = "noopener";
+    item.innerHTML = `<img src="${esc(a.previewUrl)}" alt="${esc(a.filename)}"><span>${esc(a.filename)}</span>`;
+    wrap.appendChild(item);
+  });
+  anchorEl.after(wrap);
+}
+
+function modelLooksVisionCapable(model) {
+  const m = String(model || "").toLowerCase();
+  return [
+    "gpt-4o", "gpt-4.1", "vision", "llava", "bakllava", "moondream",
+    "minicpm-v", "qwen2-vl", "qwen2.5-vl", "gemini", "claude-3",
+  ].some((x) => m.includes(x));
 }
 
 async function loadWorkspace() {

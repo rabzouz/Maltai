@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=ios-compat-1" />
+  <link rel="stylesheet" href="/static/style.css?v=image-attachments-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -252,6 +252,8 @@
           <article><span>Files</span><strong>Workspace fichiers</strong><p>read_file, write_file, PDF, JSON, CSV, exports et téléchargements.</p></article>
           <article><span>Code</span><strong>Sandbox Python</strong><p>code_execute pour tester, analyser, transformer et automatiser.</p></article>
           <article><span>Brain</span><strong>Mémoire</strong><p>souvenirs, contexte rappelé, recherche et épinglage.</p></article>
+          <article><span>Vision</span><strong>Photos jointes</strong><p>Joins une image puis utilise un modèle vision : gpt-4o-mini, llama3.2-vision, llava, bakllava.</p></article>
+          <article><span>Image</span><strong>Génération</strong><p>Avec un provider image configuré, l'agent peut créer une nouvelle image depuis un prompt.</p></article>
           <article><span>Models</span><strong>Providers IA</strong><p>OpenAI, Ollama, OpenRouter, vLLM, llama.cpp compatible OpenAI.</p></article>
           <article><span>Admin</span><strong>Contrôle instance</strong><p>terminal, process, version, santé app et Git read-only.</p></article>
         </div>
@@ -260,6 +262,8 @@
           <div class="prompt-grid compact">
             <button class="prompt-card" data-library-prompt="Utilise web_scrape sur https://arf-reparation.vercel.app/ et exporte les données en JSON structuré.">Scraper un site</button>
             <button class="prompt-card" data-library-prompt="Lis le fichier joint et crée un résumé clair avec les points importants.">Lire un fichier</button>
+            <button class="prompt-card" data-library-prompt="Décris précisément la photo jointe : sujet, contexte, détails visibles, texte détecté et actions possibles.">Décrire une photo</button>
+            <button class="prompt-card" data-library-prompt="Génère une nouvelle image 9:16 professionnelle pour MaltaiAI avec style sombre, interface agent et texte court.">Générer image</button>
             <button class="prompt-card" data-library-prompt="Crée un PDF professionnel avec un titre, des sections et une mise en page propre.">Créer un PDF</button>
             <button class="prompt-card" data-library-prompt="Utilise Brain pour retrouver ce que tu sais sur Aqua-R-Fly puis fais une synthèse.">Utiliser Brain</button>
           </div>
@@ -307,7 +311,7 @@
       </div>
 
       <footer id="composer">
-        <input type="file" id="file-input" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.py,.js,.html,.css,.png,.jpg,.jpeg,.webp,.gif,.kt,.dart,.yaml,.yml,.xml,.sql,.sh,.log" />
+        <input type="file" id="file-input" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.py,.js,.html,.css,.png,.jpg,.jpeg,.webp,.gif,.heic,.heif,.kt,.dart,.yaml,.yml,.xml,.sql,.sh,.log" />
         <div class="composer-box">
           <!-- Topbar du composer : modèle + agent -->
           <div class="composer-topbar">
@@ -583,10 +587,10 @@
     </div>
   </div>
 
-  <script src="/static/js/compat.js?v=ios-compat-1"></script>
+  <script src="/static/js/compat.js?v=image-attachments-1"></script>
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=ios-compat-1"></script>
+  <script src="/static/js/app.js?v=image-attachments-1"></script>
 </body>
 </html>

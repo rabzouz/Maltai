@@ -44,8 +44,6 @@ def _safe_workspace_filename(name: str) -> str:
 
 
 def _copy_attachment_to_workspace(up: dict, user_id: str | None) -> str | None:
-    if not up.get("text_extract"):
-        return None
     source = Path(up["path"])
     if not source.is_file():
         return None
@@ -77,6 +75,14 @@ def _build_attachments(ids: list[str], user_id: str | None) -> tuple[str, list[d
                 "type": "image_url",
                 "image_url": {"url": f"data:{up['mime']};base64,{b64}"},
             })
+            workspace_path = _copy_attachment_to_workspace(up, user_id)
+            if workspace_path:
+                context_parts.append(
+                    f"--- Image jointe : {up['filename']} ---\n"
+                    f"Chemin workspace : {workspace_path}\n"
+                    "Si le modele supporte la vision, decris directement l'image. "
+                    "Sinon, indique qu'un modele vision est necessaire."
+                )
         elif up["text_extract"]:
             workspace_path = _copy_attachment_to_workspace(up, user_id)
             path_hint = (

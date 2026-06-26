@@ -28,7 +28,7 @@ TEXT_EXTENSIONS = {
     ".txt", ".md", ".csv", ".json", ".py", ".js", ".ts", ".html", ".css",
     ".xml", ".yaml", ".yml", ".sh", ".sql", ".log", ".kt", ".java", ".dart",
 }
-IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp", "image/gif", "image/heic", "image/heif"}
 MAX_EXTRACT_CHARS = 30_000
 
 
@@ -65,7 +65,7 @@ async def upload(file: UploadFile):
     if mime == "application/pdf" or ext == ".pdf":
         text = _extract_pdf(path)
         kind = "pdf"
-    elif mime in IMAGE_MIMES:
+    elif mime in IMAGE_MIMES or ext in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".heic", ".heif"}:
         kind = "image"
     elif ext in TEXT_EXTENSIONS or mime.startswith("text/"):
         text = raw.decode("utf-8", errors="replace")
