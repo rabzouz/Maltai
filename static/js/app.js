@@ -1515,6 +1515,12 @@ function bindEvents() {
     const input  = $("#dr-input");
     const status = $("#dr-status");
     const result = $("#dr-result");
+    const actions = $("#dr-actions");
+    const copyBtn = $("#dr-copy");
+    const downloadBtn = $("#dr-download");
+    const sendChatBtn = $("#dr-send-chat");
+    let lastReport = "";
+    let lastTopic = "";
     if (!btn || !input) return;
     document.querySelectorAll("[data-dr-topic]").forEach((example) => {
       example.onclick = () => {
@@ -1531,6 +1537,9 @@ function bindEvents() {
       status.innerHTML = '<span class="dr-spinner"></span> Analyse du sujet…';
       result.className = "dr-result hidden";
       result.innerHTML = "";
+      if (actions) actions.className = "dr-actions hidden";
+      lastReport = "";
+      lastTopic = topic;
 
       try {
         // Call via agent tool endpoint
@@ -1546,15 +1555,51 @@ function bindEvents() {
         });
         if (!r.ok) throw new Error(await r.text());
         const d = await r.json();
+        lastReport = String(d.result || d.output || "");
         status.innerHTML = "✓ Rapport prêt";
         result.className = "dr-result";
-        renderMarkdown(result, d.result || d.output || "");
+        renderMarkdown(result, lastReport);
+        if (actions && lastReport) actions.className = "dr-actions";
       } catch(e) {
         status.innerHTML = "⚠ Erreur : " + e.message;
       } finally {
         btn.disabled = false;
       }
     }
+
+    if (copyBtn) copyBtn.onclick = async () => {
+      if (!lastReport) return;
+      const original = copyBtn.textContent;
+      try {
+        await navigator.clipboard.writeText(lastReport);
+        copyBtn.textContent = "Copié";
+      } catch (_) {
+        copyBtn.textContent = "Copie impossible";
+      }
+      setTimeout(() => { copyBtn.textContent = original; }, 1400);
+    };
+
+    if (downloadBtn) downloadBtn.onclick = () => {
+      if (!lastReport) return;
+      const slug = (lastTopic || "rapport")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "").slice(0, 42) || "rapport";
+      const blob = new Blob([lastReport], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `maltai-deep-research-${slug}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    if (sendChatBtn) sendChatBtn.onclick = () => {
+      if (!lastReport) return;
+      fillComposerFromPanel(`Analyse ce rapport Deep Research et propose les prochaines actions :\n\n${lastReport}`);
+    };
 
     btn.onclick = runResearch;
     input.onkeydown = (e) => { if (e.key === "Enter") runResearch(); };
