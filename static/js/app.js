@@ -2142,6 +2142,21 @@ function bindEvents() {
     });
   }
 
+  function fillComposerFromPanel(prompt) {
+    activateNav("chat");
+    const inp = $("#input");
+    if (!inp) return;
+    inp.value = prompt || "";
+    inp.focus();
+    autoGrow(inp);
+  }
+
+  function initAgentOpsPanel() {
+    document.querySelectorAll("[data-agentops-prompt]").forEach((btn) => {
+      btn.onclick = () => fillComposerFromPanel(btn.dataset.agentopsPrompt || "");
+    });
+  }
+
   function refreshModelsPanel() {
     const status = $("#models-status");
     const list = $("#models-list");
@@ -2200,6 +2215,7 @@ function bindEvents() {
     tools:       { el: "#subpanel-tools",       title: "Tools", load: () => loadToolsPanel("#side-tools-list") },
     notes:       { el: "#subpanel-notes",       title: "Notes", load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",       title: "Tâches", load: () => loadNotesPanel("todo") },
+    agentops:    { el: "#subpanel-agentops",    title: "AgentOps", load: () => initAgentOpsPanel() },
     research:    { el: "#subpanel-research",    title: "Deep Research", load: () => initDeepResearch() },
     skills:      { el: "#subpanel-skills",      title: "Librairie", load: () => initLibraryPanel() },
   };
@@ -2227,6 +2243,7 @@ function bindEvents() {
   $("#nav-terminal").onclick    = openTerminalWindow;
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
+  $("#nav-agentops").onclick    = () => activateNav("agentops");
   $("#nav-research").onclick    = () => activateNav("research");
   $("#nav-skills").onclick      = () => activateNav("skills");
   $("#nav-theme").onclick       = () => {
