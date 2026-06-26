@@ -26,6 +26,7 @@ const state = {
     autoRead: localStorage.getItem("maltai_voice_autoread") === "1",
     speakingButton: null,
   },
+  agentResponsesOpen: localStorage.getItem("maltai_agent_responses_open") === "1",
 };
 
 function effectivePlan() {
@@ -572,7 +573,10 @@ async function openSession(sid) {
 }
 
 // --- Messages ------------------------------------------------------------
-function clearMessages() { $("#messages").innerHTML = ""; }
+function clearMessages() {
+  $("#messages").innerHTML = "";
+  refreshAgentResponsesPanel();
+}
 
 function addMessage(role, content) {
   const empty = $(".empty-state");
@@ -592,6 +596,7 @@ function addMessage(role, content) {
   else bubble.textContent = content;
   $("#messages").appendChild(row);
   scrollDown();
+  refreshAgentResponsesPanel();
   return bubble;
 }
 
@@ -636,6 +641,77 @@ function wrap(tag, bubble) {
 function scrollDown() {
   const m = $("#messages");
   m.scrollTop = m.scrollHeight;
+}
+
+function setAgentResponsesPanel(open) {
+  state.agentResponsesOpen = !!open;
+  localStorage.setItem("maltai_agent_responses_open", open ? "1" : "0");
+  const panel = $("#agent-response-panel");
+  const toggle = $("#agent-responses-toggle");
+  if (panel) panel.classList.toggle("hidden", !open);
+  if (toggle) toggle.classList.toggle("active", !!open);
+  if (open) refreshAgentResponsesPanel();
+}
+
+function toggleAgentResponsesPanel() {
+  setAgentResponsesPanel(!state.agentResponsesOpen);
+}
+
+function refreshAgentResponsesPanel() {
+  const list = $("#agent-response-list");
+  const count = $("#agent-response-count");
+  if (!list) return;
+  const rows = [...document.querySelectorAll(".msg-row.assistant")]
+    .filter((row) => (row.querySelector(".bubble")?.innerText || "").trim());
+  if (count) count.textContent = `${rows.length} réponse${rows.length > 1 ? "s" : ""}`;
+  if (!rows.length) {
+    list.innerHTML = '<p class="hint">Les réponses de Maltai apparaîtront ici.</p>';
+    return;
+  }
+  list.innerHTML = "";
+  rows.slice().reverse().forEach((row, idx) => {
+    const bubble = row.querySelector(".bubble");
+    const text = (bubble?.innerText || "").trim();
+    if (!text) return;
+    if (!row.id) row.id = `agent-response-row-${Date.now()}-${idx}`;
+    const usage = row.querySelector(".usage-footer")?.innerText || "";
+    const item = document.createElement("article");
+    item.className = "agent-response-item";
+    const title = `Réponse ${rows.length - idx}`;
+    item.innerHTML = `
+      <div class="agent-response-meta">
+        <strong>${esc(title)}</strong>
+        ${usage ? `<span>${esc(usage.replace(/\s+/g, " · "))}</span>` : ""}
+      </div>
+      <p>${esc(text.slice(0, 420))}${text.length > 420 ? "…" : ""}</p>
+      <div class="agent-response-actions">
+        <button type="button" data-action="goto">aller</button>
+        <button type="button" data-action="copy">copier</button>
+      </div>
+    `;
+    if ("speechSynthesis" in window) {
+      const listen = document.createElement("button");
+      listen.type = "button";
+      listen.dataset.action = "listen";
+      listen.textContent = "écouter";
+      item.querySelector(".agent-response-actions").appendChild(listen);
+    }
+    item.querySelector('[data-action="goto"]').onclick = () => {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+      row.classList.add("highlight");
+      setTimeout(() => row.classList.remove("highlight"), 1300);
+      if (isMobile()) setAgentResponsesPanel(false);
+    };
+    item.querySelector('[data-action="copy"]').onclick = async (e) => {
+      await navigator.clipboard.writeText(text);
+      const btn = e.currentTarget;
+      btn.textContent = "copié";
+      setTimeout(() => { btn.textContent = "copier"; }, 1200);
+    };
+    const listenBtn = item.querySelector('[data-action="listen"]');
+    if (listenBtn) listenBtn.onclick = () => speakText(text, listenBtn);
+    list.appendChild(item);
+  });
 }
 
 // --- Helpers UI ---
@@ -894,6 +970,7 @@ async function send(contentOverride) {
     state.attachments = []; renderChips();
     addCopyAction(bubble);
     if (state.voice.autoRead && !bubble.classList.contains("typing")) speakText(bubble.innerText || "");
+    refreshAgentResponsesPanel();
     tagMessageRows();
     loadSessions();
   }
@@ -1304,6 +1381,7 @@ function refreshRowActions() {
       bar.appendChild(rg);
     }
   }
+  refreshAgentResponsesPanel();
 }
 
 async function regenerate() {
@@ -1628,6 +1706,15 @@ async function refreshMemoryStatus() {
 
 function bindEvents() {
   initFlaticonIcons();
+  const agentResponsesToggle = $("#agent-responses-toggle");
+  if (agentResponsesToggle) agentResponsesToggle.onclick = toggleAgentResponsesPanel;
+  const agentResponsesClose = $("#agent-response-close");
+  if (agentResponsesClose) agentResponsesClose.onclick = () => setAgentResponsesPanel(false);
+  const agentResponsesHide = $("#agent-response-hide");
+  if (agentResponsesHide) agentResponsesHide.onclick = () => setAgentResponsesPanel(false);
+  const agentResponsesRefresh = $("#agent-response-refresh");
+  if (agentResponsesRefresh) agentResponsesRefresh.onclick = refreshAgentResponsesPanel;
+  setAgentResponsesPanel(state.agentResponsesOpen);
   $("#new-chat").onclick = newSession;
   $("#send").onclick = () => {
     if (state.streaming && state.abort) { state.abort.abort(); return; }

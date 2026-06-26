@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="apple-touch-icon" href="/static/icon-180.png" />
   <title>Maltai</title>
-  <link rel="stylesheet" href="/static/style.css?v=flaticon-icons-1" />
+  <link rel="stylesheet" href="/static/style.css?v=agent-response-panel-1" />
   <link rel="stylesheet" href="/static/vendor/github-dark.min.css" />
 </head>
 <body>
@@ -343,6 +343,7 @@
           <select id="provider-select" title="Provider"></select>
           <select id="model-select" title="Modèle"></select>
         </div>
+        <button class="topbar-agent-panel" id="agent-responses-toggle" title="Afficher / masquer les réponses agent" data-fi="messages">Réponses</button>
         <button class="topbar-admin hidden" id="topbar-admin" title="Admin">Admin</button>
       </header>
 
@@ -415,6 +416,23 @@
           </div>
         </div>
       </footer>
+
+      <aside id="agent-response-panel" class="agent-response-panel hidden" aria-label="Réponses agent">
+        <div class="agent-response-head">
+          <div>
+            <strong>Réponses agent</strong>
+            <span id="agent-response-count">0 réponse</span>
+          </div>
+          <button id="agent-response-close" class="icon-btn" title="Masquer">✕</button>
+        </div>
+        <div class="agent-response-tools">
+          <button id="agent-response-refresh" class="section-mini-btn">Actualiser</button>
+          <button id="agent-response-hide" class="section-mini-btn">Masquer</button>
+        </div>
+        <div id="agent-response-list" class="agent-response-list">
+          <p class="hint">Les réponses de Maltai apparaîtront ici.</p>
+        </div>
+      </aside>
     </main>
   </div>
 
@@ -639,10 +657,10 @@
     </div>
   </div>
 
-  <script src="/static/js/compat.js?v=flaticon-icons-1"></script>
+  <script src="/static/js/compat.js?v=agent-response-panel-1"></script>
   <script src="/static/vendor/marked.js"></script>
   <script src="/static/vendor/purify.min.js"></script>
   <script src="/static/vendor/highlight.min.js"></script>
-  <script src="/static/js/app.js?v=flaticon-icons-1"></script>
+  <script src="/static/js/app.js?v=agent-response-panel-1"></script>
 </body>
 </html>

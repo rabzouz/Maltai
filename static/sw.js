@@ -1,6 +1,6 @@
 // Service worker Maltai - cache le shell statique uniquement.
 // Les requetes /api/ ne sont JAMAIS mises en cache (donnees fraiches + auth).
-const CACHE = "maltai-shell-v35";
+const CACHE = "maltai-shell-v36";
 const SHELL = [
   "/",
   "/app",
