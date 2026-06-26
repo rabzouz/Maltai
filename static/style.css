@@ -377,6 +377,32 @@ select {
   font-size: 11.5px; color: var(--muted); opacity: 0.65;
 }
 .composer-model-label svg { opacity: 0.5; }
+.voice-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.voice-toggle input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+.voice-toggle:has(input:checked) {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.voice-toggle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .plan-badge {
   display: inline-flex;
   align-items: center;
@@ -894,6 +920,21 @@ select {
   border: 1px solid var(--border);
 }
 .icon-btn.attach { font-size:20px; flex-shrink:0; padding:9px; }
+.icon-btn.voice-input {
+  flex-shrink: 0;
+  padding: 9px;
+  border: 1px solid transparent;
+}
+.icon-btn.voice-input.listening {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.icon-btn.voice-input.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .ws-link { color:var(--accent); text-decoration:none; }
 .ws-link:hover { text-decoration:underline; }
 .message-attachments {
@@ -1209,6 +1250,11 @@ select {
   border-radius:6px; font-size:11px; padding:3px 9px; cursor:pointer;
 }
 .msg-actions button:hover { color:var(--text); border-color:var(--accent-2); }
+.msg-actions button.speaking {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
 
 /* Bouton stop */
 .btn-send {
@@ -2095,6 +2141,7 @@ select {
   }
 
   .icon-btn.attach,
+  .icon-btn.voice-input,
   .btn-send {
     width: 40px;
     height: 40px;

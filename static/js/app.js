@@ -19,6 +19,13 @@ const state = {
   allTools: [],      // noms de tous les outils connus
   toolMeta: {},       // metadata des outils natifs
   abort: null,       // AbortController du stream en cours
+  voice: {
+    listening: false,
+    recognition: null,
+    baseText: "",
+    autoRead: localStorage.getItem("maltai_voice_autoread") === "1",
+    speakingButton: null,
+  },
 };
 
 function effectivePlan() {
@@ -637,6 +644,121 @@ function setStatus(msg) {
   if (bar) { bar.textContent = msg; bar.style.opacity = msg ? "1" : "0"; }
 }
 
+function setVoiceListening(active) {
+  state.voice.listening = active;
+  const btn = $("#voice-input");
+  if (!btn) return;
+  btn.classList.toggle("listening", active);
+  btn.title = active ? "Arrêter la dictée" : "Dicter avec le micro";
+}
+
+function cleanSpeechText(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stopVoiceRead() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (state.voice.speakingButton) {
+    state.voice.speakingButton.classList.remove("speaking");
+    state.voice.speakingButton.textContent = "écouter";
+  }
+  state.voice.speakingButton = null;
+}
+
+function speakText(text, button) {
+  if (!("speechSynthesis" in window)) {
+    setStatus("Lecture vocale non disponible sur ce navigateur.");
+    return false;
+  }
+  const content = cleanSpeechText(text).slice(0, 4500);
+  if (!content) return false;
+  if (button && state.voice.speakingButton === button) {
+    stopVoiceRead();
+    return true;
+  }
+  stopVoiceRead();
+  const utterance = new SpeechSynthesisUtterance(content);
+  utterance.lang = (navigator.language || "fr-FR").startsWith("fr") ? navigator.language : "fr-FR";
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  if (button) {
+    button.classList.add("speaking");
+    button.textContent = "stop";
+    state.voice.speakingButton = button;
+  }
+  utterance.onend = () => {
+    if (!button || state.voice.speakingButton === button) stopVoiceRead();
+  };
+  utterance.onerror = () => {
+    if (!button || state.voice.speakingButton === button) stopVoiceRead();
+  };
+  window.speechSynthesis.speak(utterance);
+  return true;
+}
+
+function initVoiceControls() {
+  const auto = $("#voice-autoread");
+  const mic = $("#voice-input");
+  const input = $("#input");
+  if (auto) {
+    auto.checked = state.voice.autoRead;
+    auto.disabled = !("speechSynthesis" in window);
+    auto.onchange = () => {
+      state.voice.autoRead = auto.checked;
+      localStorage.setItem("maltai_voice_autoread", auto.checked ? "1" : "0");
+      if (!auto.checked) stopVoiceRead();
+    };
+    if (auto.disabled) auto.closest(".voice-toggle")?.classList.add("disabled");
+  }
+  if (!mic || !input) return;
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    mic.disabled = true;
+    mic.classList.add("disabled");
+    mic.title = "Dictée vocale non disponible sur ce navigateur.";
+    return;
+  }
+  const recognition = new Recognition();
+  state.voice.recognition = recognition;
+  recognition.lang = navigator.language || "fr-FR";
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onstart = () => {
+    state.voice.baseText = input.value.trim();
+    setVoiceListening(true);
+    setStatus("Écoute en cours… parle maintenant.");
+  };
+  recognition.onresult = (event) => {
+    let spoken = "";
+    for (let i = 0; i < event.results.length; i += 1) {
+      spoken += event.results[i][0].transcript;
+    }
+    input.value = [state.voice.baseText, spoken.trim()].filter(Boolean).join(" ");
+    autoGrow(input);
+  };
+  recognition.onerror = (event) => {
+    setStatus(event.error === "not-allowed" ? "Micro refusé par le navigateur." : `Erreur micro : ${event.error}`);
+  };
+  recognition.onend = () => {
+    setVoiceListening(false);
+    setStatus("");
+    input.focus();
+  };
+  mic.onclick = () => {
+    if (state.voice.listening) {
+      recognition.stop();
+      return;
+    }
+    try {
+      recognition.start();
+    } catch (_) {
+      setVoiceListening(false);
+    }
+  };
+}
+
 // --- Chat streaming ------------------------------------------------------
 async function send(contentOverride) {
   const input = $("#input");
@@ -748,6 +870,7 @@ async function send(contentOverride) {
     sb.classList.remove("stop"); sb.textContent = "↑"; sb.title = "Envoyer"; sb.disabled = false;
     state.attachments = []; renderChips();
     addCopyAction(bubble);
+    if (state.voice.autoRead && !bubble.classList.contains("typing")) speakText(bubble.innerText || "");
     tagMessageRows();
     loadSessions();
   }
@@ -1201,6 +1324,13 @@ function addCopyAction(bubble) {
     copy.textContent = "✓"; setTimeout(() => (copy.textContent = "copier"), 1200);
   };
   bar.appendChild(copy);
+  if ("speechSynthesis" in window) {
+    const listen = document.createElement("button");
+    listen.className = "listen-btn";
+    listen.textContent = "écouter";
+    listen.onclick = () => speakText(bubble.innerText || "", listen);
+    bar.appendChild(listen);
+  }
   wrap.appendChild(bar);
 }
 
@@ -2385,6 +2515,7 @@ function bindEvents() {
   $("#file-input").addEventListener("change", (e) => {
     uploadFiles([...e.target.files]); e.target.value = "";
   });
+  initVoiceControls();
   $("#input").addEventListener("focus", () => {
     syncViewportHeight();
     setTimeout(() => $("#input").scrollIntoView({ block: "nearest" }), 120);
