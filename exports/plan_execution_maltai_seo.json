@@ -1,0 +1,151 @@
+{
+  "site": "https://maltai.fr/",
+  "date": "2026-06-28",
+  "priorites": {
+    "P0": [
+      "Redirection 301 www -> non-www",
+      "Réécriture meta description",
+      "Réécriture H1"
+    ],
+    "P1": [
+      "Attributs alt sur les images",
+      "Hiérarchie H2/H3",
+      "Revue des ancres internes"
+    ],
+    "P2": [
+      "Données structurées (déjà en place)",
+      "Campagne backlinks",
+      "Checklist SEO mensuelle"
+    ]
+  },
+  "taches": [
+    {
+      "id": "P0-1",
+      "titre": "Redirection 301 canonique www/non-www",
+      "statut": "fait",
+      "fichier": "app.py + docs/seo/redirections_301.md"
+    },
+    {
+      "id": "P0-2",
+      "titre": "Meta description (245 -> 153 caractères)",
+      "statut": "fait",
+      "fichier": "static/site.html, content/meta_homepage.md"
+    },
+    {
+      "id": "P0-3",
+      "titre": "H1 descriptif unique",
+      "statut": "fait",
+      "fichier": "static/site.html, static/site.css, content/homepage_headings.md"
+    },
+    {
+      "id": "P1-1",
+      "titre": "Attributs alt sur logos",
+      "statut": "fait",
+      "fichier": "static/site.html, docs/seo/images_alt_inventory.md"
+    },
+    {
+      "id": "P1-2",
+      "titre": "Hiérarchie des titres H2/H3",
+      "statut": "validé",
+      "fichier": "content/homepage_headings.md"
+    },
+    {
+      "id": "P1-3",
+      "titre": "Revue des ancres internes",
+      "statut": "documenté",
+      "fichier": "docs/seo/anchors_review.md"
+    },
+    {
+      "id": "P2-1",
+      "titre": "Données structurées schema.org",
+      "statut": "en place",
+      "fichier": "static/site.html, docs/seo/schema_markup_plan.md"
+    },
+    {
+      "id": "P2-2",
+      "titre": "Plan backlinks",
+      "statut": "planifié",
+      "fichier": "docs/seo/backlinks_outreach_plan.md"
+    },
+    {
+      "id": "P2-3",
+      "titre": "Suivi SEO mensuel",
+      "statut": "planifié",
+      "fichier": "docs/seo/checklist_controle_mensuel.md"
+    }
+  ],
+  "responsables": {
+    "Dev/Ops": [
+      "P0-1",
+      "P0-3",
+      "P1-1",
+      "P2-1"
+    ],
+    "SEO/Content": [
+      "P0-2",
+      "P0-3",
+      "P1-2",
+      "P1-3"
+    ],
+    "Marketing/Founder": [
+      "P2-2"
+    ],
+    "SEO/Ops": [
+      "P2-3"
+    ]
+  },
+  "livrables": [
+    "docs/seo/redirections_301.md",
+    "docs/seo/images_alt_inventory.md",
+    "docs/seo/anchors_review.md",
+    "docs/seo/schema_markup_plan.md",
+    "docs/seo/backlinks_outreach_plan.md",
+    "docs/seo/checklist_controle_mensuel.md",
+    "content/meta_homepage.md",
+    "content/homepage_headings.md",
+    "exports/plan_execution_maltai_seo.json"
+  ],
+  "verifications": {
+    "techniques": [
+      "Variante non canonique -> 301 vers https://maltai.fr/",
+      "canonical = https://maltai.fr/",
+      "sitemap = URL canoniques uniquement",
+      "toutes les images ont un alt"
+    ],
+    "editoriales": [
+      "H1 unique, descriptif (>20 caractères), cohérent avec le title",
+      "meta description <= 160 caractères, orientée bénéfice",
+      "hiérarchie de titres logique H1>H2>H3"
+    ],
+    "suivi": [
+      "nouveau crawl SEO après mise en production",
+      "Search Console: indexation, couverture, inspection d'URL",
+      "suivi CTR homepage et domaines référents"
+    ]
+  },
+  "planning": {
+    "semaine_1": [
+      "Redirection 301",
+      "Meta description",
+      "H1 homepage",
+      "Alt images"
+    ],
+    "semaine_2": [
+      "Hiérarchie H2/H3",
+      "Revue ancres",
+      "Vérif Search Console / sitemap / canonical"
+    ],
+    "semaine_3_4": [
+      "Plan backlinks",
+      "Schema markup",
+      "Re-audit SEO avant/après"
+    ]
+  },
+  "criteres_succes": [
+    "problèmes critiques du rapport fermés",
+    "H1 et meta description optimisés",
+    "images avec alt",
+    "canonicalisation d'URL propre",
+    "amélioration des sections Server / Meta information / Page structure au re-crawl"
+  ]
+}

@@ -938,3 +938,19 @@ h1 {
   .security-grid div:hover, .workflow-list div:hover,
   .plan-list div:hover, .metrics div:hover { transform: none; }
 }
+
+
+/* H1 SEO : marque imposante + sous-titre descriptif lisible */
+h1 .h1-brand { display: block; }
+h1 .h1-sub {
+  display: block;
+  margin-top: 16px;
+  max-width: 720px;
+  font-size: clamp(20px, 2.4vw, 30px);
+  line-height: 1.18;
+  font-weight: 800;
+  letter-spacing: 0;
+  background: none;
+  color: #d8e1ea;
+  -webkit-text-fill-color: #d8e1ea;
+}

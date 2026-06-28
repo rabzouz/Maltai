@@ -153,6 +153,19 @@ def billing_success_page():
     return FileResponse(str(STATIC_DIR / "billing.html"))
 
 
+# Ajouté en dernier => middleware le plus externe : s'exécute avant l'auth.
+@app.middleware("http")
+async def canonical_host_redirect(request: Request, call_next):
+    """Redirige www.maltai.fr -> maltai.fr en 301 (évite le duplicate content)."""
+    host = request.headers.get("host", "")
+    if host.startswith("www."):
+        target = f"https://{host[4:]}{request.url.path}"
+        if request.url.query:
+            target += "?" + request.url.query
+        return RedirectResponse(target, status_code=301)
+    return await call_next(request)
+
+
 if __name__ == "__main__":
     import uvicorn
 
