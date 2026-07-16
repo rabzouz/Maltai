@@ -108,10 +108,23 @@ async def static_cache_and_security_headers(request: Request, call_next):
         # no-cache (sans no-store) : le navigateur garde une copie mais revalide
         # a chaque fois -> reponse 304 legere, toujours a jour apres deploiement.
         response.headers["Cache-Control"] = "no-cache"
-    # Headers de securite (sans CSP pour ne rien casser).
+    # Headers de securite.
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"
+    )
+    # CSP en mode Report-Only : n'applique rien, log seulement les violations
+    # dans la console navigateur. A passer en "Content-Security-Policy" une fois
+    # verifie qu'aucune violation n'apparait en usage normal.
+    response.headers.setdefault(
+        "Content-Security-Policy-Report-Only",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "connect-src 'self' ws: wss:; font-src 'self' data:; "
+        "frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
+    )
     if settings.SECURE_COOKIES:  # true uniquement en prod HTTPS
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
