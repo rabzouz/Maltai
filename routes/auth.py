@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -11,6 +12,33 @@ from core.config import settings
 from core.plans import normalize_plan
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# --- Rate limiting en memoire (anti brute-force, zero dependance) ----------
+# {cle: [timestamps]} — purge automatique des entrees expirees.
+_RATE_BUCKETS: dict[str, list[float]] = {}
+
+
+def _client_ip(request: Request) -> str:
+    # Derriere Traefik/Coolify : la vraie IP est dans X-Forwarded-For.
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "?"
+
+
+def _rate_limit(request: Request, action: str, max_attempts: int, window_s: float) -> None:
+    """Leve 429 si l'IP depasse max_attempts sur la fenetre glissante."""
+    now = time.time()
+    key = f"{action}:{_client_ip(request)}"
+    bucket = [t for t in _RATE_BUCKETS.get(key, []) if now - t < window_s]
+    if len(bucket) >= max_attempts:
+        raise HTTPException(429, "Trop de tentatives. Reessaie dans quelques minutes.")
+    bucket.append(now)
+    _RATE_BUCKETS[key] = bucket
+    # Purge globale occasionnelle pour eviter la croissance infinie.
+    if len(_RATE_BUCKETS) > 1000:
+        for k in [k for k, v in _RATE_BUCKETS.items() if not v or now - v[-1] > window_s]:
+            _RATE_BUCKETS.pop(k, None)
 
 
 class LoginIn(BaseModel):
@@ -62,7 +90,8 @@ def _set_cookie(response: Response, token: str) -> None:
 
 
 @router.post("/login")
-def login(body: LoginIn, response: Response):
+def login(body: LoginIn, request: Request, response: Response):
+    _rate_limit(request, "login", max_attempts=10, window_s=60)
     user = auth.get_user_by_username(body.username.strip())
     if not user or not auth.verify_password(body.password, user["password_hash"]):
         raise HTTPException(401, "Identifiants invalides")
@@ -71,7 +100,8 @@ def login(body: LoginIn, response: Response):
 
 
 @router.post("/register")
-def register(body: RegisterIn, response: Response):
+def register(body: RegisterIn, request: Request, response: Response):
+    _rate_limit(request, "register", max_attempts=5, window_s=3600)
     if not settings.REGISTRATION_ENABLED:
         raise HTTPException(403, "Inscription desactivee")
     username = body.username.strip()

@@ -5,6 +5,7 @@ agents avec outils, sessions persistees, auth par cookie signe.
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -21,16 +22,8 @@ from routes import tool_run
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
-app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
-
-# Chemins accessibles sans authentification.
-OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/auth/register", "/api/health",
-                 "/api/telegram/webhook/", "/api/external/chat")
-OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico", "/robots.txt", "/sitemap.xml"}
-
-
-@app.on_event("startup")
-def _startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     db.init_db()
     core_auth.seed_admin()
     if not db.list_providers():
@@ -41,6 +34,15 @@ def _startup():
             settings.DEFAULT_MODEL,
             settings.DEFAULT_EMBED_MODEL,
         )
+    yield
+
+
+app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+
+# Chemins accessibles sans authentification.
+OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/auth/register", "/api/health",
+                 "/api/telegram/webhook/", "/api/external/chat")
+OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico", "/robots.txt", "/sitemap.xml"}
 
 
 @app.middleware("http")
@@ -99,12 +101,21 @@ def health():
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.middleware("http")
-async def no_cache_static(request: Request, call_next):
+async def static_cache_and_security_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
     if path.startswith("/static/") and (path.endswith(".js") or path.endswith(".css")):
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
+        # no-cache (sans no-store) : le navigateur garde une copie mais revalide
+        # a chaque fois -> reponse 304 legere, toujours a jour apres deploiement.
+        response.headers["Cache-Control"] = "no-cache"
+    # Headers de securite (sans CSP pour ne rien casser).
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if settings.SECURE_COOKIES:  # true uniquement en prod HTTPS
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
     return response
 
 
