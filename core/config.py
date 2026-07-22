@@ -29,7 +29,9 @@ def _bool(name: str, default: bool) -> bool:
 
 class Settings:
     APP_NAME = "Maltai"
-    APP_VERSION = "1.1.0"
+    APP_VERSION = "1.1.1"
+    # Renseigne au build Docker (Coolify passe SOURCE_COMMIT automatiquement).
+    APP_COMMIT = os.getenv("SOURCE_COMMIT", "")[:8]
 
     # Reseau
     APP_BIND = os.getenv("APP_BIND", "127.0.0.1")

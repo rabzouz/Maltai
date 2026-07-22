@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS uploads (
     mime        TEXT NOT NULL DEFAULT '',
     path        TEXT NOT NULL,
     text_extract TEXT NOT NULL DEFAULT '',
+    user_id     TEXT,
     created_at  REAL NOT NULL
 );
 
@@ -195,6 +196,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     session_cols = {r["name"] for r in conn.execute("PRAGMA table_info(sessions)")}
     if "user_id" not in session_cols:
         conn.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
+    upload_cols = {r["name"] for r in conn.execute("PRAGMA table_info(uploads)")}
+    if "user_id" not in upload_cols:
+        conn.execute("ALTER TABLE uploads ADD COLUMN user_id TEXT")
 
 
 def new_id() -> str:
@@ -440,6 +444,18 @@ def get_billing_event(session_id: str) -> dict[str, Any] | None:
     try:
         row = conn.execute("SELECT * FROM billing_events WHERE session_id=?", (session_id,)).fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def list_billing_events_for_user(user_id: str) -> list[dict[str, Any]]:
+    conn = connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM billing_events WHERE user_id=? ORDER BY created_at ASC",
+            (user_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()
 
@@ -870,14 +886,15 @@ def telegram_bind_session(chat_id: str, session_id: str) -> None:
 
 # --- Uploads ----------------------------------------------------------------
 
-def add_upload(filename: str, mime: str, path: str, text_extract: str) -> dict[str, Any]:
+def add_upload(filename: str, mime: str, path: str, text_extract: str,
+               user_id: str | None = None) -> dict[str, Any]:
     uid = new_id()
     conn = connect()
     try:
         conn.execute(
-            "INSERT INTO uploads (id, filename, mime, path, text_extract, created_at) "
-            "VALUES (?,?,?,?,?,?)",
-            (uid, filename, mime, path, text_extract, now()),
+            "INSERT INTO uploads (id, filename, mime, path, text_extract, user_id, created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (uid, filename, mime, path, text_extract, user_id, now()),
         )
         conn.commit()
     finally:

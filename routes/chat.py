@@ -65,6 +65,10 @@ def _build_attachments(ids: list[str], user_id: str | None) -> tuple[str, list[d
         up = db.get_upload(uid)
         if not up:
             continue
+        # Isolation : un upload rattache a un autre utilisateur est ignore
+        # (user_id NULL = fichier d'avant la migration, tolere).
+        if up.get("user_id") and up["user_id"] != user_id:
+            continue
         if up["mime"].startswith("image/"):
             try:
                 raw = Path(up["path"]).read_bytes()

@@ -49,7 +49,7 @@ def _extract_pdf(path: Path) -> str:
 
 
 @router.post("/upload")
-async def upload(file: UploadFile):
+async def upload(file: UploadFile, request: Request):
     raw = await file.read()
     if len(raw) > settings.CHAT_UPLOAD_MAX_BYTES:
         raise HTTPException(413, f"Fichier trop volumineux (max {settings.CHAT_UPLOAD_MAX_BYTES // (1024*1024)} Mo)")
@@ -74,7 +74,9 @@ async def upload(file: UploadFile):
     if len(text) > MAX_EXTRACT_CHARS:
         text = text[:MAX_EXTRACT_CHARS] + "\n…[tronque]"
 
-    up = db.add_upload(file.filename or "fichier", mime, str(path), text)
+    user = getattr(request.state, "user", None)
+    up = db.add_upload(file.filename or "fichier", mime, str(path), text,
+                       user_id=user["id"] if user else None)
     return {"id": up["id"], "filename": up["filename"], "kind": kind,
             "chars": len(text)}
 

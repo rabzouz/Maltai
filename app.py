@@ -5,6 +5,7 @@ agents avec outils, sessions persistees, auth par cookie signe.
 """
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from core.config import settings
 from core import auth as core_auth
 from core import database as db
+from core import maintenance
 from routes import auth as auth_routes
 from routes import billing, chat, external, mcp, memory, notes, ollama, providers, sessions, telegram, terminal, tools, uploads
 from routes import tool_run
@@ -34,7 +36,9 @@ async def lifespan(app: FastAPI):
             settings.DEFAULT_MODEL,
             settings.DEFAULT_EMBED_MODEL,
         )
+    task = asyncio.create_task(maintenance.maintenance_loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
@@ -95,7 +99,10 @@ app.include_router(billing.router)
 
 @app.get("/api/health")
 def health():
-    return {"app": settings.APP_NAME, "version": settings.APP_VERSION, "status": "ok"}
+    payload = {"app": settings.APP_NAME, "version": settings.APP_VERSION, "status": "ok"}
+    if settings.APP_COMMIT:
+        payload["commit"] = settings.APP_COMMIT
+    return payload
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

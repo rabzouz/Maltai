@@ -1,0 +1,15 @@
+# Normalise les fins de ligne : LF dans le depot, quel que soit l'OS.
+# Evite les faux "fichiers modifies" entre Windows et Linux.
+* text=auto eol=lf
+
+# Fichiers binaires : ne jamais toucher.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.db binary

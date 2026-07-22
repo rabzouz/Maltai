@@ -14,6 +14,7 @@ assistant OpenClaw d'interroger Maltai (sa memoire, ses outils MCP...).
 """
 from __future__ import annotations
 
+import hashlib
 import hmac
 import secrets as pysecrets
 
@@ -25,11 +26,28 @@ from src import connector
 
 router = APIRouter(prefix="/api/external", tags=["external"])
 
-KV_KEY = "external_api_keys"  # liste de {"name": str, "key": str}
+# Liste de {"name": str, "hash": sha256 hex, "preview": "mlt_xxxx…"}.
+# La cle en clair n'est jamais stockee : montree une seule fois a la creation.
+KV_KEY = "external_api_keys"
+
+
+def _hash_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
 
 
 def _keys() -> list[dict]:
-    return db.kv_get(KV_KEY, [])
+    keys = db.kv_get(KV_KEY, [])
+    # Migration douce : les anciennes entrees stockaient la cle en clair.
+    migrated = False
+    for entry in keys:
+        if "key" in entry:
+            plain = entry.pop("key")
+            entry["hash"] = _hash_key(plain)
+            entry["preview"] = plain[:8] + "…"
+            migrated = True
+    if migrated:
+        db.kv_set(KV_KEY, keys)
+    return keys
 
 
 def _check_key(request: Request) -> None:
@@ -40,8 +58,9 @@ def _check_key(request: Request) -> None:
             provided = auth[len("Bearer "):]
     if not provided:
         raise HTTPException(401, "Cle API manquante (X-Api-Key)")
+    provided_hash = _hash_key(provided)
     for entry in _keys():
-        if hmac.compare_digest(entry.get("key", ""), provided):
+        if hmac.compare_digest(entry.get("hash", ""), provided_hash):
             return
     raise HTTPException(403, "Cle API invalide")
 
@@ -64,7 +83,7 @@ class KeyIn(BaseModel):
 def list_keys(request: Request):
     if getattr(request.state, "user", None) is None:
         raise HTTPException(401, "Non authentifie")
-    return [{"name": k["name"], "preview": k["key"][:8] + "…"} for k in _keys()]
+    return [{"name": k["name"], "preview": k.get("preview", "mlt_????…")} for k in _keys()]
 
 
 @router.post("/keys")
@@ -76,7 +95,8 @@ def create_key(body: KeyIn, request: Request):
         raise HTTPException(403, "Reserve aux administrateurs")
     key = "mlt_" + pysecrets.token_urlsafe(32)
     keys = _keys()
-    keys.append({"name": body.name.strip() or "cle", "key": key})
+    keys.append({"name": body.name.strip() or "cle",
+                 "hash": _hash_key(key), "preview": key[:8] + "…"})
     db.kv_set(KV_KEY, keys)
     # La cle complete n'est montree qu'une seule fois, a la creation.
     return {"name": body.name, "key": key}
