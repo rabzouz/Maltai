@@ -2548,3 +2548,55 @@ select:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+
+/* =====================================================================
+   CONFORT RESPONSIVE (additif — mobile / tablette / desktop)
+   ===================================================================== */
+
+/* Empeche les navigateurs mobiles de gonfler le texte en paysage */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Lecture plus confortable dans les reponses */
+.msg-row.assistant .bubble { line-height: 1.65; }
+
+/* --- Tablette (761px – 1100px) : entre le drawer et le grand ecran --- */
+@media (min-width: 761px) and (max-width: 1100px) {
+  #sidebar { width: 208px; min-width: 150px; }
+  .msg-row { padding: 8px 16px; }
+  .selectors select { min-width: 0; }
+  select { max-width: 220px; }
+  .bubble { font-size: 15px; }
+}
+
+/* --- Grand ecran (>= 1440px) : profite de la place --- */
+@media (min-width: 1440px) {
+  .msg-row { max-width: 860px; }
+  .tool-line { max-width: 860px; }
+  .attach-chips { max-width: 900px; }
+  .bubble { font-size: 15.5px; }
+  #input { font-size: 15.5px; }
+}
+
+/* --- Telephone en paysage : barres compactes, place au contenu --- */
+@media (max-width: 940px) and (max-height: 480px) and (orientation: landscape) {
+  #topbar { min-height: 44px; padding-top: 4px; padding-bottom: 4px; }
+  #composer { padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .messages { padding-top: 6px; }
+  .empty-state { margin: 3vh auto; }
+  .empty-state h1 { font-size: 22px; }
+}
+
+/* --- Tactile : cibles minimales confortables (44px Apple/Android) --- */
+@media (pointer: coarse) {
+  .btn-send, .topbar-menu, .sidebar-hamburger { min-width: 44px; min-height: 44px; }
+  .code-copy { padding: 6px 10px; font-size: 12px; }
+  .msg-actions button { min-width: 38px; min-height: 38px; }
+  .chip { padding: 8px 12px; }
+  .chip .x { padding: 4px; }
+}
+
+/* Le long contenu (URLs, chemins) ne deborde jamais de l'ecran */
+.bubble { overflow-wrap: break-word; word-break: break-word; }
+.bubble pre { max-width: 100%; }
+.bubble pre code { word-break: normal; }
