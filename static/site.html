@@ -1,410 +1,859 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0d14" />
-  <meta name="robots" content="index, follow" />
-  <meta name="description" content="MaltaiAI : workspace IA open source et auto-hébergé. Chat multi-providers, agents outillés, mémoire, fichiers et administration dans une seule interface." />
-  <meta name="author" content="MaltaiAI" />
-  <link rel="canonical" href="https://maltai.fr/" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="robots" content="index, follow">
+    <title>MaltaiAI — Workspace IA open source & auto-hébergé</title>
+    <meta name="description" content="MaltaiAI est un workspace IA open source et auto-hébergé. Chat multi-providers, agents outillés, mémoire vectorielle et console admin dans une interface unique.">
+    <meta name="author" content="MaltaiAI">
+    <link rel="canonical" href="https://maltai.fr/">
 
-  <!-- Open Graph -->
-  <meta property="og:site_name" content="MaltaiAI" />
-  <meta property="og:title" content="MaltaiAI — Workspace IA open source et auto-hébergé" />
-  <meta property="og:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits — dans une seule interface web responsive." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://maltai.fr/" />
-  <meta property="og:locale" content="fr_FR" />
-  <meta property="og:image" content="https://maltai.fr/static/logo-full.png" />
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="MaltaiAI">
+    <meta property="og:title" content="MaltaiAI — Workspace IA open source et auto-hébergé">
+    <meta property="og:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits — dans une seule interface web responsive.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://maltai.fr/">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:image" content="https://maltai.fr/static/logo-full.png">
 
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="MaltaiAI — Workspace IA open source et auto-hébergé" />
-  <meta name="twitter:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits." />
-  <meta name="twitter:image" content="https://maltai.fr/static/logo-full.png" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MaltaiAI — Workspace IA open source et auto-hébergé">
+    <meta name="twitter:description" content="Chat IA multi-providers, agents outillés, Ollama local, browser automation, terminal admin, mémoire et crédits.">
+    <meta name="twitter:image" content="https://maltai.fr/static/logo-full.png">
 
-  <link rel="icon" type="image/png" href="/static/favicon.png" />
-  <link rel="apple-touch-icon" href="/static/icon-180.png" />
-  <link rel="manifest" href="/static/manifest.json" />
-  <title>MaltaiAI — Workspace IA open source et auto-hébergé</title>
-  <link rel="stylesheet" href="/static/site.css?v=agent-1" />
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/icon-180.png">
+    <link rel="manifest" href="/static/manifest.json">
 
-  <!-- Données structurées : application -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "MaltaiAI",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "Docker, Linux, macOS, Windows",
-    "description": "Workspace IA open source et auto-hébergé : chat multi-providers, agents outillés, Ollama local, navigation web, fichiers, mémoire vectorielle et console d'administration.",
-    "url": "https://maltai.fr/",
-    "image": "https://maltai.fr/static/logo-full.png",
-    "softwareVersion": "1.1.0",
-    "license": "https://github.com/rabzouz/Maltai/blob/main/LICENSE",
-    "codeRepository": "https://github.com/rabzouz/Maltai",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "EUR"
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Données structurées -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "MaltaiAI",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Docker, Linux, macOS, Windows",
+      "description": "Workspace IA open source et auto-hébergé : chat multi-providers, agents outillés, Ollama local, navigation web, fichiers, mémoire vectorielle et console d'administration.",
+      "url": "https://maltai.fr/",
+      "image": "https://maltai.fr/static/logo-full.png",
+      "softwareVersion": "1.1.1",
+      "license": "https://github.com/rabzouz/Maltai/blob/main/LICENSE",
+      "codeRepository": "https://github.com/rabzouz/Maltai",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
     }
-  }
-  </script>
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type":"Question","name":"Qu'est-ce que MaltaiAI ?","acceptedAnswer":{"@type":"Answer","text":"MaltaiAI est un workspace IA open source que vous hébergez vous-même : chat multi-providers, agents outillés, mémoire vectorielle et console d'administration dans une seule interface web."}},
+        {"@type":"Question","name":"Quels modèles et providers sont supportés ?","acceptedAnswer":{"@type":"Answer","text":"Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local, avec bascule entre plusieurs providers."}},
+        {"@type":"Question","name":"Est-ce vraiment auto-hébergé ?","acceptedAnswer":{"@type":"Answer","text":"Oui, Maltai tourne sur votre serveur (Docker, Coolify, Linux, macOS, Windows) et stocke ses données localement."}},
+        {"@type":"Question","name":"Combien ça coûte ?","acceptedAnswer":{"@type":"Answer","text":"Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que vous branchez ; avec Ollama en local, aucun coût d'API."}},
+        {"@type":"Question","name":"Est-ce sécurisé pour plusieurs utilisateurs ?","acceptedAnswer":{"@type":"Answer","text":"Oui : sessions et workspace isolés par utilisateur, rôles séparant les commandes sensibles, et protection anti-SSRF des outils web même au fil des redirections."}}
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #111118;
+            --bg-tertiary: #1a1a24;
+            --bg-card: #13131f;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8a8a9a;
+            --text-muted: #5a5a6a;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99,102,241,0.3);
+            --accent-secondary: #8b5cf6;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        ::selection { background: var(--accent-glow); color: var(--text-primary); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 1rem 0; background: rgba(10,10,15,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); transition: var(--transition); }
+        .navbar.scrolled { padding: 0.75rem 0; background: rgba(10,10,15,0.95); }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text-primary); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-link { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: var(--transition); position: relative; }
+        .nav-link:hover { color: var(--text-primary); }
+        .nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--accent); transition: var(--transition); border-radius: 1px; }
+        .nav-link:hover::after { width: 100%; }
+        .nav-cta { background: var(--accent); color: white; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: var(--transition); border: 1px solid transparent; white-space: nowrap; }
+        .nav-cta:hover { background: var(--accent-light); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+        .nav-mobile-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; min-width: 44px; min-height: 44px; }
+        .hero { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; position: relative; padding: 8rem 2rem 4rem; overflow: hidden; }
+        .hero-bg { position: absolute; inset: 0; z-index: 0; }
+        .hero-bg::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.1) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(99,102,241,0.08) 0%, transparent 40%); animation: gradient-shift 15s ease infinite; background-size: 200% 200%; }
+        .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%); }
+        .hero-content { position: relative; z-index: 1; text-align: center; max-width: 800px; animation: fadeInUp 1s ease; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.875rem; color: var(--accent-light); margin-bottom: 2rem; font-weight: 500; }
+        .hero-badge .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse-glow 2s ease infinite; }
+        .hero-title { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem; background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-title span { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-subtitle { font-size: clamp(1rem, 2vw, 1.25rem); color: var(--text-secondary); max-width: 600px; margin: 0 auto 2.5rem; line-height: 1.7; }
+        .hero-cta-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.75rem; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; text-decoration: none; transition: var(--transition); cursor: pointer; border: none; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); color: white; box-shadow: 0 4px 24px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.4); }
+        .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-hover); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: var(--text-secondary); }
+        .hero-social { display: flex; gap: 1.5rem; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.875rem; flex-wrap: wrap; }
+        .hero-social a { color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; transition: var(--transition); }
+        .hero-social a:hover { color: var(--text-secondary); }
+        .hero-scroll { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); color: var(--text-muted); animation: float 3s ease infinite; cursor: pointer; }
+        section { padding: 6rem 2rem; position: relative; }
+        .section-container { max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; max-width: 640px; margin: 0 auto 4rem; }
+        .section-label { display: inline-block; background: rgba(99,102,241,0.1); color: var(--accent-light); padding: 0.35rem 0.875rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+        .section-title { font-size: clamp(1.75rem, 4vw, 2.75rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1rem; line-height: 1.2; }
+        .section-subtitle { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.7; }
+        .trust-bar { background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 2rem; }
+        .trust-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+        .trust-item { display: flex; align-items: flex-start; gap: 0.875rem; }
+        .trust-icon { width: 40px; height: 40px; background: rgba(99,102,241,0.1); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-size: 1.1rem; flex-shrink: 0; }
+        .trust-text h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .trust-text p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+        .demo-section { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%); }
+        .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .browser-mockup { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05); }
+        .browser-header { background: var(--bg-tertiary); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); }
+        .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .browser-dot.red { background: #ef4444; }
+        .browser-dot.yellow { background: #f59e0b; }
+        .browser-dot.green { background: #22c55e; }
+        .browser-url { flex: 1; background: var(--bg-primary); border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-left: 0.5rem; text-align: center; }
+        .browser-content { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.8; }
+        .chat-line { margin-bottom: 1rem; opacity: 0; animation: fadeIn 0.5s ease forwards; }
+        .chat-line:nth-child(1) { animation-delay: 0.2s; }
+        .chat-line:nth-child(2) { animation-delay: 0.6s; }
+        .chat-line:nth-child(3) { animation-delay: 1s; }
+        .chat-line:nth-child(4) { animation-delay: 1.4s; }
+        .chat-line:nth-child(5) { animation-delay: 1.8s; }
+        .chat-user { color: var(--accent-light); }
+        .chat-ai { color: var(--text-secondary); }
+        .chat-tool { color: var(--success); font-size: 0.75rem; margin-left: 1rem; padding: 0.2rem 0.5rem; background: rgba(34,197,94,0.1); border-radius: 4px; display: inline-block; }
+        .demo-steps { display: flex; flex-direction: column; gap: 2rem; }
+        .demo-step { display: flex; gap: 1.25rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: var(--transition); }
+        .demo-step:hover { border-color: var(--border-hover); transform: translateX(4px); }
+        .step-number { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
+        .step-content h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .step-content p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; transition: var(--transition); position: relative; overflow: hidden; }
+        .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); opacity: 0; transition: var(--transition); }
+        .feature-card:hover { border-color: var(--border-hover); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-icon { width: 48px; height: 48px; background: rgba(99,102,241,0.1); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-size: 1.25rem; margin-bottom: 1.25rem; }
+        .feature-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; }
+        .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .usecases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        .usecase-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; display: flex; gap: 1.5rem; transition: var(--transition); }
+        .usecase-card:hover { border-color: var(--border-hover); background: var(--bg-tertiary); }
+        .usecase-icon { width: 56px; height: 56px; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .usecase-content h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .usecase-content p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .security-section { background: var(--bg-secondary); }
+        .security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        .security-card { text-align: center; padding: 2rem 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: var(--transition); }
+        .security-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+        .security-icon { width: 56px; height: 56px; background: rgba(34,197,94,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1.25rem; color: var(--success); }
+        .security-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .security-card p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 900px; margin: 0 auto; }
+        .pricing-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; transition: var(--transition); position: relative; }
+        .pricing-card:hover { border-color: var(--border-hover); transform: translateY(-4px); }
+        .pricing-card.featured { border-color: var(--accent); box-shadow: 0 0 40px rgba(99,102,241,0.1); }
+        .pricing-card.featured::before { content: 'Populaire'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); color: white; padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; }
+        .pricing-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .pricing-desc { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem; }
+        .pricing-price { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .pricing-price span { font-size: 1rem; font-weight: 400; color: var(--text-secondary); }
+        .pricing-note { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem; }
+        .pricing-features { list-style: none; text-align: left; margin-bottom: 2rem; }
+        .pricing-features li { padding: 0.5rem 0; font-size: 0.9rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; }
+        .pricing-features li::before { content: '✓'; color: var(--success); font-weight: 700; }
+        .pricing-features li.disabled { color: var(--text-muted); text-decoration: line-through; }
+        .pricing-features li.disabled::before { content: '✕'; color: var(--text-muted); }
+        .pricing-btn { width: 100%; justify-content: center; }
+        .install-section { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); }
+        .install-terminal { max-width: 700px; margin: 0 auto; background: #0d0d12; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .terminal-header { background: var(--bg-tertiary); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); }
+        .terminal-title { margin-left: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+        .terminal-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.8; color: var(--text-secondary); overflow-x: auto; }
+        .terminal-line { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+        .terminal-prompt { color: var(--success); }
+        .terminal-command { color: var(--text-primary); }
+        .terminal-comment { color: var(--text-muted); }
+        .install-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+        .install-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: var(--transition); }
+        .install-btn:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+        .faq-list { max-width: 700px; margin: 0 auto; }
+        .faq-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; transition: var(--transition); }
+        .faq-item:hover { border-color: var(--border-hover); }
+        .faq-question { padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: var(--transition); }
+        .faq-question:hover { color: var(--accent-light); }
+        .faq-icon { transition: transform 0.3s ease; color: var(--text-muted); }
+        .faq-item.active .faq-icon { transform: rotate(180deg); color: var(--accent); }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; padding: 0 1.5rem; }
+        .faq-item.active .faq-answer { max-height: 300px; padding: 0 1.5rem 1.25rem; }
+        .faq-answer p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; }
+        .footer { background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 4rem 2rem 2rem; }
+        .footer-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+        .footer-brand { max-width: 300px; }
+        .footer-logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-primary); text-decoration: none; }
+        .footer-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; }
+        .footer-col h4 { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.25rem; color: var(--text-primary); }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 0.75rem; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; transition: var(--transition); }
+        .footer-links a:hover { color: var(--accent-light); }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 2rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-copy { color: var(--text-muted); font-size: 0.85rem; }
+        .footer-legal { display: flex; gap: 1.5rem; }
+        .footer-legal a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; transition: var(--transition); }
+        .footer-legal a:hover { color: var(--text-secondary); }
+        @media (max-width: 1024px) {
+            .demo-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .security-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .nav-mobile-toggle { display: block; }
+            .trust-grid { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+            .usecases-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+            section { padding: 4rem 1.5rem; }
+        }
+        @media (max-width: 480px) {
+            .trust-grid { grid-template-columns: 1fr; }
+            .hero-cta-group { flex-direction: column; width: 100%; }
+            .btn { width: 100%; justify-content: center; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+            html { scroll-behavior: auto; }
+            .reveal { opacity: 1; transform: none; }
+            .chat-line { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-  <a class="skip-link" href="#main">Aller au contenu</a>
 
-  <header class="site-topbar">
-    <a class="site-brand" href="/" aria-label="Accueil MaltaiAI">
-      <img src="/static/logo-emblem.png" alt="Logo MaltaiAI" width="34" height="34" />
-      <span>Maltai<span>AI</span></span>
-    </a>
-    <nav class="site-nav" aria-label="Navigation principale">
-      <a href="#experience">Expérience</a>
-      <a href="#comment-ca-marche">Guide</a>
-      <a href="#agent">Agent</a>
-      <a href="#outils">Outils</a>
-      <a href="#securite">Sécurité</a>
-      <a href="#plans">Plans</a>
-      <a href="#faq">FAQ</a>
-      <a href="#installer">Installer</a>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <div class="nav-logo-icon">M</div>
+                MaltaiAI
+            </a>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Fonctionnalités</a>
+                <a href="#security" class="nav-link">Sécurité</a>
+                <a href="#pricing" class="nav-link">Tarifs</a>
+                <a href="#install" class="nav-link">Installer</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+                <a href="https://github.com/rabzouz/Maltai" class="nav-link" target="_blank" rel="noopener">GitHub</a>
+                <a href="/login" class="nav-link">Connexion</a>
+                <a href="/app" class="nav-cta">Ouvrir l'app</a>
+            </div>
+            <button class="nav-mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
+        </div>
     </nav>
-    <div class="site-actions">
-      <a class="ghost-link" href="/login">Connexion</a>
-      <a class="primary-link" href="/app">Ouvrir l'app</a>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                <span id="version-badge">v1.1.1 stable — Open source</span>
+            </div>
+            <h1 class="hero-title">
+                <span class="sr-only">MaltaiAI — </span>Le workspace IA<br>que tu <span>contrôles</span>.
+            </h1>
+            <p class="hero-subtitle">
+                Chat multi-providers, agents outillés, mémoire vectorielle et console admin.
+                Auto-hébergé, open source, et conçu pour le travail — pas seulement pour tester un modèle.
+            </p>
+            <div class="hero-cta-group">
+                <a href="/app" class="btn btn-primary">
+                    <span>▶</span> Lancer Maltai
+                </a>
+                <a href="https://github.com/rabzouz/Maltai" class="btn btn-secondary" target="_blank" rel="noopener">
+                    <span>★</span> Voir sur GitHub
+                </a>
+            </div>
+            <div class="hero-social">
+                <a href="https://github.com/rabzouz/Maltai" target="_blank" rel="noopener">
+                    <span>⭐</span> Star sur GitHub
+                </a>
+                <span>•</span>
+                <span>Compatible OpenAI</span>
+                <span>•</span>
+                <span>Self-hosted</span>
+                <span>•</span>
+                <span>Mobile first</span>
+            </div>
+        </div>
+        <div class="hero-scroll" onclick="document.getElementById('trust').scrollIntoView({behavior:'smooth'})">
+            ↓
+        </div>
+    </section>
+
+    <!-- Trust Bar -->
+    <div class="trust-bar" id="trust">
+        <div class="trust-grid">
+            <div class="trust-item reveal">
+                <div class="trust-icon">⚡</div>
+                <div class="trust-text">
+                    <h4>Multi-provider</h4>
+                    <p>OpenAI, Ollama, OpenRouter et toute API compatible</p>
+                </div>
+            </div>
+            <div class="trust-item reveal reveal-delay-1">
+                <div class="trust-icon">🛠️</div>
+                <div class="trust-text">
+                    <h4>Outils agent</h4>
+                    <p>Web, fichiers, code sandbox, browser et terminal</p>
+                </div>
+            </div>
+            <div class="trust-item reveal reveal-delay-2">
+                <div class="trust-icon">📱</div>
+                <div class="trust-text">
+                    <h4>Mobile first</h4>
+                    <p>Android, iPhone, tablette et desktop</p>
+                </div>
+            </div>
+            <div class="trust-item reveal reveal-delay-3">
+                <div class="trust-icon">🚀</div>
+                <div class="trust-text">
+                    <h4>Déploiement libre</h4>
+                    <p>Docker, Coolify, Linux, macOS et Windows</p>
+                </div>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <main id="main">
-    <section class="hero">
-      <div class="hero-backdrop" aria-hidden="true">
-        <img src="/static/logo-full.png" alt="MaltaiAI — workspace IA open source et auto-hébergé" />
-      </div>
-      <div class="hero-content reveal">
-        <p class="eyebrow">Open source · auto-hébergé · mobile</p>
-        <h1><span class="h1-brand">MaltaiAI</span><span class="h1-sub">Le workspace IA open source et auto-hébergé : chat, agents, outils et fichiers</span></h1>
-        <p class="hero-copy">
-          Le workspace IA pour centraliser tes providers, lancer des agents outillés,
-          gérer Ollama, explorer le web, manipuler des fichiers et garder le contrôle sur ton instance.
-        </p>
-        <div class="hero-actions">
-          <a class="primary-link large" href="/app">Lancer Maltai</a>
-          <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">GitHub</a>
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Expérience</span>
+                <h2 class="section-title">Une interface IA faite pour travailler</h2>
+                <p class="section-subtitle">Chat, outils, fichiers, mémoire, modèles et administration dans une seule interface lisible et responsive.</p>
+            </div>
+            <div class="demo-grid">
+                <div class="demo-visual reveal">
+                    <div class="browser-mockup">
+                        <div class="browser-header">
+                            <div class="browser-dot red"></div>
+                            <div class="browser-dot yellow"></div>
+                            <div class="browser-dot green"></div>
+                            <div class="browser-url">maltai.fr/app</div>
+                        </div>
+                        <div class="browser-content">
+                            <div class="chat-line">
+                                <span class="chat-user">user:</span> <span class="terminal-command">Analyse cette page et extrais les points importants.</span>
+                            </div>
+                            <div class="chat-line">
+                                <span class="chat-ai">maltai:</span> <span class="terminal-comment">// Activation des outils autorisés...</span>
+                            </div>
+                            <div class="chat-line">
+                                <span class="chat-tool">browser_open</span> <span class="terminal-comment">→ snapshot</span>
+                            </div>
+                            <div class="chat-line">
+                                <span class="chat-tool">note_save</span> <span class="terminal-comment">→ synthèse enregistrée</span>
+                            </div>
+                            <div class="chat-line">
+                                <span class="chat-ai">maltai:</span> <span class="terminal-command">Synthèse prête, liens détectés et note enregistrée dans le workspace.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="demo-steps">
+                    <div class="demo-step reveal reveal-delay-1">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Choisis ton provider</h3>
+                            <p>Connecte OpenAI, OpenRouter, Ollama local ou tout endpoint compatible. Bascule entre plusieurs providers selon tes besoins.</p>
+                        </div>
+                    </div>
+                    <div class="demo-step reveal reveal-delay-2">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Active l'agent</h3>
+                            <p>Laisse Maltai utiliser les outils autorisés selon ton plan et ton rôle utilisateur. Web, fichiers, code et plus.</p>
+                        </div>
+                    </div>
+                    <div class="demo-step reveal reveal-delay-3">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Contrôle l'instance</h3>
+                            <p>Admin console, processus, Git read-only, crédits, Brain et modèles Ollama — tout est sous ton contrôle.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <ul class="hero-chips" aria-label="Points forts">
-          <li>OpenAI compatible</li>
-          <li>Ollama local</li>
-          <li>Browser tools</li>
-          <li>Console admin</li>
-        </ul>
-      </div>
-      <div class="hero-preview" aria-label="Aperçu de l'interface Maltai" role="img">
-        <div class="preview-top">
-          <span>MaltaiAI</span>
-          <span>Agent · Admin · crédits</span>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Outils natifs</span>
+                <h2 class="section-title">Un agent qui sait agir dans ton workspace</h2>
+                <p class="section-subtitle">Les briques importantes d'un agent moderne, intégrées nativement dans ton instance auto-hébergée.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Browser</h3>
+                    <p>Navigation web, extraction de texte, liens, formulaires, clics Playwright et captures PNG en direct.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon">📁</div>
+                    <h3>Fichiers</h3>
+                    <p>Lecture, écriture, patch, PDF, Word, Excel, ZIP et téléchargement dans un workspace isolé par utilisateur.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon">💻</div>
+                    <h3>Terminal admin</h3>
+                    <p>Console, processus longs, logs, kill, version app et inspection Git read-only pour les administrateurs.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-3">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Brain</h3>
+                    <p>Mémoire vectorielle, recherche sémantique, souvenirs épinglés et nettoyage contrôlé du contexte.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon">🦙</div>
+                    <h3>Ollama</h3>
+                    <p>Liste, téléchargement avec progression et suppression des modèles locaux directement depuis l'interface.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon">💳</div>
+                    <h3>Crédits</h3>
+                    <p>Plans Basic, Premium, Admin, suivi des tokens et balance pour cadrer l'usage des outils et modèles.</p>
+                </div>
+            </div>
         </div>
-        <div class="preview-sidebar">
-          <span>Chat</span><span>Brain</span><span>Tools</span><span>Terminal</span><span>Models</span>
+    </section>
+
+    <!-- Use Cases -->
+    <section style="background: var(--bg-secondary);">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Cas d'usage</span>
+                <h2 class="section-title">Pour administrer, chercher, coder et automatiser</h2>
+                <p class="section-subtitle">Tout depuis le même endroit, sans jongler entre dix outils différents.</p>
+            </div>
+            <div class="usecases-grid">
+                <div class="usecase-card reveal">
+                    <div class="usecase-icon">🔍</div>
+                    <div class="usecase-content">
+                        <h3>Recherche web</h3>
+                        <p>Lis des pages, extrais les liens, capture une page et produis une synthèse structurée. L'agent navigue pour toi.</p>
+                    </div>
+                </div>
+                <div class="usecase-card reveal reveal-delay-1">
+                    <div class="usecase-icon">🏠</div>
+                    <div class="usecase-content">
+                        <h3>IA locale</h3>
+                        <p>Installe des modèles Ollama depuis l'interface et bascule entre plusieurs providers selon la tâche et la confidentialité.</p>
+                    </div>
+                </div>
+                <div class="usecase-card reveal reveal-delay-2">
+                    <div class="usecase-icon">📂</div>
+                    <div class="usecase-content">
+                        <h3>Workspace</h3>
+                        <p>Lis, crée ou patche des fichiers dans un espace isolé par utilisateur. Exporte en PDF, JSON ou CSV.</p>
+                    </div>
+                </div>
+                <div class="usecase-card reveal reveal-delay-3">
+                    <div class="usecase-icon">🔧</div>
+                    <div class="usecase-content">
+                        <h3>Administration</h3>
+                        <p>Surveille la version, les processus, les logs, les crédits et les accès. Console admin intégrée.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="preview-main">
-          <div class="preview-row user">Analyse cette page et extrais les points importants.</div>
-          <div class="preview-tool">browser_open · snapshot · screenshot · note_save</div>
-          <div class="preview-row ai">Synthèse prête, liens détectés et note enregistrée dans le workspace.</div>
-          <div class="preview-footer">OpenAI · Ollama · Agent · mémoire active</div>
+    </section>
+
+    <!-- Security -->
+    <section class="security-section" id="security">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Sécurité</span>
+                <h2 class="section-title">Des garde-fous pour ouvrir les outils sans perdre le contrôle</h2>
+                <p class="section-subtitle">Maltai est conçu pour être partagé en toute confiance, même en production.</p>
+            </div>
+            <div class="security-grid">
+                <div class="security-card reveal">
+                    <div class="security-icon">👤</div>
+                    <h3>Rôles</h3>
+                    <p>Basic, Premium et Admin séparent le chat, les outils agent et les commandes sensibles.</p>
+                </div>
+                <div class="security-card reveal reveal-delay-1">
+                    <div class="security-icon">🔒</div>
+                    <h3>Isolation</h3>
+                    <p>Sessions et workspace isolés par utilisateur. Chaque compte ne voit que ses propres données.</p>
+                </div>
+                <div class="security-card reveal reveal-delay-2">
+                    <div class="security-icon">🛡️</div>
+                    <h3>Anti-SSRF</h3>
+                    <p>Les outils web bloquent les adresses internes, y compris au fil des redirections.</p>
+                </div>
+                <div class="security-card reveal reveal-delay-3">
+                    <div class="security-icon">🔐</div>
+                    <h3>Admin only</h3>
+                    <p>Terminal, Python admin, processus et Git read-only restent réservés aux administrateurs.</p>
+                </div>
+            </div>
         </div>
-      </div>
     </section>
 
-    <section class="metrics reveal" aria-label="Capacités">
-      <div><strong>Multi-provider</strong><span>OpenAI, Ollama, OpenRouter et APIs compatibles</span></div>
-      <div><strong>Outils agent</strong><span>web, fichiers, code sandbox, browser et terminal admin</span></div>
-      <div><strong>Mobile first</strong><span>interface adaptée Android, iPhone, tablette et desktop</span></div>
-      <div><strong>Déploiement libre</strong><span>Docker, Coolify, Linux, macOS et Windows</span></div>
-    </section>
-
-    <section id="experience" class="section split experience reveal">
-      <div class="section-head">
-        <p class="eyebrow">Expérience</p>
-        <h2>Une interface IA faite pour travailler, pas seulement tester un modèle.</h2>
-        <p>Maltai regroupe chat, outils, fichiers, mémoire, modèles et administration dans une seule interface lisible.</p>
-      </div>
-      <div class="workflow-list">
-        <div><span>01</span><strong>Choisis ton provider</strong><p>OpenAI, OpenRouter, Ollama local ou tout endpoint compatible OpenAI.</p></div>
-        <div><span>02</span><strong>Active l'agent</strong><p>Laisse Maltai utiliser les outils autorisés selon le plan et le rôle utilisateur.</p></div>
-        <div><span>03</span><strong>Contrôle l'instance</strong><p>Admin console, process, Git read-only, crédits, Brain et modèles Ollama.</p></div>
-      </div>
-    </section>
-
-    <section id="comment-ca-marche" class="section guide reveal">
-      <div class="section-head">
-        <p class="eyebrow">Comment ça marche</p>
-        <h2>Un parcours simple pour démarrer avec MaltaiAI.</h2>
-        <p>Chaque étape correspond à ce que l'utilisateur voit dans l'application : compte, plan, modèle, chat, outils et fichiers.</p>
-      </div>
-      <div class="guide-grid">
-        <article>
-          <span>01</span>
-          <h3>Créer un compte</h3>
-          <p>Un nouvel utilisateur s'inscrit depuis la page de connexion. Il arrive en plan Basic avec des crédits de départ.</p>
-        </article>
-        <article>
-          <span>02</span>
-          <h3>Voir les tarifs</h3>
-          <p>Au premier accès, une fenêtre affiche Premium mensuel, Premium annuel et le pack de crédits. Le paiement passe par Stripe Checkout.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h3>Choisir le modèle</h3>
-          <p>L'utilisateur sélectionne un provider et un modèle : Maltai Premium OpenAI, Ollama local ou un endpoint compatible OpenAI.</p>
-        </article>
-        <article>
-          <span>04</span>
-          <h3>Discuter avec l'IA</h3>
-          <p>Le chat fonctionne comme un assistant classique. Les réponses affichent le modèle utilisé, les tokens et les crédits consommés.</p>
-        </article>
-        <article>
-          <span>05</span>
-          <h3>Activer l'Agent</h3>
-          <p>En Premium, le bouton Agent autorise Maltai à utiliser les outils : recherche web, scraping, browser, fichiers, PDF et code sandbox.</p>
-        </article>
-        <article>
-          <span>06</span>
-          <h3>Gérer le workspace</h3>
-          <p>Les fichiers créés ou analysés restent dans le workspace utilisateur. L'admin garde accès à la console, aux process et aux réglages.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="agent" class="section agent-section reveal">
-      <div class="section-head">
-        <p class="eyebrow">Agent autonome</p>
-        <h2>Les briques importantes d'un agent moderne, dans MaltaiAI.</h2>
-        <p>Les plateformes agent récentes mettent en avant la mémoire, les outils, l'automatisation, la délégation et l'accès multi-modèles. Maltai reprend ces idées dans une instance que tu peux héberger et contrôler.</p>
-      </div>
-      <div class="agent-grid">
-        <article class="agent-card">
-          <span>Connect</span>
-          <h3>Connecter les surfaces</h3>
-          <p>Chat web responsive, providers compatibles OpenAI, Ollama local, workspace fichiers et intégrations comme Telegram selon la configuration.</p>
-        </article>
-        <article class="agent-card">
-          <span>Remember</span>
-          <h3>Se souvenir du contexte</h3>
-          <p>Brain conserve les souvenirs utiles, rappelle les éléments pertinents par message et permet de rechercher ou supprimer la mémoire.</p>
-        </article>
-        <article class="agent-card">
-          <span>Schedule</span>
-          <h3>Préparer l'automatisation</h3>
-          <p>Tâches, notes, process longs et terminal admin donnent une base claire pour les rapports, scripts et actions récurrentes.</p>
-        </article>
-        <article class="agent-card">
-          <span>Delegate</span>
-          <h3>Déléguer aux outils</h3>
-          <p>L'agent peut appeler les outils autorisés : web scraping, browser, fichiers, PDF, code sandbox, formulaires et Playwright.</p>
-        </article>
-        <article class="agent-card">
-          <span>Search</span>
-          <h3>Chercher et vérifier</h3>
-          <p>Recherche web, extraction structurée, navigation, captures et résumé de pages pour transformer une URL en données exploitables.</p>
-        </article>
-        <article class="agent-card">
-          <span>Experiment</span>
-          <h3>Tester en sandbox</h3>
-          <p>Code Python, terminal, lecture de fichiers et exports PDF/JSON/CSV dans un workspace isolé par utilisateur.</p>
-        </article>
-        <article class="market-card">
-          <span>Modèle économique</span>
-          <h3>Plans, crédits et outils</h3>
-          <p>Les offres agent modernes combinent souvent accès aux modèles, crédits mensuels, limites de débit et outils intégrés. Maltai applique ce principe avec Basic, Premium, Admin, Stripe Checkout et suivi tokens/crédits.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="outils" class="section reveal">
-      <div class="section-head">
-        <p class="eyebrow">Outils natifs</p>
-        <h2>Un agent qui sait agir dans ton workspace.</h2>
-      </div>
-      <div class="feature-grid">
-        <article>
-          <h3>Browser</h3>
-          <p>Navigation web, extraction de texte, liens, formulaires, clics Playwright et captures PNG.</p>
-        </article>
-        <article>
-          <h3>Fichiers</h3>
-          <p>Lecture, écriture, patch, PDF, Word, Excel, ZIP et téléchargement dans un workspace isolé par utilisateur.</p>
-        </article>
-        <article>
-          <h3>Terminal admin</h3>
-          <p>Console, process longs, logs, kill, version app et inspection Git read-only.</p>
-        </article>
-        <article>
-          <h3>Brain</h3>
-          <p>Mémoire vectorielle, recherche, souvenirs épinglés et nettoyage contrôlé.</p>
-        </article>
-        <article>
-          <h3>Ollama</h3>
-          <p>Liste, téléchargement avec progression et suppression des modèles locaux.</p>
-        </article>
-        <article>
-          <h3>Crédits</h3>
-          <p>Plans Basic, Premium, Admin, suivi tokens et balance pour cadrer l'usage des outils.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section usecases reveal">
-      <div class="section-head">
-        <p class="eyebrow">Cas d'usage</p>
-        <h2>Pour administrer, chercher, coder et automatiser depuis le même endroit.</h2>
-      </div>
-      <div class="usecase-grid">
-        <div><strong>Recherche web</strong><span>Lire des pages, extraire les liens, capturer une page et produire une synthèse.</span></div>
-        <div><strong>IA locale</strong><span>Installer des modèles Ollama depuis l'interface et basculer entre plusieurs providers.</span></div>
-        <div><strong>Workspace</strong><span>Lire, créer ou patcher des fichiers dans un espace isolé par utilisateur.</span></div>
-        <div><strong>Administration</strong><span>Surveiller la version, les process, les logs, les crédits et les accès.</span></div>
-      </div>
-    </section>
-
-    <section id="securite" class="section security reveal">
-      <div class="section-head">
-        <p class="eyebrow">Sécurité</p>
-        <h2>Des garde-fous pour ouvrir les outils sans perdre le contrôle.</h2>
-      </div>
-      <div class="security-grid">
-        <div><strong>Rôles</strong><p>Basic, Premium et Admin séparent le chat, les outils agent et les commandes sensibles.</p></div>
-        <div><strong>Isolation</strong><p>Sessions et workspace isolés par utilisateur : chaque compte ne voit que ses propres données.</p></div>
-        <div><strong>Anti-SSRF</strong><p>Les outils web bloquent les adresses internes, y compris au fil des redirections.</p></div>
-        <div><strong>Admin only</strong><p>Terminal, Python admin, process et Git read-only restent réservés aux administrateurs.</p></div>
-      </div>
-    </section>
-
-    <section id="plans" class="section split reveal">
-      <div class="section-head">
-        <p class="eyebrow">Accès</p>
-        <h2>Des permissions claires pour chaque utilisateur.</h2>
-        <p>Basic pour discuter, Premium pour les outils agent, Admin pour administrer l'instance.</p>
-      </div>
-      <div class="plan-list">
-        <div><strong>Basic</strong><span>Chat principal et providers configurés.</span></div>
-        <div><strong>Premium</strong><span>Outils agent, recherche, fichiers, browser, code sandbox.</span></div>
-        <div><strong>Admin</strong><span>Console, terminal, process, Git read-only et usage non facturé.</span></div>
-      </div>
-    </section>
-
-    <section id="faq" class="section faq reveal">
-      <div class="section-head">
-        <p class="eyebrow">FAQ</p>
-        <h2>Questions fréquentes.</h2>
-      </div>
-      <div class="faq-list">
-        <details>
-          <summary>Qu'est-ce que MaltaiAI ?</summary>
-          <p>MaltaiAI est un workspace IA open source que tu héberges toi-même. Il réunit le chat multi-providers, des agents capables d'utiliser des outils (web, fichiers, code, terminal), une mémoire vectorielle et une console d'administration, dans une seule interface web responsive.</p>
-        </details>
-        <details>
-          <summary>Quels modèles et providers sont supportés ?</summary>
-          <p>Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local. Tu peux configurer plusieurs providers et basculer de l'un à l'autre selon le besoin.</p>
-        </details>
-        <details>
-          <summary>Est-ce vraiment auto-hébergé ? Où vont mes données ?</summary>
-          <p>Oui. Maltai tourne sur ton serveur (Docker, Coolify, Linux, macOS ou Windows) et stocke ses données localement. Tu gardes le contrôle de tes conversations, de tes clés API et de tes fichiers.</p>
-        </details>
-        <details>
-          <summary>Combien ça coûte ?</summary>
-          <p>Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que tu choisis de brancher (OpenAI, OpenRouter…). Avec Ollama en local, tu peux fonctionner sans coût d'API.</p>
-        </details>
-        <details>
-          <summary>Comment l'installer ?</summary>
-          <p>Clone le dépôt GitHub et lance l'application avec Python, ou déploie l'image Docker. Le projet est prêt pour un déploiement en un clic via Coolify. Les commandes sont détaillées dans la section Installer ci-dessous.</p>
-        </details>
-        <details>
-          <summary>Est-ce sécurisé pour plusieurs utilisateurs ?</summary>
-          <p>Oui. Les sessions et le workspace sont isolés par utilisateur, les rôles séparent le chat des commandes sensibles, et les outils web bloquent les adresses internes (protection anti-SSRF, même au fil des redirections).</p>
-        </details>
-      </div>
-    </section>
-
-    <section id="installer" class="section install reveal">
-      <div>
-        <p class="eyebrow">Installer</p>
-        <h2>Télécharger et déployer Maltai.</h2>
-        <p>Le projet est disponible sur GitHub. Tu peux télécharger la version stable, l'installer avec Git, Docker ou le déployer sur Coolify.</p>
-        <div class="release-card">
-          <span>Version stable</span>
-          <strong>Maltai v1.1.0</strong>
-          <p>ZIP du tag v1.1.0 prêt pour installation, déploiement ou sauvegarde.</p>
-          <div class="release-actions">
-            <a class="primary-link" href="https://github.com/rabzouz/Maltai/archive/refs/tags/v1.1.0.zip" rel="noopener" target="_blank">Télécharger le ZIP</a>
-            <a class="ghost-link" href="https://github.com/rabzouz/Maltai/releases/tag/v1.1.0" rel="noopener" target="_blank">Voir la release</a>
-          </div>
+    <!-- Pricing -->
+    <section id="pricing">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Tarifs</span>
+                <h2 class="section-title">Des permissions claires pour chaque utilisateur</h2>
+                <p class="section-subtitle">Le logiciel est open source et gratuit. Les crédits servent à cadrer l'usage des outils selon le rôle.</p>
+            </div>
+            <div class="pricing-grid">
+                <div class="pricing-card reveal">
+                    <div class="pricing-name">Basic</div>
+                    <div class="pricing-desc">Pour discuter et explorer</div>
+                    <div class="pricing-price">0€ <span>/ mois</span></div>
+                    <div class="pricing-note">Open source & gratuit</div>
+                    <ul class="pricing-features">
+                        <li>Chat principal</li>
+                        <li>Providers configurés</li>
+                        <li class="disabled">Outils agent</li>
+                        <li class="disabled">Recherche web</li>
+                        <li class="disabled">Workspace fichiers</li>
+                        <li class="disabled">Browser & sandbox</li>
+                    </ul>
+                    <a href="/register" class="btn btn-secondary pricing-btn">Commencer</a>
+                </div>
+                <div class="pricing-card featured reveal reveal-delay-1">
+                    <div class="pricing-name">Premium</div>
+                    <div class="pricing-desc">Pour travailler avec l'agent</div>
+                    <div class="pricing-price">Gratuit <span>/ self-hosted</span></div>
+                    <div class="pricing-note">Tu contrôles les limites</div>
+                    <ul class="pricing-features">
+                        <li>Tout le plan Basic</li>
+                        <li>Outils agent activés</li>
+                        <li>Recherche web</li>
+                        <li>Workspace fichiers</li>
+                        <li>Browser & code sandbox</li>
+                        <li>Suivi tokens & crédits</li>
+                    </ul>
+                    <a href="/app" class="btn btn-primary pricing-btn">Ouvrir l'app</a>
+                </div>
+                <div class="pricing-card reveal reveal-delay-2">
+                    <div class="pricing-name">Admin</div>
+                    <div class="pricing-desc">Pour administrer l'instance</div>
+                    <div class="pricing-price">Gratuit <span>/ owner</span></div>
+                    <div class="pricing-note">Usage non facturé</div>
+                    <ul class="pricing-features">
+                        <li>Tout le plan Premium</li>
+                        <li>Console & terminal</li>
+                        <li>Processus & logs</li>
+                        <li>Git read-only</li>
+                        <li>Gestion des crédits</li>
+                        <li>Configuration globale</li>
+                    </ul>
+                    <a href="#install" class="btn btn-secondary pricing-btn">Devenir admin</a>
+                </div>
+            </div>
         </div>
-      </div>
-      <pre><code>git clone https://github.com/rabzouz/Maltai.git
-cd Maltai
-python3 -m venv venv
-pip install -r requirements.txt
-python app.py</code></pre>
-      <div class="install-links">
-        <a class="primary-link large" href="https://github.com/rabzouz/Maltai/archive/refs/tags/v1.1.0.zip" rel="noopener" target="_blank">Télécharger Maltai</a>
-        <a class="ghost-link large" href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">Voir le dépôt GitHub</a>
-      </div>
     </section>
 
-    <section class="final-cta reveal">
-      <div>
-        <p class="eyebrow">Prêt à tester</p>
-        <h2>Ouvre Maltai et connecte tes modèles.</h2>
-      </div>
-      <div class="site-actions">
-        <a class="primary-link large" href="/app">Ouvrir l'app</a>
-        <a class="ghost-link large" href="/login">Connexion</a>
-      </div>
+    <!-- Install -->
+    <section class="install-section" id="install">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Installation</span>
+                <h2 class="section-title">Prêt en quelques commandes</h2>
+                <p class="section-subtitle">Clone, installe et lance. Docker, Coolify ou manuel — tu choisis.</p>
+            </div>
+            <div class="install-terminal reveal">
+                <div class="terminal-header">
+                    <div class="browser-dot red"></div>
+                    <div class="browser-dot yellow"></div>
+                    <div class="browser-dot green"></div>
+                    <span class="terminal-title">bash — Maltai v1.1.1</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-command">git clone https://github.com/rabzouz/Maltai.git</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-command">cd Maltai</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-command">python3 -m venv venv && source venv/bin/activate</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-command">pip install -r requirements.txt</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-command">python app.py</span>
+                        <span class="terminal-comment"># Maltai démarre sur http://localhost:7000</span>
+                    </div>
+                </div>
+            </div>
+            <div class="install-buttons reveal">
+                <a href="https://github.com/rabzouz/Maltai/archive/refs/tags/v1.1.0.zip" class="install-btn">
+                    <span>📦</span> Télécharger le ZIP
+                </a>
+                <a href="https://github.com/rabzouz/Maltai#readme" class="install-btn" target="_blank" rel="noopener">
+                    <span>🐳</span> Docker
+                </a>
+                <a href="https://github.com/rabzouz/Maltai/blob/main/DEPLOY-COOLIFY.md" class="install-btn" target="_blank" rel="noopener">
+                    <span>🚀</span> Coolify
+                </a>
+                <a href="https://github.com/rabzouz/Maltai#readme" class="install-btn" target="_blank" rel="noopener">
+                    <span>📖</span> Documentation
+                </a>
+            </div>
+        </div>
     </section>
-  </main>
 
-  <footer class="site-footer">
-    <span>MaltaiAI</span>
-    <span>Workspace IA open source et auto-hébergé</span>
-    <nav class="footer-links" aria-label="Liens de pied de page">
-      <a href="/login">Se connecter</a>
-      <a href="https://github.com/rabzouz/Maltai" rel="noopener" target="_blank">Code source</a>
-    </nav>
-  </footer>
+    <!-- FAQ -->
+    <section id="faq">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">FAQ</span>
+                <h2 class="section-title">Questions fréquentes</h2>
+                <p class="section-subtitle">Tout ce qu'il faut savoir avant de déployer ton instance.</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item reveal">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Qu'est-ce que MaltaiAI ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>MaltaiAI est un workspace IA open source que tu héberges toi-même. Il réunit le chat multi-providers, des agents capables d'utiliser des outils (web, fichiers, code, terminal), une mémoire vectorielle et une console d'administration, dans une seule interface web responsive.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal reveal-delay-1">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Quels modèles et providers sont supportés ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local. Tu peux configurer plusieurs providers et basculer de l'un à l'autre selon le besoin.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal reveal-delay-2">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Est-ce vraiment auto-hébergé ? Où vont mes données ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Oui. Maltai tourne sur ton serveur (Docker, Coolify, Linux, macOS ou Windows) et stocke ses données localement. Tu gardes le contrôle de tes conversations, de tes clés API et de tes fichiers.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal reveal-delay-3">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Combien ça coûte ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que tu choisis de brancher (OpenAI, OpenRouter…). Avec Ollama en local, tu peux fonctionner sans coût d'API.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal reveal-delay-1">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Est-ce sécurisé pour plusieurs utilisateurs ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Oui. Les sessions et le workspace sont isolés par utilisateur, les rôles séparent le chat des commandes sensibles, et les outils web bloquent les adresses internes (protection anti-SSRF, même au fil des redirections).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <!-- Données structurées : FAQ -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {"@type":"Question","name":"Qu'est-ce que MaltaiAI ?","acceptedAnswer":{"@type":"Answer","text":"MaltaiAI est un workspace IA open source que vous hébergez vous-même : chat multi-providers, agents outillés, mémoire vectorielle et console d'administration dans une seule interface web."}},
-      {"@type":"Question","name":"Quels modèles et providers sont supportés ?","acceptedAnswer":{"@type":"Answer","text":"Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local, avec bascule entre plusieurs providers."}},
-      {"@type":"Question","name":"Est-ce vraiment auto-hébergé ?","acceptedAnswer":{"@type":"Answer","text":"Oui, Maltai tourne sur votre serveur (Docker, Coolify, Linux, macOS, Windows) et stocke ses données localement."}},
-      {"@type":"Question","name":"Combien ça coûte ?","acceptedAnswer":{"@type":"Answer","text":"Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que vous branchez ; avec Ollama en local, aucun coût d'API."}},
-      {"@type":"Question","name":"Comment l'installer ?","acceptedAnswer":{"@type":"Answer","text":"Clonez le dépôt GitHub et lancez l'application avec Python, ou déployez l'image Docker. Le projet est prêt pour Coolify."}},
-      {"@type":"Question","name":"Est-ce sécurisé pour plusieurs utilisateurs ?","acceptedAnswer":{"@type":"Answer","text":"Oui : sessions et workspace isolés par utilisateur, rôles séparant les commandes sensibles, et protection anti-SSRF des outils web même au fil des redirections."}}
-    ]
-  }
-  </script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <div class="nav-logo-icon" style="width:28px;height:28px;font-size:0.875rem;">M</div>
+                    MaltaiAI
+                </a>
+                <p class="footer-desc">
+                    Workspace IA open source et auto-hébergé. Chat, agents, outils, mémoire et administration dans une interface unique.
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>Produit</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">Fonctionnalités</a></li>
+                    <li><a href="#security">Sécurité</a></li>
+                    <li><a href="#pricing">Tarifs</a></li>
+                    <li><a href="#install">Installation</a></li>
+                    <li><a href="/app">Ouvrir l'app</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Ressources</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/rabzouz/Maltai" target="_blank" rel="noopener">GitHub</a></li>
+                    <li><a href="https://github.com/rabzouz/Maltai#readme" target="_blank" rel="noopener">Documentation</a></li>
+                    <li><a href="https://github.com/rabzouz/Maltai/releases" target="_blank" rel="noopener">Changelog</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Communauté</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/rabzouz/Maltai/issues" target="_blank" rel="noopener">Issues</a></li>
+                    <li><a href="https://github.com/rabzouz/Maltai/discussions" target="_blank" rel="noopener">Discussions</a></li>
+                    <li><a href="mailto:contact@maltai.fr">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copy">© 2026 MaltaiAI. Open source sous licence MIT.</div>
+            <div class="footer-legal">
+                <a href="/login">Connexion</a>
+                <a href="/register">Inscription</a>
+            </div>
+        </div>
+    </footer>
 
-  <script>
-    // Révélation au défilement (progressif, désactivé si reduced-motion).
-    (function () {
-      var els = document.querySelectorAll('.reveal');
-      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (reduce || !('IntersectionObserver' in window)) {
-        els.forEach(function (el) { el.classList.add('is-visible'); });
-        return;
-      }
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+    <!-- Scripts -->
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
         });
-      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-      els.forEach(function (el) { io.observe(el); });
-    })();
-  </script>
+
+        // Intersection Observer for reveal animations
+        const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // FAQ toggle
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            const isActive = item.classList.contains('active');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+            if (!isActive) {
+                item.classList.add('active');
+            }
+        }
+
+        // Mobile nav toggle
+        function toggleMobileNav() {
+            const links = document.querySelector('.nav-links');
+            if (links.style.display === 'flex') {
+                links.style.display = 'none';
+            } else {
+                links.style.display = 'flex';
+                links.style.flexDirection = 'column';
+                links.style.position = 'absolute';
+                links.style.top = '100%';
+                links.style.left = '0';
+                links.style.right = '0';
+                links.style.background = 'rgba(10,10,15,0.98)';
+                links.style.padding = '1rem 2rem';
+                links.style.borderBottom = '1px solid var(--border)';
+                links.style.backdropFilter = 'blur(20px)';
+            }
+        }
+
+        // Ferme le menu mobile apres un clic sur un lien
+        document.querySelectorAll('.nav-links a').forEach(a => {
+            a.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.nav-links').style.display = 'none';
+                }
+            });
+        });
+
+        // Version reelle depuis l'API
+        fetch('/api/health').then(r => r.json()).then(d => {
+            if (d.version) {
+                document.getElementById('version-badge').textContent = 'v' + d.version + ' stable — Open source';
+            }
+        }).catch(() => {});
+    </script>
 </body>
 </html>

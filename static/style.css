@@ -2600,3 +2600,23 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .bubble { overflow-wrap: break-word; word-break: break-word; }
 .bubble pre { max-width: 100%; }
 .bubble pre code { word-break: normal; }
+
+/* --- Fix : bouton Deconnecter toujours visible dans le drawer mobile ---
+   Si le contenu de la sidebar deborde (longues listes de sessions/outils),
+   le pied etait pousse hors ecran. On force la colonne flex a se comprimer
+   et le pied a rester colle en bas, au-dessus de tout. */
+@media (max-width: 760px) {
+  #sidebar { display: flex; flex-direction: column; }
+  #sidebar > * { min-height: 0; }
+  .subpanel { min-height: 0; flex: 1 1 auto; overflow-y: auto; }
+  .side-tools { max-height: 34dvh; }
+  .sidebar-foot {
+    flex-shrink: 0;
+    margin-top: auto;
+    position: relative;
+    z-index: 6;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+  .logout-btn { display: flex !important; }
+}

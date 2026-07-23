@@ -128,8 +128,10 @@ async def static_cache_and_security_headers(request: Request, call_next):
     response.headers.setdefault(
         "Content-Security-Policy-Report-Only",
         "default-src 'self'; script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
-        "connect-src 'self' ws: wss:; font-src 'self' data:; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self' ws: wss:; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
         "frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
     )
     if settings.SECURE_COOKIES:  # true uniquement en prod HTTPS
