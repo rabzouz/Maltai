@@ -8,3 +8,5 @@ data/
 *.db-wal
 *.db-shm
 .DS_Store
+# Sources PNG des visuels marketing (les .webp optimises sont versionnes)
+static/marketing/*.png

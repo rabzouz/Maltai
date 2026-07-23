@@ -199,6 +199,43 @@
         .usecase-icon { width: 56px; height: 56px; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
         .usecase-content h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
         .usecase-content p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .gallery-section { background: var(--bg-secondary); overflow: hidden; }
+        .gallery-strip {
+            display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 2rem 1.25rem;
+            scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin; max-width: 1200px; margin: 0 auto;
+        }
+        .gallery-strip::-webkit-scrollbar { height: 8px; }
+        .gallery-strip::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        .gallery-item {
+            flex: 0 0 auto; scroll-snap-align: center; border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; background: var(--bg-card);
+            cursor: zoom-in; transition: var(--transition);
+        }
+        .gallery-item:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .gallery-item img {
+            display: block; height: clamp(320px, 55vh, 500px); width: auto; max-width: 82vw;
+            object-fit: contain;
+        }
+        .gallery-hint { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 0.75rem; }
+        .lightbox {
+            position: fixed; inset: 0; z-index: 2000; display: none;
+            align-items: center; justify-content: center;
+            background: rgba(5,5,10,0.92); backdrop-filter: blur(8px);
+            padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+            cursor: zoom-out;
+        }
+        .lightbox.open { display: flex; }
+        .lightbox img { max-width: 100%; max-height: 100%; border-radius: var(--radius); }
+        .lightbox-close {
+            position: absolute; top: max(12px, env(safe-area-inset-top)); right: 16px;
+            background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
+            width: 44px; height: 44px; border-radius: 50%; font-size: 1.25rem; cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .gallery-strip { padding: 0.5rem 1.25rem 1rem; gap: 0.75rem; }
+            .gallery-item img { height: clamp(300px, 52vh, 420px); }
+        }
         .security-section { background: var(--bg-secondary); }
         .security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
         .security-card { text-align: center; padding: 2rem 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: var(--transition); }
@@ -540,6 +577,37 @@
         </div>
     </section>
 
+    <!-- Galerie -->
+    <section class="gallery-section" id="galerie">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">En images</span>
+                <h2 class="section-title">MaltaiAI en action</h2>
+                <p class="section-subtitle">OpenAI, Ollama, llama.cpp, vLLM, OpenRouter, mode vocal, Brain, outils agent — découvre l'écosystème en un coup d'œil.</p>
+            </div>
+        </div>
+        <div class="gallery-strip reveal">
+            <figure class="gallery-item"><img src="/static/marketing/visuel-01.webp" alt="MaltaiAI — visuel de présentation 1" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-02.webp" alt="MaltaiAI — visuel de présentation 2" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-03.webp" alt="MaltaiAI — visuel de présentation 3" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-04.webp" alt="MaltaiAI — visuel de présentation 4" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-05.webp" alt="MaltaiAI — visuel de présentation 5" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-06.webp" alt="MaltaiAI — visuel de présentation 6" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-07.webp" alt="MaltaiAI — visuel de présentation 7" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-08.webp" alt="MaltaiAI — visuel de présentation 8" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-09.webp" alt="MaltaiAI — visuel de présentation 9" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-10.webp" alt="MaltaiAI — visuel de présentation 10" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-11.webp" alt="MaltaiAI — visuel de présentation 11" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-12.webp" alt="MaltaiAI — visuel de présentation 12" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-13.webp" alt="MaltaiAI — visuel de présentation 13" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-14.webp" alt="MaltaiAI — visuel de présentation 14" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-15.webp" alt="MaltaiAI — visuel de présentation 15" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-16.webp" alt="MaltaiAI — visuel de présentation 16" loading="lazy" decoding="async"></figure>
+            <figure class="gallery-item"><img src="/static/marketing/visuel-17.webp" alt="MaltaiAI — visuel de présentation 17" loading="lazy" decoding="async"></figure>
+        </div>
+        <p class="gallery-hint">Fais défiler horizontalement — touche une image pour l'agrandir.</p>
+    </section>
+
     <!-- Security -->
     <section class="security-section" id="security">
         <div class="section-container">
@@ -797,8 +865,32 @@
         </div>
     </footer>
 
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-label="Image agrandie">
+        <button class="lightbox-close" aria-label="Fermer">✕</button>
+        <img src="" alt="">
+    </div>
+
     <!-- Scripts -->
     <script>
+        // Galerie : clic pour agrandir
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = lightbox.querySelector('img');
+        document.querySelectorAll('.gallery-item img').forEach(img => {
+            img.parentElement.addEventListener('click', () => {
+                lightboxImg.src = img.src;
+                lightboxImg.alt = img.alt;
+                lightbox.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+        function closeLightbox() {
+            lightbox.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        lightbox.addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
             const navbar = document.getElementById('navbar');
