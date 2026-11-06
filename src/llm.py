@@ -43,7 +43,9 @@ async def list_models(base_url: str, api_key: str) -> list[str]:
 
 # --- Compatibilite des parametres --------------------------------------------
 # Les modeles OpenAI recents refusent `max_tokens` (remplace par
-# `max_completion_tokens`) et certains n'acceptent que la temperature par defaut.
+# `max_completion_tokens`), certains n'acceptent que la temperature par defaut,
+# et certains refusent les outils avec leur raisonnement par defaut sur
+# /chat/completions (il faut alors `reasoning_effort: "none"` avec les outils).
 # On part d'un choix sense selon le provider, puis on s'adapte automatiquement a
 # une erreur 400 explicite ; l'adaptation est memorisee par (provider, modele).
 _ADAPT: dict[tuple[str, str], dict] = {}
@@ -65,6 +67,9 @@ def _adapt(base: str, model: str) -> dict:
         _ADAPT[key] = {
             "tokens_param": "max_completion_tokens" if _is_openai_official(base) else "max_tokens",
             "temperature": True,
+            # None = pas encore teste, True = envoyer "none" avec les outils,
+            # False = le provider refuse ce parametre (ne plus l'envoyer).
+            "reasoning_none_tools": None,
         }
     return _ADAPT[key]
 
@@ -79,10 +84,12 @@ def _payload(base: str, model: str, messages: list[dict], temperature: float | N
         payload[a["tokens_param"]] = int(max_tokens)
     if tools:
         payload["tools"] = tools
+        if a["reasoning_none_tools"] is True:
+            payload["reasoning_effort"] = "none"
     return payload
 
 
-def _learn_from_error(base: str, model: str, body: str) -> bool:
+def _learn_from_error(base: str, model: str, body: str, has_tools: bool = False) -> bool:
     """Ajuste les parametres apres une erreur 400. Vrai s'il faut reessayer."""
     a = _adapt(base, model)
     try:
@@ -99,6 +106,17 @@ def _learn_from_error(base: str, model: str, body: str) -> bool:
     if a["tokens_param"] == "max_completion_tokens" and param == "max_completion_tokens":
         a["tokens_param"] = "max_tokens"
         return True
+    if param == "reasoning_effort" or "reasoning_effort" in msg:
+        # « Function tools with reasoning_effort are not supported ... set
+        # reasoning_effort to 'none' » -> on desactive le raisonnement avec outils.
+        if has_tools and a["reasoning_none_tools"] is None and "none" in msg:
+            a["reasoning_none_tools"] = True
+            return True
+        # Le provider refuse le parametre que l'on vient d'envoyer : on le retire.
+        if a["reasoning_none_tools"] is True:
+            a["reasoning_none_tools"] = False
+            return True
+        return False
     if a["temperature"] and (param == "temperature" or (
             "temperature" in msg and ("unsupported" in msg or "not support" in msg or "only the default" in msg))):
         a["temperature"] = False
@@ -119,12 +137,12 @@ async def _stream_lines(base_url: str, api_key: str, model: str, messages: list[
     last = ""
     try:
         async with httpx.AsyncClient(timeout=None) as client:
-            for _attempt in range(3):
+            for _attempt in range(5):
                 payload = _payload(base, model, messages, temperature, max_tokens, tools)
                 async with client.stream("POST", url, headers=headers, json=payload) as resp:
                     if resp.status_code >= 400:
                         last = (await resp.aread()).decode(errors="replace")
-                        if resp.status_code == 400 and _learn_from_error(base, model, last):
+                        if resp.status_code == 400 and _learn_from_error(base, model, last, bool(tools)):
                             continue
                         raise LLMError(f"Erreur {resp.status_code} : {last[:300]}")
                     async for line in resp.aiter_lines():
