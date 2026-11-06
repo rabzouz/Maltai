@@ -3407,3 +3407,9 @@ async def execute_tool(name: str, args: dict, ctx: dict) -> str:
         return await runner(args, ctx)
     except Exception as e:  # garde-fou : un outil ne doit jamais tuer la boucle
         return f"Erreur outil {name} : {e}"
+
+
+# --- Agent SEO / SEO local / GEO (module dedie) -------------------------------
+from src import seo_tools as _seo_tools  # noqa: E402
+
+TOOLS.update(_seo_tools.SEO_TOOLS)

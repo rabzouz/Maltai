@@ -100,6 +100,10 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6"/><path d="M20 18V6"/><path d="M8 12h8"/><path d="M8 6h8"/><path d="M8 18h8"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/></svg>
           <span>AgentOps</span>
         </button>
+        <button class="nav-item" id="nav-seo" data-fi="seo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/><path d="M6.5 12l2.2-2.4 1.9 1.9 2.9-3.3"/></svg>
+          <span>Agent SEO</span>
+        </button>
         <button class="nav-item" id="nav-research" data-fi="research">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6" opacity=".6"/></svg>
           <span>Deep Research</span>
@@ -300,6 +304,48 @@
           </div>
         </div>
       </div>
+      <div id="subpanel-seo" class="subpanel hidden">
+        <div class="panel-hero seo-hero">
+          <span class="panel-kicker">Agent SEO</span>
+          <h3>SEO technique, SEO local et GEO pour vos sites.</h3>
+          <p>Audit multi-pages, cohérence NAP et fiche locale, visibilité dans ChatGPT, Claude, Perplexity et Gemini — avec rapports exportés et correctifs prêts à coller.</p>
+          <div class="panel-stat-grid">
+            <div><strong>SEO</strong><span>technique</span></div>
+            <div><strong>Local</strong><span>NAP & fiche</span></div>
+            <div><strong>GEO</strong><span>moteurs IA</span></div>
+          </div>
+        </div>
+        <div class="subpanel-card">
+          <h3>Site à analyser</h3>
+          <p class="hint">Renseigne l'URL (et, pour le SEO local, le nom et la ville), puis choisis une mission. Le mode Agent s'active automatiquement.</p>
+          <div class="seo-form">
+            <input id="seo-url" type="url" placeholder="https://exemple.fr" autocomplete="url" aria-label="URL du site" />
+            <input id="seo-business" type="text" placeholder="Nom / activité (optionnel)" aria-label="Nom ou activité" />
+            <input id="seo-city" type="text" placeholder="Ville (optionnel)" aria-label="Ville" />
+          </div>
+          <p class="hint seo-hint" id="seo-hint" aria-live="polite"></p>
+        </div>
+        <div class="ops-grid">
+          <article><span>SEO</span><strong>Audit technique</strong><p>seo_site_audit : https, www/non-www, robots, sitemap, title, meta, H1, alt, canonical, doublons et liens cassés.</p></article>
+          <article><span>Local</span><strong>SEO local</strong><p>local_seo_audit : NAP, LocalBusiness, carte, horaires, avis, ville dans le title et checklist Google Business Profile.</p></article>
+          <article><span>GEO</span><strong>Moteurs IA</strong><p>geo_audit : 18 bots IA dans robots.txt, llms.txt, données structurées, contenu citable et signaux d'entité.</p></article>
+          <article><span>Content</span><strong>Mots-clés & contenu</strong><p>seo_keywords, schema_generate et llms_txt_generate : mots-clés, écart concurrent, JSON-LD et llms.txt prêts à publier.</p></article>
+        </div>
+        <div class="subpanel-card">
+          <h3>Missions</h3>
+          <div class="prompt-grid compact">
+            <button class="prompt-card" data-seo-prompt="Agis comme un consultant SEO senior. Lance seo_site_audit sur {url} (max_pages 15), puis seo_keywords sur la page d'accueil. Restitue le score et la note, les problèmes classés P0/P1/P2 avec leur correctif, le code HTML corrigé du title, de la meta description et du H1 de l'accueil, puis un plan d'action priorisé. Donne le lien du rapport exporté.">Audit SEO complet</button>
+            <button class="prompt-card" data-seo-prompt="Lance local_seo_audit sur {url}{local_args}. Explique la cohérence NAP (nom, adresse, téléphone), les champs LocalBusiness manquants, la carte, les horaires et les avis. Génère ensuite avec schema_generate le JSON-LD LocalBusiness final prêt à coller, propose un title et un H1 optimisés pour « {business} {city} » et termine par la checklist Google Business Profile.">SEO local</button>
+            <button class="prompt-card" data-seo-prompt="Lance geo_audit sur {url}. Explique simplement comment ChatGPT, Claude, Perplexity, Gemini et Copilot peuvent lire et citer ce site, puis liste les correctifs par priorité : règles robots.txt pour les bots IA (avec le bloc à copier), llms.txt, données structurées, contenu citable (questions, FAQ, chiffres, définitions) et signaux d'entité.">Audit GEO (IA)</button>
+            <button class="prompt-card" data-seo-prompt="Lance llms_txt_generate sur {url}, relis le fichier pour qu'il soit clair et factuel, puis donne-moi la version finale et les étapes pour la publier à la racine du site (/llms.txt).">Générer llms.txt</button>
+            <button class="prompt-card" data-seo-prompt="Analyse {url} avec seo_audit et geo_audit, déduis le type de site, puis génère avec schema_generate tous les blocs JSON-LD utiles (Organization, WebSite, FAQPage et, selon le cas, LocalBusiness, Service, Product ou SoftwareApplication). Donne le code final à coller dans le head et la méthode pour le valider.">Données structurées</button>
+            <button class="prompt-card" data-seo-prompt="Lance seo_keywords sur {url}. Identifie l'intention et les mots-clés principaux, ce qui manque dans le title, le H1 et la meta description, puis propose un title (60 caractères max), une meta description (155 caractères max), un H1, 5 sujets de contenus à créer et le brief détaillé du premier (plan H2/H3, questions à traiter, mots-clés).">Mots-clés & contenu</button>
+            <button class="prompt-card" data-seo-prompt="Compare {url} avec un concurrent : demande-moi son URL si je ne l'ai pas donnée, puis lance seo_keywords (avec competitor_url), seo_audit et geo_audit sur les deux sites. Présente un tableau des écarts (contenu, mots-clés, structure, données structurées, GEO) et les 5 actions pour passer devant.">Analyse concurrent</button>
+            <button class="prompt-card" data-seo-prompt="Récupère le contenu de {url} avec page_summary ou web_fetch et réécris la page pour le SEO et le GEO : H1, intro qui définit clairement l'offre, sections formulées en questions, données chiffrées, FAQ de 6 questions et son balisage FAQPage. Donne le HTML prêt à intégrer.">Réécrire la page</button>
+            <button class="prompt-card" data-seo-prompt="Réalise un diagnostic SEO technique, local et GEO de {url} avec seo_site_audit, local_seo_audit et geo_audit, puis construis un plan d'action sur 30 jours, semaine par semaine, avec priorité, effort, impact attendu et indicateurs à suivre. Exporte-le en PDF avec pdf_create.">Plan d'action 30 jours</button>
+          </div>
+        </div>
+      </div>
       <div id="subpanel-skills" class="subpanel hidden">
         <div class="panel-hero library-hero">
           <span class="panel-kicker">Librairie</span>
@@ -311,6 +357,7 @@
           <article><span>Files</span><strong>Workspace fichiers</strong><p>read_file, write_file, PDF, JSON, CSV, exports et téléchargements.</p></article>
           <article><span>Code</span><strong>Sandbox Python</strong><p>code_execute pour tester, analyser, transformer et automatiser.</p></article>
           <article><span>Brain</span><strong>Mémoire</strong><p>souvenirs, contexte rappelé, recherche et épinglage.</p></article>
+          <article><span>SEO</span><strong>SEO, local & GEO</strong><p>seo_site_audit, local_seo_audit, geo_audit, seo_keywords, schema_generate, llms_txt_generate.</p></article>
           <article><span>Vision</span><strong>Photos jointes</strong><p>Joins une image puis utilise un modèle vision : gpt-4o-mini, llama3.2-vision, llava, bakllava.</p></article>
           <article><span>Image</span><strong>Génération</strong><p>Avec un provider image configuré, l'agent peut créer une nouvelle image depuis un prompt.</p></article>
           <article><span>Models</span><strong>Providers IA</strong><p>OpenAI, Ollama, OpenRouter, vLLM, llama.cpp compatible OpenAI.</p></article>

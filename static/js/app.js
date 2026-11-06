@@ -1145,6 +1145,19 @@ const DIRECT_TOOL_EXAMPLES = {
   },
   web_crawl: { url: "https://example.com", max_pages: 3, max_depth: 1, save_as: "crawl-example.json" },
   seo_audit: { url: "https://example.com", save_as: "seo-example.json" },
+  seo_site_audit: { url: "https://example.com", max_pages: 10, save_as: "audit-seo-example" },
+  local_seo_audit: { url: "https://example.com", business_name: "Exemple SARL", city: "Paris", phone: "01 23 45 67 89" },
+  geo_audit: { url: "https://example.com", save_as: "audit-geo-example" },
+  schema_generate: {
+    type: "localbusiness",
+    data: {
+      name: "Exemple SARL", url: "https://example.com", telephone: "+33123456789",
+      street: "1 rue de la Paix", postal_code: "75002", city: "Paris", country: "FR",
+      opening_hours: [{ days: ["lundi", "mardi", "mercredi", "jeudi", "vendredi"], opens: "09:00", closes: "18:00" }]
+    }
+  },
+  llms_txt_generate: { url: "https://example.com", max_pages: 10 },
+  seo_keywords: { url: "https://example.com", top: 20 },
   browser_navigate: { url: "https://example.com" },
   browser_snapshot: { url: "https://maltai.fr" },
   browser_links: {},
@@ -2443,6 +2456,42 @@ function bindEvents() {
     });
   }
 
+  function initSeoPanel() {
+    const hint = $("#seo-hint");
+    const setHint = (msg) => { if (hint) hint.textContent = msg || ""; };
+    setHint(canUseAgentTools() ? "" : "Les missions SEO utilisent les outils agent : plan Premium requis.");
+    const fill = (tpl, map) => Object.keys(map).reduce((acc, k) => acc.split(`{${k}}`).join(map[k]), tpl);
+    document.querySelectorAll("[data-seo-prompt]").forEach((btn) => {
+      btn.onclick = () => {
+        const urlInput = $("#seo-url");
+        let url = (urlInput?.value || "").trim();
+        if (!url) {
+          setHint("Renseigne d'abord l'URL du site à analyser.");
+          urlInput?.focus();
+          return;
+        }
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+        const business = ($("#seo-business")?.value || "").trim();
+        const city = ($("#seo-city")?.value || "").trim();
+        const localArgs = [business && `business_name « ${business} »`, city && `city « ${city} »`]
+          .filter(Boolean).join(", ");
+        const prompt = fill(btn.dataset.seoPrompt || "", {
+          url,
+          local_args: localArgs ? ` (${localArgs})` : "",
+          business: business || "l'activité",
+          city: city || "sa ville",
+        });
+        const agent = $("#agent-mode");
+        if (agent && !agent.disabled && !agent.checked) {
+          agent.checked = true;
+          agent.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        setHint("");
+        fillComposerFromPanel(prompt);
+      };
+    });
+  }
+
   function refreshModelsPanel() {
     const status = $("#models-status");
     const list = $("#models-list");
@@ -2502,6 +2551,7 @@ function bindEvents() {
     notes:       { el: "#subpanel-notes",       title: "Notes", load: () => loadNotesPanel("note") },
     tasks:       { el: "#subpanel-tasks",       title: "Tâches", load: () => loadNotesPanel("todo") },
     agentops:    { el: "#subpanel-agentops",    title: "AgentOps", load: () => initAgentOpsPanel() },
+    seo:         { el: "#subpanel-seo",         title: "Agent SEO", load: () => initSeoPanel() },
     research:    { el: "#subpanel-research",    title: "Deep Research", load: () => initDeepResearch() },
     skills:      { el: "#subpanel-skills",      title: "Librairie", load: () => initLibraryPanel() },
   };
@@ -2530,6 +2580,7 @@ function bindEvents() {
   $("#nav-notes").onclick       = () => activateNav("notes");
   $("#nav-tasks").onclick       = () => activateNav("tasks");
   $("#nav-agentops").onclick    = () => activateNav("agentops");
+  $("#nav-seo").onclick         = () => activateNav("seo");
   $("#nav-research").onclick    = () => activateNav("research");
   $("#nav-skills").onclick      = () => activateNav("skills");
   $("#nav-theme").onclick       = () => {

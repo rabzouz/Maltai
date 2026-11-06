@@ -1,0 +1,22 @@
+# MaltaiAI
+
+> MaltaiAI est un workspace IA open source et auto-hébergé : chat multi-providers (OpenAI, OpenRouter, Ollama, vLLM, llama.cpp), agents outillés, mémoire vectorielle, gestion de fichiers, Agent SEO / SEO local / GEO et console d'administration, dans une seule interface web.
+
+MaltaiAI se déploie avec Docker ou Coolify sur Linux, macOS ou Windows. Les conversations, clés API et fichiers restent sur le serveur de l'utilisateur. Les plans Basic (chat), Premium (outils agent) et Admin (administration de l'instance) encadrent l'accès aux outils, consommés en crédits.
+
+## Produit
+
+- [Accueil MaltaiAI](https://maltai.fr/): présentation, fonctionnalités, Agent SEO, sécurité, tarifs, installation et FAQ
+- [Application](https://maltai.fr/app): interface de chat et d'agents (connexion requise)
+
+## Fonctionnalités
+
+- Chat multi-providers compatible OpenAI, avec Ollama en local
+- Agent outillé : recherche web, scraping, navigateur Playwright, fichiers PDF/Word/Excel/ZIP, code sandbox
+- Agent SEO : audit technique multi-pages, SEO local (NAP, LocalBusiness), GEO (bots IA, llms.txt, données structurées), mots-clés et écart concurrent
+- Brain : mémoire vectorielle et recherche sémantique
+- Administration : terminal, processus, Git en lecture seule, gestion des crédits
+
+## Code source
+
+- [Dépôt GitHub](https://github.com/rabzouz/Maltai): code source, documentation et releases

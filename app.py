@@ -10,8 +10,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.routing import Match
 
 from core.config import settings
 from core import auth as core_auth
@@ -46,7 +49,36 @@ app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=li
 # Chemins accessibles sans authentification.
 OPEN_PREFIXES = ("/static/", "/api/auth/login", "/api/auth/register", "/api/health",
                  "/api/telegram/webhook/", "/api/external/chat")
-OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico", "/robots.txt", "/sitemap.xml"}
+OPEN_EXACT = {"/", "/login", "/register", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/llms.txt"}
+
+
+def _route_exists(scope) -> bool:
+    """Vrai si une route (ou un mount) de l'application correspond au chemin."""
+    for route in app.router.routes:
+        try:
+            match, _ = route.matches(scope)
+        except Exception:
+            continue
+        if match != Match.NONE:
+            return True
+    return False
+
+
+NOT_FOUND_HTML = """<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>Page introuvable — MaltaiAI</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0d14;color:#ecf2f7;
+font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:24px}a{color:#00d4c4;font-weight:700}</style>
+</head><body><main><h1>Page introuvable</h1><p>Cette page n'existe pas ou a été déplacée.</p>
+<p><a href="/">Retour à l'accueil MaltaiAI</a></p></main></body></html>"""
+
+
+@app.exception_handler(StarletteHTTPException)
+async def not_found_handler(request: Request, exc: StarletteHTTPException):
+    """Vraie page 404 HTML hors API (les moteurs voient un 404, pas un soft 404)."""
+    if exc.status_code == 404 and not request.url.path.startswith("/api/"):
+        return HTMLResponse(NOT_FOUND_HTML, status_code=404)
+    return await http_exception_handler(request, exc)
 
 
 @app.middleware("http")
@@ -74,6 +106,11 @@ async def auth_middleware(request: Request, call_next):
     if request.state.user is None:
         if path.startswith("/api/"):
             return JSONResponse({"detail": "Non authentifie"}, status_code=401)
+        # URL inexistante : laisser le routage renvoyer une vraie 404. Rediriger
+        # vers /login (200) creerait des « soft 404 » pour les moteurs. Les routes
+        # existantes restent protegees : elles sont toujours redirigees ci-dessous.
+        if not _route_exists(request.scope):
+            return await call_next(request)
         return RedirectResponse("/login")
 
     return await call_next(request)
@@ -154,6 +191,11 @@ def robots_route():
 @app.get("/sitemap.xml")
 def sitemap_route():
     return FileResponse(str(STATIC_DIR / "sitemap.xml"), media_type="application/xml")
+
+
+@app.get("/llms.txt")
+def llms_route():
+    return FileResponse(str(STATIC_DIR / "llms.txt"), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/login")

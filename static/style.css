@@ -2620,3 +2620,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   }
   .logout-btn { display: flex !important; }
 }
+
+/* --- Agent SEO -------------------------------------------------------------- */
+.seo-form { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-top: 10px; }
+.seo-form input {
+  min-width: 0; background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font-size: 14px;
+}
+.seo-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.seo-hint:empty { display: none; }
+.seo-hint { color: var(--accent); margin-top: 8px; }
+@media (max-width: 720px) { .seo-form { grid-template-columns: 1fr; } }

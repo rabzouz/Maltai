@@ -61,7 +61,8 @@
         {"@type":"Question","name":"Quels modèles et providers sont supportés ?","acceptedAnswer":{"@type":"Answer","text":"Tout endpoint compatible OpenAI : OpenAI, OpenRouter, ainsi qu'Ollama, vLLM ou llama.cpp en local, avec bascule entre plusieurs providers."}},
         {"@type":"Question","name":"Est-ce vraiment auto-hébergé ?","acceptedAnswer":{"@type":"Answer","text":"Oui, Maltai tourne sur votre serveur (Docker, Coolify, Linux, macOS, Windows) et stocke ses données localement."}},
         {"@type":"Question","name":"Combien ça coûte ?","acceptedAnswer":{"@type":"Answer","text":"Le logiciel est open source et gratuit. Les seuls coûts éventuels sont ceux des providers d'IA payants que vous branchez ; avec Ollama en local, aucun coût d'API."}},
-        {"@type":"Question","name":"Est-ce sécurisé pour plusieurs utilisateurs ?","acceptedAnswer":{"@type":"Answer","text":"Oui : sessions et workspace isolés par utilisateur, rôles séparant les commandes sensibles, et protection anti-SSRF des outils web même au fil des redirections."}}
+        {"@type":"Question","name":"Est-ce sécurisé pour plusieurs utilisateurs ?","acceptedAnswer":{"@type":"Answer","text":"Oui : sessions et workspace isolés par utilisateur, rôles séparant les commandes sensibles, et protection anti-SSRF des outils web même au fil des redirections."}},
+        {"@type":"Question","name":"MaltaiAI peut-il auditer le SEO et le GEO de mon site ?","acceptedAnswer":{"@type":"Answer","text":"Oui. L'Agent SEO (plans Premium et Admin) audite le SEO technique multi-pages, le SEO local (NAP, LocalBusiness, fiche Google) et le GEO, la capacité à être cité par ChatGPT, Claude, Perplexity ou Gemini, et génère le JSON-LD et le fichier llms.txt."}}
       ]
     }
     </script>
@@ -326,6 +327,35 @@
             .chat-line { opacity: 1; }
         }
     </style>
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "MaltaiAI",
+      "url": "https://maltai.fr/",
+      "logo": "https://maltai.fr/static/logo-full.png",
+      "description": "Éditeur de MaltaiAI, workspace IA open source et auto-hébergé.",
+      "sameAs": [
+        "https://github.com/rabzouz/Maltai",
+        "https://x.com/MaltaiAi"
+      ],
+      "@id": "https://maltai.fr/#organization"
+    },
+    {
+      "@type": "WebSite",
+      "name": "MaltaiAI",
+      "url": "https://maltai.fr/",
+      "inLanguage": "fr",
+      "@id": "https://maltai.fr/#website",
+      "publisher": {
+        "@id": "https://maltai.fr/#organization"
+      }
+    }
+  ]
+}
+    </script>
 </head>
 <body>
 
@@ -531,6 +561,34 @@
                     <div class="feature-icon">💳</div>
                     <h3>Crédits</h3>
                     <p>Plans Basic, Premium, Admin, suivi des tokens et balance pour cadrer l'usage des outils et modèles.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agent SEO -->
+    <section id="agent-seo">
+        <div class="section-container">
+            <div class="section-header reveal">
+                <span class="section-label">Agent SEO</span>
+                <h2 class="section-title">Un agent SEO, SEO local et GEO pour tes sites</h2>
+                <p class="section-subtitle">Donne une URL : l'agent SEO de MaltaiAI audite le site, explique les problèmes par priorité et produit les correctifs prêts à coller — balises, données structurées JSON-LD et fichier llms.txt. Les rapports complets sont exportés en JSON et Markdown dans ton workspace.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🔎</div>
+                    <h3>Audit SEO technique</h3>
+                    <p>Crawl multi-pages : HTTPS, redirection www, robots.txt, sitemap, title, meta description, H1, attributs alt, canonical, contenus minces, doublons et liens cassés, avec un score de A à F.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon">📍</div>
+                    <h3>SEO local</h3>
+                    <p>Cohérence NAP (nom, adresse, téléphone), schéma LocalBusiness, carte, horaires et avis, ville dans le title et le H1, plus une checklist Google Business Profile.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon">🤖</div>
+                    <h3>GEO pour les moteurs IA</h3>
+                    <p>Visibilité dans ChatGPT, Claude, Perplexity et Gemini : accès de 18 bots IA dans robots.txt, llms.txt, données structurées, contenu citable et signaux d'entité, avec un score GEO sur 100.</p>
                 </div>
             </div>
         </div>
@@ -810,6 +868,15 @@
                     </div>
                     <div class="faq-answer">
                         <p>Oui. Les sessions et le workspace sont isolés par utilisateur, les rôles séparent le chat des commandes sensibles, et les outils web bloquent les adresses internes (protection anti-SSRF, même au fil des redirections).</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal reveal-delay-2">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        MaltaiAI peut-il auditer le SEO et le GEO de mon site ?
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Oui. L'Agent SEO (plans Premium et Admin) audite le SEO technique d'un site sur plusieurs pages, le SEO local (NAP, LocalBusiness, fiche Google) et le GEO, c'est-à-dire la capacité à être lu et cité par ChatGPT, Claude, Perplexity ou Gemini. Il génère aussi les données structurées JSON-LD et le fichier llms.txt.</p>
                     </div>
                 </div>
             </div>
