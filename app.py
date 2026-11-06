@@ -137,6 +137,8 @@ app.include_router(billing.router)
 @app.get("/api/health")
 def health():
     payload = {"app": settings.APP_NAME, "version": settings.APP_VERSION, "status": "ok"}
+    from src import llm as _llm
+    payload["llm"] = _llm.COMPAT_VERSION
     if settings.APP_COMMIT:
         payload["commit"] = settings.APP_COMMIT
     return payload
